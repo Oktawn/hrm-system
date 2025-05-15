@@ -3,6 +3,7 @@ import { UserRoleEnum } from '../commons/enums/enums';
 import { verify } from 'jsonwebtoken';
 import { jwtConfig } from '../config/jwt.config';
 import { TokenPayload } from './auth.interface';
+
 interface AuthenticatedRequest extends Request {
   user?: TokenPayload;
 }

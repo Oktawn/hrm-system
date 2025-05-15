@@ -40,4 +40,36 @@ export class AuthController {
       next(error);
     }
   }
+
+  async logout(req: Request, res: Response) {
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
+    res.status(200).json({
+      message: 'Logout successful',
+    })
+  }
+
+  async refreshToken(req: Request, res: Response, next: NextFunction) {
+    try {
+      const refreshToken = req.cookies.refresh_token;
+      if (!refreshToken) {
+        res.status(401).json({ message: "Unauthorized" });
+        return;
+      }
+
+      const result = await authService.updateRefreshToken(refreshToken);
+
+      res.cookie('refresh_token', result, {
+        httpOnly: true,
+        maxAge: jwtConfig.getExpiration("JWT_REFRESH_EXPIRATION"),
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      });
+      res.status(200).json({
+        message: 'Refresh token updated successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
