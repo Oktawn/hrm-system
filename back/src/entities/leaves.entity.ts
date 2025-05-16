@@ -4,8 +4,8 @@ import { LeaveTypeEnum, RequestsStatusEnum } from "../commons/enums/enums";
 
 @Entity("leaves")
 export class LeavesEntity {
-  @PrimaryGeneratedColumn("uuid")
-  id: string;
+  @PrimaryGeneratedColumn("increment")
+  id: number;
 
   @ManyToOne(() => EmployeesEntity, employee => employee.leaves)
   employee: EmployeesEntity;

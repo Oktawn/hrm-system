@@ -5,8 +5,8 @@ import { RequestsStatusEnum, RequestTypeEnum } from "../commons/enums/enums";
 
 @Entity("hr_requests")
 export class HrRequestsEntity {
-  @PrimaryGeneratedColumn("uuid")
-  id: string;
+  @PrimaryGeneratedColumn("increment")
+  id: number;
 
   @ManyToOne(() => EmployeesEntity, employee => employee.hrRequests)
   employee: EmployeesEntity;

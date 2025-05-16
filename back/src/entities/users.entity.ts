@@ -1,7 +1,7 @@
 import { Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { EmployeesEntity } from "./employees.entity";
 import { UserRoleEnum } from "../commons/enums/enums";
-import { RefreshTokenEnity } from "./refresh-tokens.entity";
+import { RefreshTokenEntity } from "./refresh-tokens.entity";
 
 @Entity("users")
 export class UsersEntity {
@@ -27,8 +27,8 @@ export class UsersEntity {
   @OneToOne(() => EmployeesEntity, employee => employee.user)
   employee: EmployeesEntity;
 
-  @OneToOne(() => RefreshTokenEnity, refreshToken => refreshToken.user)
-  refreshToken: RefreshTokenEnity;
+  @OneToOne(() => RefreshTokenEntity, refreshToken => refreshToken.user)
+  refreshToken: RefreshTokenEntity;
 
 
 }

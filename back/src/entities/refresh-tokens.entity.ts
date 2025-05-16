@@ -1,10 +1,9 @@
-import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from "typeorm";
 import { UsersEntity } from "./users.entity";
 
 
 @Entity("refresh_tokens")
-export class RefreshTokenEnity {
-
+export class RefreshTokenEntity {
 
   @PrimaryColumn()
   tokens: string;

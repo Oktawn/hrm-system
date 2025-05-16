@@ -10,7 +10,7 @@ import { HrRequestsEntity } from "./hr-requests.entity";
 export class EmployeesEntity {
 
   @PrimaryGeneratedColumn("uuid")
-  id: number;
+  id: string;
 
   @Column()
   firstName: string;

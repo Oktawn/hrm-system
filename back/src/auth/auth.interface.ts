@@ -1,3 +1,4 @@
+import { Request } from 'express';
 export interface TokenPayload {
   userId: string;
   role: string;
@@ -16,12 +17,12 @@ export interface AuthResponse {
 export interface IRegister {
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
-  middleName?: string;
 }
 
 export interface ILogin {
   email: string;
   password: string;
+}
+export interface AuthenticatedRequest extends Request {
+  user?: TokenPayload;
 }
