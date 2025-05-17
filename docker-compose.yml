@@ -1,0 +1,60 @@
+
+services:
+  postgres:
+    image: postgres
+    container_name: hrm-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: hrm
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: hrm_db
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: hrm-rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: hrm
+      RABBITMQ_DEFAULT_PASS: password
+    ports:
+      - "5672:5672"   # AMQP протокол
+      - "15672:15672" # Management интерфейс
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  api:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    container_name: hrm-api
+    restart: always
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      DATABASE_URL: postgres://hrm:password@postgres:5432/hrm_db
+      RABBITMQ_URL: amqp://hrm:password@rabbitmq:5672
+      NODE_ENV: production
+    ports:
+      - "8000:8000"
+
+  worker:
+    build:
+      context: ./back
+      dockerfile: Dockerfile.worker
+    container_name: hrm-worker
+    restart: always
+    depends_on:
+      - rabbitmq
+    environment:
+      RABBITMQ_URL: amqp://hrm:password@rabbitmq:5672
+      NODE_ENV: production
+    command: ["node", "dist/workers/email-worker.js"]
+
+volumes:
+  pg_data:
+  rabbitmq_data:

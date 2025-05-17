@@ -49,9 +49,6 @@ export class EmployeesEntity {
   @ManyToOne(() => LeavesEntity, leave => leave.employee)
   leaves: LeavesEntity[];
 
-  @OneToMany(() => TasksEntity, task => task.assignee)
-  assignedTasks: TasksEntity[];
-
   @OneToMany(() => TasksEntity, task => task.creator)
   createdTasks: TasksEntity[];
 

@@ -93,7 +93,12 @@ export class EmployeesService {
         findUser.email = email;
         userRepository.save(findUser);
       }
-      employeeRepository.save(data);
+      for (const key in data) {
+        if (data[key] !== undefined) {
+          findEmployee[key] = data[key];
+        }
+      }
+      employeeRepository.save(findEmployee);
 
     } catch (error) {
       throw createError(500, "Error updating employee");

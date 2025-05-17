@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { EmployeesEntity } from "./employees.entity";
 import { TaskPriorityEnum, TaskStatusEnum } from "../commons/enums/enums";
 
@@ -22,8 +22,9 @@ export class TasksEntity {
   @Column({ type: "date", nullable: true })
   deadline: Date;
 
-  @ManyToOne(() => EmployeesEntity, employee => employee.assignedTasks)
-  assignee: EmployeesEntity;
+  @ManyToMany(() => EmployeesEntity, { cascade: true })
+  @JoinTable()
+  assignees: EmployeesEntity[];
 
   @ManyToOne(() => EmployeesEntity, employee => employee.createdTasks)
   creator: EmployeesEntity;
