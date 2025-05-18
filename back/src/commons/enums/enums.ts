@@ -5,28 +5,21 @@ export enum UserRoleEnum {
   EMPLOYEE = "employee"
 }
 
-export enum RequestsStatusEnum {
+export enum RequestStatusEnum {
   PENDING = "pending",
-  PROCESSING = "processing",
-  COMPLETED = "completed",
+  APPROVED = "approved",
   REJECTED = "rejected",
-  CANCELLED = "cancelled"
+  COMPLETED = "completed",
+  CANCELLED = "cancelled",
 }
 
 export enum RequestTypeEnum {
-  DOCUMENT = "document",
-  CERTIFICATE = "certificate",
-  EQUIPMENT = "equipment",
-  COMPENSATION = "compensation",
-  BENEFITS = "benefits",
-  OTHER = "other"
-}
-
-export enum LeaveTypeEnum {
-  VACATION = "vacation",
-  SICK = "sick",
-  UNPAID = "unpaid",
-  OTHER = "other"
+  DOCUMENT = "document",       // Запрос документа
+  CERTIFICATE = "certificate", // Запрос справки
+  LEAVE_VACATION = "leave_vacation", // Отпуск
+  LEAVE_SICK = "leave_sick",   // Больничный
+  LEAVE_PERSONAL = "leave_personal", // Отгул
+  // другие типы заявок
 }
 
 

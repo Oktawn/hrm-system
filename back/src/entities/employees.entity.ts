@@ -2,9 +2,8 @@ import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, One
 import { UsersEntity } from "./users.entity";
 import { DepartmentsEntity } from "./departments.entity";
 import { PositionsEntity } from "./positions.entity";
-import { LeavesEntity } from "./leaves.entity";
 import { TasksEntity } from "./tasks.entity";
-import { HrRequestsEntity } from "./hr-requests.entity";
+import { RequestEntity } from "./request.entity";
 
 @Entity("employees")
 export class EmployeesEntity {
@@ -43,17 +42,12 @@ export class EmployeesEntity {
   @ManyToOne(() => DepartmentsEntity, dep => dep.employees, { onDelete: "SET NULL" })
   department: DepartmentsEntity;
 
-  @ManyToOne(() => PositionsEntity, position => position.employees)
+  @ManyToOne(() => PositionsEntity, position => position.employees, { onDelete: "SET NULL" })
   position: PositionsEntity;
-
-  @ManyToOne(() => LeavesEntity, leave => leave.employee)
-  leaves: LeavesEntity[];
 
   @OneToMany(() => TasksEntity, task => task.creator)
   createdTasks: TasksEntity[];
 
-  @OneToMany(() => HrRequestsEntity, request => request.employee)
-  hrRequests: HrRequestsEntity[];
-
-
+  @OneToMany(() => RequestEntity, request => request.creator)
+  createdRequests: RequestEntity[];
 }

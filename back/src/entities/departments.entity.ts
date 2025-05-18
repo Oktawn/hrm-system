@@ -1,5 +1,6 @@
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { EmployeesEntity } from "./employees.entity";
+import { PositionsEntity } from "./positions.entity";
 
 @Entity("departments")
 export class DepartmentsEntity {
@@ -18,4 +19,7 @@ export class DepartmentsEntity {
 
   @OneToMany(() => EmployeesEntity, employee => employee.department)
   employees: EmployeesEntity[];
+
+  @OneToMany(() => PositionsEntity, position => position.department)
+  positions: PositionsEntity[];
 }

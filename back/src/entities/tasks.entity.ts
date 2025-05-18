@@ -22,7 +22,7 @@ export class TasksEntity {
   @Column({ type: "date", nullable: true })
   deadline: Date;
 
-  @ManyToMany(() => EmployeesEntity, { cascade: true })
+  @ManyToMany(() => EmployeesEntity, { onDelete: "SET NULL" })
   @JoinTable()
   assignees: EmployeesEntity[];
 

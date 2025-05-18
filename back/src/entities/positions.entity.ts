@@ -1,5 +1,6 @@
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { EmployeesEntity } from "./employees.entity";
+import { DepartmentsEntity } from "./departments.entity";
 
 @Entity("positions")
 export class PositionsEntity {
@@ -20,6 +21,9 @@ export class PositionsEntity {
 
   @OneToMany(() => EmployeesEntity, employee => employee.position)
   employees: EmployeesEntity[];
+
+  @ManyToOne(()=>DepartmentsEntity, department => department.positions, { onDelete: "SET NULL" })
+  department: DepartmentsEntity;
 
   @CreateDateColumn()
   createdAt: Date;
