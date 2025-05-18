@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { UsersEntity } from "./users.entity";
-import { DepartmentsEntity } from "./departments.enity";
+import { DepartmentsEntity } from "./departments.entity";
 import { PositionsEntity } from "./positions.entity";
 import { LeavesEntity } from "./leaves.entity";
 import { TasksEntity } from "./tasks.entity";

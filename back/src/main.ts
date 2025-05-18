@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { authRouter } from './auth/auth.router';
 import { AppDataSource } from './data-source';
+import { employeesRouter } from './employees/employees.router';
 
 const app = express();
 const port = envConfig.get("API_PORT");
@@ -16,7 +17,7 @@ app.use(cookieParser());
 app.use(express.json({ limit: "50mb" }));
 
 app.use("/api/auth", authRouter);
-app.use("/api", authRouter);
+app.use("/api/employees", employeesRouter);
 
 
 AppDataSource.initialize()

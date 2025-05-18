@@ -10,6 +10,9 @@ interface IJwtConfig {
 
 class JwtConfig {
   constructor() {
+    if (process.env.NODE_ENV === "production") {
+      return;
+    }
     const jwtPath = path.resolve(__dirname, "jwt.env");
     const { error, parsed } = config({ path: jwtPath });
     if (error) {

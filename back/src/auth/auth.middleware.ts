@@ -6,18 +6,20 @@ import { AuthenticatedRequest, TokenPayload } from './auth.interface';
 
 export function authMiddleware(requiredRoles?: UserRoleEnum[]) {
   return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    const token = req.cookies.access_token;
+
+    if (!token) {
       res.status(401).json({ message: "Unauthorized" });
       return;
     }
-    const token = authHeader.split(" ")[1];
+
     try {
       const payload = verifyToken(token);
       if (!payload) {
         res.status(401).json({ message: "Invalid token" });
         return;
       }
+
       if (requiredRoles && requiredRoles.length > 0) {
         if (!requiredRoles.includes(payload.role as UserRoleEnum)) {
           res.status(403).json({ message: "Forbidden" });

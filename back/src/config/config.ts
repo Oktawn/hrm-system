@@ -13,9 +13,10 @@ interface IEnvConfig {
 
 class EnvConfig {
   constructor() {
-    const envDev = path.resolve(__dirname, "../../.env");
-    const envProd = path.resolve(__dirname, "../../../.env");
-    const envPath = envDev || envProd;
+    if (process.env.NODE_ENV === "production") {
+      return;
+    }
+    const envPath = path.resolve(__dirname, "../../.env");
     const { error, parsed } = config({ path: envPath });
     if (error) {
       throw new Error(`Error loading .env file: ${error}`);

@@ -11,8 +11,20 @@ export class AuthController {
   async register(req: Request, res: Response, next: NextFunction) {
     try {
       const userData: IRegister = req.body;
-      return authService.registerUser(userData);
+      await authService.registerUser(userData);
+      res.status(201).json({
+        message: 'User registered successfully',
+      });
     } catch (error) {
+      if (error instanceof Error) {
+        res.status(409).json({
+          message: error.message,
+        });
+      } else {
+        res.status(500).json({
+          message: 'Internal server error',
+        });
+      }
       next(error);
     }
   }

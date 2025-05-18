@@ -6,6 +6,8 @@ import createError from "http-errors";
 
 export class EmployeesService {
   async getAllEmployees(filter: IEmployeeFilter) {
+    filter.page = filter.page || 1;
+    filter.limit = filter.limit || 10;
 
     const queryB = employeeRepository.createQueryBuilder("employee");
     queryB.leftJoinAndSelect("employee.department", "department");
@@ -32,8 +34,12 @@ export class EmployeesService {
     const page = (filter.page - 1) * filter.limit;
     queryB.skip(page).take(filter.limit);
     const [employees, total] = await queryB.getManyAndCount();
+    const modifiedEmployees = employees.map(employee => ({
+      ...employee,
+      user: employee.user ? { email: employee.user.email } : null
+    }));
     return {
-      data: employees,
+      data: modifiedEmployees,
       meta: {
         page: page,
         limit: filter.limit,
@@ -45,13 +51,21 @@ export class EmployeesService {
 
   async getEmployeeById(id: string) {
     const employee = await employeeRepository.findOne({
-      where: { id },
+      where: { user: { id: id } },
       relations: ["department", "position", "user"],
     });
     if (!employee) {
       throw createError(404, "Employee not found");
     }
-    return employee;
+    const userEmail = employee.user ? {
+      id: employee.user.id,
+      email: employee.user.email
+    } : null;
+
+    return {
+      ...employee,
+      user: userEmail
+    };
   }
 
   async createEmployee(employeeData: ICreateEmployee) {

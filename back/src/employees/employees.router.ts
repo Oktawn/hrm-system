@@ -7,12 +7,12 @@ const employeesRouter = Router();
 const employeesController = new EmployeesController();
 
 employeesRouter.get("/account/me", authMiddleware(), employeesController.getEmployeeAccountById);
-employeesRouter.get("/employees", authMiddleware(), employeesController.getAllEmployees);
-employeesRouter.get("/employees/:id", authMiddleware(), employeesController.getEmployeeById);
-employeesRouter.post("/employees/create", authMiddleware([UserRoleEnum.ADMIN]), employeesController.createEmployee);
-employeesRouter.put("/employees/update/me", authMiddleware(), employeesController.updateEmployee);
-employeesRouter.put("/employees/update", authMiddleware([UserRoleEnum.ADMIN, UserRoleEnum.HR, UserRoleEnum.MANAGER]), employeesController.updateAnotherEmployee);
-employeesRouter.delete("/employees/:id", authMiddleware([UserRoleEnum.ADMIN]), employeesController.deleteEmployee);
+employeesRouter.get("/", authMiddleware(), employeesController.getAllEmployees);
+employeesRouter.get("/:id", authMiddleware(), employeesController.getEmployeeById);
+employeesRouter.post("/create", authMiddleware([UserRoleEnum.ADMIN]), employeesController.createEmployee);
+employeesRouter.put("/update/me", authMiddleware(), employeesController.updateEmployee);
+employeesRouter.put("/update", authMiddleware([UserRoleEnum.ADMIN, UserRoleEnum.HR, UserRoleEnum.MANAGER]), employeesController.updateAnotherEmployee);
+employeesRouter.delete("/:id", authMiddleware([UserRoleEnum.ADMIN]), employeesController.deleteEmployee);
 
 
 export {
