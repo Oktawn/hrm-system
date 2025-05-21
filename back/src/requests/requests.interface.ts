@@ -4,18 +4,20 @@ export interface ICreateRequest {
   type: RequestTypeEnum;
   title: string;
   description?: string;
+  status: RequestStatusEnum;
+  userId: string;
   startDate?: Date;
   endDate?: Date;
   attachments?: any;
 }
 
 export interface IUpdateRequest {
+  id: number;
   title?: string;
   description?: string;
   status?: RequestStatusEnum;
   startDate?: Date;
   endDate?: Date;
-  assignedToId?: string;
   attachments?: any;
 }
 
@@ -23,7 +25,6 @@ export interface IRequestFilter {
   type?: RequestTypeEnum | RequestTypeEnum[];
   status?: RequestStatusEnum | RequestStatusEnum[];
   employeeId?: string;
-  assignedToId?: string;
   startDateFrom?: Date;
   startDateTo?: Date;
   endDateFrom?: Date;

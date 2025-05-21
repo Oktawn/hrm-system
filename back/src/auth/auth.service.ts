@@ -3,7 +3,7 @@ import { ILogin, IRegister, TokenPayload } from "./auth.interface";
 import { compareSync, hashSync } from "bcrypt";
 import jwt from "jsonwebtoken";
 import { jwtConfig } from "../config/jwt.config";
-import { refreshTokenRepository, userRepository } from "../db/db-rep";
+import { employeeRepository, refreshTokenRepository, userRepository } from "../db/db-rep";
 
 export class AuthService {
 
@@ -19,6 +19,10 @@ export class AuthService {
 
     try {
       await userRepository.save(newUser);
+      const newEmployee = employeeRepository.create({
+        user: newUser
+      });
+      await employeeRepository.save(newEmployee);
     } catch (error) {
       throw createError(500, "Internal server error");
     }

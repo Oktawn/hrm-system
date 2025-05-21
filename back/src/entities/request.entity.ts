@@ -25,9 +25,8 @@ export class RequestEntity {
   @ManyToOne(() => EmployeesEntity)
   creator: EmployeesEntity;
 
-  @ManyToMany(() => EmployeesEntity, { onDelete: "SET NULL" })
-  @JoinTable()
-  assignees: EmployeesEntity[];
+  @ManyToOne(() => EmployeesEntity, { onDelete: "SET NULL" })
+  assignees: EmployeesEntity;
 
   @Column({ type: "date", nullable: true })
   startDate: Date; // для отпусков
