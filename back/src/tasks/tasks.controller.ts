@@ -72,10 +72,10 @@ export class TasksController {
       creatorId: req.user.userId,
     };
     try {
-      await tasksService.createTask(taskData);
+      const result = await tasksService.createTask(taskData);
       res.status(201).json({
         message: "Task created successfully",
-        data: taskData,
+        data: result,
       });
     } catch (error) {
       next(error);

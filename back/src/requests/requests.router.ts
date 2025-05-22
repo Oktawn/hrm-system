@@ -14,3 +14,5 @@ requestRouter.get("/employee/:employeeId", authMiddleware(), requestsController.
 requestRouter.post("/create", authMiddleware(), requestsController.createRequest);
 requestRouter.put("/update/:id", authMiddleware(), requestsController.updateRequest);
 requestRouter.delete("/:id", authMiddleware(), requestsController.deleteRequest);
+
+export { requestRouter };

@@ -49,41 +49,42 @@ export class AuthService {
   }
 
   async generateTokens(payload: TokenPayload) {
-    const accessToken = jwt.sign(payload, jwtConfig.get("JWT_SECRET"), {
-      expiresIn: jwtConfig.getExpiration("JWT_EXPIRES_IN"),
-    })
-    const refreshToken = await this.generateRefreshToken(payload.userId);
-    return { accessToken, refreshToken }
+    const tokens = await Promise.all([
+      this.generateAccessToken(payload),
+      this.generateRefreshToken(payload)
+    ]);
+    return {
+      accessToken: tokens[0],
+      refreshToken: tokens[1]
+    }
   }
 
-  async generateRefreshToken(userId: string) {
-    const refreshToken = jwt.sign({ userId }, jwtConfig.get("JWT_SECRET"), {
+  async generateAccessToken(payload: TokenPayload) {
+    const accessToken = jwt.sign(payload, jwtConfig.get("JWT_SECRET"), {
+      expiresIn: jwtConfig.getExpiration("JWT_EXPIRES_IN")
+    });
+    return accessToken;
+  }
+
+  async generateRefreshToken(payload: TokenPayload) {
+    const refreshToken = jwt.sign(payload, jwtConfig.get("JWT_SECRET"), {
       expiresIn: jwtConfig.getExpiration("JWT_REFRESH_EXPIRATION")
     });
-    const token = await refreshTokenRepository.findOneBy({ user: { id: userId } });
+    const token = await refreshTokenRepository.findOneBy({ user: { id: payload.userId } });
     if (token) {
       await refreshTokenRepository.delete(token);
     };
     const newToken = refreshTokenRepository.create({
       tokens: refreshToken,
-      user: { id: userId },
+      user: { id: payload.userId },
       expires_at: new Date(Date.now() + jwtConfig.getExpiration("JWT_REFRESH_EXPIRATION"))
     });
     try {
-      refreshTokenRepository.save(newToken);
+      await refreshTokenRepository.save(newToken);
       return refreshToken;
     } catch (error) {
       throw createError(500, "Internal server error");
     }
-  }
-
-  async updateRefreshToken(token: string) {
-    const tokenData = await refreshTokenRepository.findOne({ where: { tokens: token }, relations: ["user"] });
-    if (!tokenData) {
-      throw createError(401, "Invalid token");
-    }
-    return this.generateRefreshToken(tokenData.user.id);
-
   }
 
 }

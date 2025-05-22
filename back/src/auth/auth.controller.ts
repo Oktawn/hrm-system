@@ -69,7 +69,7 @@ export class AuthController {
         return;
       }
 
-      const result = await authService.updateRefreshToken(refreshToken);
+      const result = await authService.generateRefreshToken(refreshToken);
 
       res.cookie('refresh_token', result, {
         httpOnly: true,

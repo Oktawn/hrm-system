@@ -5,12 +5,14 @@ import { authMiddleware } from "../auth/auth.middleware";
 const taskRouter = Router();
 const tasksController = new TasksController();
 
-taskRouter.get("/tasks", authMiddleware(), tasksController.getAllTasks);
-taskRouter.get("/tasks/:id", authMiddleware(), tasksController.getTaskById);
-taskRouter.get("/tasks/assignee/:assigneeId", authMiddleware(), tasksController.getTasksByAssignee);
-taskRouter.get("/tasks/creator/:creatorId", authMiddleware(), tasksController.getTasksByCreator);
-taskRouter.get("/tasks/status/:status", authMiddleware(), tasksController.getTasksByStatus);
-taskRouter.get("/tasks/priority/:priority", authMiddleware(), tasksController.getTasksByPriority);
-taskRouter.post("/tasks/create", authMiddleware(), tasksController.createTask);
-taskRouter.put("/tasks/update/:id", authMiddleware(), tasksController.updateTask);
-taskRouter.delete("/tasks/:id", authMiddleware(), tasksController.deleteTask);
+taskRouter.get("/", authMiddleware(), tasksController.getAllTasks);
+taskRouter.get("/:id", authMiddleware(), tasksController.getTaskById);
+taskRouter.get("/assignee/:assigneeId", authMiddleware(), tasksController.getTasksByAssignee);
+taskRouter.get("/creator/:creatorId", authMiddleware(), tasksController.getTasksByCreator);
+taskRouter.get("/status/:status", authMiddleware(), tasksController.getTasksByStatus);
+taskRouter.get("/priority/:priority", authMiddleware(), tasksController.getTasksByPriority);
+taskRouter.post("/create", authMiddleware(), tasksController.createTask);
+taskRouter.put("/update/:id", authMiddleware(), tasksController.updateTask);
+taskRouter.delete("/:id", authMiddleware(), tasksController.deleteTask);
+
+export { taskRouter };

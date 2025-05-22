@@ -57,14 +57,14 @@ export class EmployeesService {
     if (!employee) {
       throw createError(404, "Employee not found");
     }
-    const userEmail = employee.user ? {
+    const user = employee.user ? {
       id: employee.user.id,
       email: employee.user.email
     } : null;
 
     return {
       ...employee,
-      user: userEmail
+      user: user
     };
   }
 

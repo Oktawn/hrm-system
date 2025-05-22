@@ -15,6 +15,7 @@ export class TasksService {
       ...taskData,
       creator: exCreator,
       assignees: [],
+      deadline: taskData.deadline ? new Date(taskData.deadline) : undefined,
     });
     if (taskData.assigneesId) {
       let exAssignees = await employeeRepository.findBy({ id: In(taskData.assigneesId) })
@@ -25,6 +26,15 @@ export class TasksService {
     }
     try {
       await taskRepository.save(newTask);
+      return {
+        ...newTask,
+        creator: newTask.creator ? {
+          id: newTask.creator.id,
+        } : null,
+        assignees: newTask.assignees ? {
+          id: newTask.assignees.map((assignee) => assignee.id),
+        } : null,
+      };
     } catch (error) {
       throw createError(500, "Error creating task");
     }
