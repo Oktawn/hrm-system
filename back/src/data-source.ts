@@ -13,7 +13,7 @@ export const AppDataSource = new DataSource({
   password: envConfig.get("DB_PASSWORD"),
   database: envConfig.get("DB_DATABASE"),
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  synchronize: true,
+  synchronize: false,
   cache: {
     duration: 10000
   },
