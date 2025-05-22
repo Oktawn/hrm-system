@@ -72,7 +72,7 @@ export class AuthService {
     });
     const token = await refreshTokenRepository.findOneBy({ user: { id: payload.userId } });
     if (token) {
-      await refreshTokenRepository.delete(token);
+      await refreshTokenRepository.remove(token);
     };
     const newToken = refreshTokenRepository.create({
       tokens: refreshToken,

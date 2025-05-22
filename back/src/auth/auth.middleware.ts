@@ -19,6 +19,7 @@ export function authMiddleware(requiredRoles?: UserRoleEnum[]) {
         }
         req.user = payload;
         next();
+        return;
       } catch (error) {
         if (!(error instanceof TokenExpiredError)) {
           res.status(401).json({ message: "Invalid access token" });
@@ -54,23 +55,16 @@ export function authMiddleware(requiredRoles?: UserRoleEnum[]) {
 
 
         const newAccessTokenPayload = verifyToken(newTokens.accessToken);
-        if (checkRole(newAccessTokenPayload, requiredRoles)) {
-          res.status(403).json({ message: "Forbidden after token refresh" });
-          return;
-        }
         req.user = newAccessTokenPayload;
         next();
-
+        return;
       } catch (error) {
-        res.clearCookie('access_token');
-        res.clearCookie('refresh_token');
         res.status(401).json({ message: "Invalid or expired refresh token" });
         return;
       }
     }
 
     res.status(401).json({ message: "Unauthorized - No valid tokens provided" });
-    return;
   };
 }
 
