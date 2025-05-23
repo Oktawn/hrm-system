@@ -1,16 +1,17 @@
 import { Response, NextFunction } from 'express';
 import { UserRoleEnum } from '../commons/enums/enums';
-import { TokenExpiredError, verify } from 'jsonwebtoken';
+import { decode, JwtPayload, TokenExpiredError, verify } from 'jsonwebtoken';
 import { jwtConfig } from '../config/jwt.config';
 import { AuthenticatedRequest, TokenPayload } from './auth.interface';
 import { AuthService } from './auth.service';
+import ms from 'ms';
 const authService = new AuthService();
 
 export function authMiddleware(requiredRoles?: UserRoleEnum[]) {
   return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const accessToken = req.cookies.access_token;
     const refreshToken = req.cookies.refresh_token;
-    if (accessToken) {
+    if (accessToken && refreshToken) {
       try {
         const payload = verifyToken(accessToken);
         if (checkRole(payload, requiredRoles)) {
@@ -18,8 +19,13 @@ export function authMiddleware(requiredRoles?: UserRoleEnum[]) {
           return;
         }
         req.user = payload;
-        next();
-        return;
+        if (((decode(refreshToken) as JwtPayload).exp - (Date.now() * 1000)) < ms("1d")) {
+          console.log("updated refresh token");
+        }
+        else {
+          next();
+          return;
+        }
       } catch (error) {
         if (!(error instanceof TokenExpiredError)) {
           res.status(401).json({ message: "Invalid access token" });
@@ -37,9 +43,7 @@ export function authMiddleware(requiredRoles?: UserRoleEnum[]) {
       try {
         const refreshPayload = verifyToken(refreshToken);
 
-
         const newTokens = await authService.generateTokens(refreshPayload);
-
         res.cookie("access_token", newTokens.accessToken, {
           httpOnly: true,
           maxAge: jwtConfig.getExpiration("JWT_EXPIRES_IN"),

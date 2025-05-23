@@ -49,10 +49,17 @@ export class AuthService {
   }
 
   async generateTokens(payload: TokenPayload) {
+    const clearPayload: TokenPayload = {
+      userId: payload.userId,
+      role: payload.role,
+    }
     const tokens = await Promise.all([
-      this.generateAccessToken(payload),
-      this.generateRefreshToken(payload)
-    ]);
+      this.generateAccessToken(clearPayload),
+      this.generateRefreshToken(clearPayload)
+    ]).catch((error) => {
+      console.log("Error generating tokens", error);
+      throw createError(500, "Internal server error");
+    });
     return {
       accessToken: tokens[0],
       refreshToken: tokens[1]
@@ -70,16 +77,16 @@ export class AuthService {
     const refreshToken = jwt.sign(payload, jwtConfig.get("JWT_SECRET"), {
       expiresIn: jwtConfig.getExpiration("JWT_REFRESH_EXPIRATION")
     });
-    const token = await refreshTokenRepository.findOneBy({ user: { id: payload.userId } });
-    if (token) {
-      await refreshTokenRepository.remove(token);
-    };
-    const newToken = refreshTokenRepository.create({
-      tokens: refreshToken,
-      user: { id: payload.userId },
-      expires_at: new Date(Date.now() + jwtConfig.getExpiration("JWT_REFRESH_EXPIRATION"))
-    });
     try {
+      const token = await refreshTokenRepository.findOneBy({ user: { id: payload.userId } });
+      if (token) {
+        await refreshTokenRepository.remove(token);
+      };
+      const newToken = refreshTokenRepository.create({
+        tokens: refreshToken,
+        user: { id: payload.userId },
+        expires_at: new Date(Date.now() + jwtConfig.getExpiration("JWT_REFRESH_EXPIRATION"))
+      });
       await refreshTokenRepository.save(newToken);
       return refreshToken;
     } catch (error) {
