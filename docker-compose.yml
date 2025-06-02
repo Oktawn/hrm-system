@@ -26,6 +26,18 @@ services:
       - postgres
     ports:
       - "${API_PORT}:8000"
+  frontend:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    container_name: hrm-frontend
+    env_file:
+      - .env
+    restart: always
+    depends_on:
+      - api
+    ports:
+      - "5173:5173"
 
 volumes:
   postgres_data:
