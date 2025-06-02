@@ -9,43 +9,39 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Важно для работы с cookie
 });
 
-// Интерсептор для добавления токена к запросам
-api.interceptors.request.use(
-  (config) => {
-    const token = getCookie('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Интерсептор для обработки ошибок авторизации
+// Интерсептор для обработки ответов и автоматического обновления токенов
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
+    // Проверяем, что это ошибка 401 и запрос еще не повторялся
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      const refreshToken = getCookie('refreshToken');
-      if (refreshToken) {
+      try {
+        // Пытаемся обновить токены через refresh endpoint
+        await api.post('/auth/refresh');
+        
+        // Если обновление прошло успешно, повторяем оригинальный запрос
+        return api(originalRequest);
+      } catch (refreshError) {
+        // Если обновление токена не удалось, перенаправляем на логин
+        console.error('Failed to refresh token:', refreshError);
+        
+        // Очищаем cookie через logout
         try {
-          const response = await refreshAccessToken(refreshToken);
-          setCookie('accessToken', response.accessToken);
-          api.defaults.headers.Authorization = `Bearer ${response.accessToken}`;
-          return api(originalRequest);
-        } catch (refreshError) {
-          // Если обновление токена не удалось, перенаправляем на логин
-          clearAuthCookies();
-          window.location.href = '/login';
+          await api.post('/auth/logout');
+        } catch (logoutError) {
+          console.error('Logout error:', logoutError);
         }
+        
+        // Перенаправляем на страницу логина
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
       }
     }
 
@@ -61,36 +57,31 @@ export const authAPI = {
   logout: (): Promise<AxiosResponse<void>> =>
     api.post('/auth/logout'),
 
-  refreshToken: (refreshToken: string): Promise<AxiosResponse<{ accessToken: string }>> =>
-    api.post('/auth/refresh', { refreshToken }),
+  refreshToken: (): Promise<AxiosResponse<{ message: string }>> =>
+    api.post('/auth/refresh'),
+
+  checkToken: (): Promise<AxiosResponse<{ valid: boolean; user?: any }>> =>
+    api.get('/auth/check'),
 };
 
-// Утилиты для работы с куки
-export const setCookie = (name: string, value: string, days: number = 7): void => {
-  const expires = new Date();
-  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
-};
-
-export const getCookie = (name: string): string | null => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) {
-    return parts.pop()?.split(';').shift() || null;
+// Утилиты для проверки авторизации
+export const checkAuthStatus = async (): Promise<boolean> => {
+  try {
+    const response = await authAPI.checkToken();
+    return response.data.valid;
+  } catch (error) {
+    return false;
   }
-  return null;
 };
 
-export const deleteCookie = (name: string): void => {
-  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-};
-
-export const clearAuthCookies = (): void => {
-  deleteCookie('accessToken');
-  deleteCookie('refreshToken');
-};
-
-const refreshAccessToken = async (refreshToken: string) => {
-  const response = await authAPI.refreshToken(refreshToken);
-  return response.data;
+// Функция для безопасного выполнения API запросов с автоматическим обновлением токенов
+export const safeApiCall = async <T>(apiCall: () => Promise<AxiosResponse<T>>): Promise<T> => {
+  try {
+    const response = await apiCall();
+    return response.data;
+  } catch (error: any) {
+    // Если это ошибка 401, interceptor уже попытается обновить токен
+    // и повторить запрос автоматически
+    throw error;
+  }
 };

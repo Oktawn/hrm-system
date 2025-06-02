@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import type { AuthState, LoginRequest, User } from '../types/auth.types';
-import { authAPI, setCookie, getCookie, clearAuthCookies } from '../services/auth.service';
+import { authAPI } from '../services/auth.service';
 
 interface AuthActions {
   login: (credentials: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
-  checkAuth: () => void;
+  checkAuth: () => Promise<void>;
   clearError: () => void;
   setUser: (user: User) => void;
 }
@@ -16,7 +16,7 @@ type AuthStore = AuthState & AuthActions;
 export const useAuthStore = create<AuthStore>()(
   devtools(
     persist(
-      (set, get) => ({
+      (set) => ({
         // Начальное состояние
         user: null,
         accessToken: null,
@@ -31,16 +31,11 @@ export const useAuthStore = create<AuthStore>()(
 
           try {
             const response = await authAPI.login(credentials);
-            const { accessToken, refreshToken, user } = response.data;
-
-            // Сохраняем токены в куки
-            setCookie('accessToken', accessToken, 7);
-            setCookie('refreshToken', refreshToken, 30);
-
+            // В новой системе токены автоматически сохраняются в httpOnly cookie
+            // Нам нужно только получить данные пользователя
+            
             set({
-              user,
-              accessToken,
-              refreshToken,
+              user: response.data.user || null, // Если есть данные пользователя в ответе
               isAuthenticated: true,
               isLoading: false,
               error: null,
@@ -49,8 +44,6 @@ export const useAuthStore = create<AuthStore>()(
             const errorMessage = error.response?.data?.message || 'Ошибка авторизации';
             set({
               user: null,
-              accessToken: null,
-              refreshToken: null,
               isAuthenticated: false,
               isLoading: false,
               error: errorMessage,
@@ -67,8 +60,7 @@ export const useAuthStore = create<AuthStore>()(
           } catch (error) {
             console.error('Ошибка при выходе:', error);
           } finally {
-            // Очищаем состояние и куки в любом случае
-            clearAuthCookies();
+            // Очищаем состояние - куки очистит сервер
             set({
               user: null,
               accessToken: null,
@@ -80,25 +72,31 @@ export const useAuthStore = create<AuthStore>()(
           }
         },
 
-        checkAuth: () => {
-          const accessToken = getCookie('accessToken');
-          const refreshToken = getCookie('refreshToken');
-
-          if (accessToken && refreshToken) {
-            const { user } = get();
-            if (user) {
+        checkAuth: async () => {
+          set({ isLoading: true });
+          
+          try {
+            const response = await authAPI.checkToken();
+            
+            if (response.data.valid) {
               set({
-                accessToken,
-                refreshToken,
+                user: response.data.user || null,
                 isAuthenticated: true,
+                isLoading: false,
+              });
+            } else {
+              set({
+                user: null,
+                isAuthenticated: false,
+                isLoading: false,
               });
             }
-          } else {
+          } catch (error) {
+            // Если проверка токена не удалась, пользователь не авторизован
             set({
               user: null,
-              accessToken: null,
-              refreshToken: null,
               isAuthenticated: false,
+              isLoading: false,
             });
           }
         },

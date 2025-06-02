@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from "./auth.service";
-import { ILogin, IRegister } from './auth.interface';
+import { ILogin, IRegister, TokenPayload } from './auth.interface';
 import { jwtConfig } from '../config/jwt.config';
+import jwt from 'jsonwebtoken';
 
 
 const authService = new AuthService();
@@ -54,34 +55,81 @@ export class AuthController {
   }
 
   async logout(req: Request, res: Response) {
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token');
-    res.status(200).json({
-      message: 'Logout successful',
-    })
+    try {
+      const refreshToken = req.cookies.refresh_token;
+      if (refreshToken) {
+        const payload = jwt.decode(refreshToken) as TokenPayload;
+        if (payload.userId) {
+          await authService.logout(payload.userId);
+        }
+      }
+      
+      res.clearCookie('access_token');
+      res.clearCookie('refresh_token');
+      res.status(200).json({
+        message: 'Logout successful',
+      });
+    } catch (error) {
+      res.clearCookie('access_token');
+      res.clearCookie('refresh_token');
+      res.status(200).json({
+        message: 'Logout successful',
+      });
+    }
   }
 
   async refreshToken(req: Request, res: Response, next: NextFunction) {
     try {
       const refreshToken = req.cookies.refresh_token;
       if (!refreshToken) {
-        res.status(401).json({ message: "Unauthorized" });
+        res.status(401).json({ message: "No refresh token provided" });
         return;
       }
 
-      const result = await authService.generateRefreshToken(refreshToken);
+      const tokens = await authService.refreshTokens(refreshToken);
 
-      res.cookie('refresh_token', result, {
+      res.cookie('access_token', tokens.accessToken, {
+        httpOnly: true,
+        maxAge: jwtConfig.getExpiration("JWT_EXPIRES_IN"),
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      });
+
+      res.cookie('refresh_token', tokens.refreshToken, {
         httpOnly: true,
         maxAge: jwtConfig.getExpiration("JWT_REFRESH_EXPIRATION"),
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict'
       });
+
       res.status(200).json({
-        message: 'Refresh token updated successfully',
+        message: 'Tokens refreshed successfully',
       });
     } catch (error) {
       next(error);
+    }
+  }
+
+  async checkToken(req: Request, res: Response, next: NextFunction) {
+    try {
+      const accessToken = req.cookies.access_token;
+      
+      if (!accessToken) {
+        res.status(401).json({ message: "No access token provided", valid: false });
+        return;
+      }
+
+      const payload = await authService.verifyAccessToken(accessToken);
+      res.status(200).json({ 
+        message: "Token is valid", 
+        valid: true,
+        user: {
+          userId: payload.userId,
+          role: payload.role
+        }
+      });
+    } catch (error) {
+      res.status(401).json({ message: "Invalid or expired token", valid: false });
     }
   }
 }

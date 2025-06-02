@@ -94,4 +94,63 @@ export class AuthService {
     }
   }
 
+  async refreshTokens(refreshToken: string) {
+    try {
+      const payload = jwt.verify(refreshToken, jwtConfig.get("JWT_SECRET")) as TokenPayload;
+
+      const tokenRecord = await refreshTokenRepository.findOne({
+        where: {
+          tokens: refreshToken,
+          user: { id: payload.userId }
+        },
+        relations: ["user"]
+      });
+
+      if (!tokenRecord) {
+        throw createError(401, "Invalid refresh token");
+      }
+
+      // Проверяем не истек ли токен
+      if (tokenRecord.expires_at < new Date()) {
+        await refreshTokenRepository.remove(tokenRecord);
+        throw createError(401, "Refresh token expired");
+      }
+
+      // Генерируем новые токены
+      const newTokens = await this.generateTokens({
+        userId: payload.userId,
+        role: payload.role,
+      });
+
+      return newTokens;
+    } catch (error) {
+      if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+        throw createError(401, "Invalid refresh token");
+      }
+      throw error;
+    }
+  }
+
+  async verifyAccessToken(accessToken: string): Promise<TokenPayload> {
+    try {
+      return jwt.verify(accessToken, jwtConfig.get("JWT_SECRET")) as TokenPayload;
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        throw createError(401, "Access token expired");
+      }
+      throw createError(401, "Invalid access token");
+    }
+  }
+
+  async logout(userId: string) {
+    try {
+      const token = await refreshTokenRepository.findOneBy({ user: { id: userId } });
+      if (token) {
+        await refreshTokenRepository.remove(token);
+      }
+    } catch (error) {
+      throw createError(500, "Internal server error during logout");
+    }
+  }
+
 }
