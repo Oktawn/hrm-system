@@ -9,6 +9,7 @@ interface AuthActions {
   checkAuth: () => Promise<void>;
   clearError: () => void;
   setUser: (user: User) => void;
+  updateUser: (userData: Partial<User>) => void;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -19,8 +20,6 @@ export const useAuthStore = create<AuthStore>()(
       (set) => ({
         // Начальное состояние
         user: null,
-        accessToken: null,
-        refreshToken: null,
         isAuthenticated: false,
         isLoading: false,
         error: null,
@@ -63,8 +62,6 @@ export const useAuthStore = create<AuthStore>()(
             // Очищаем состояние - куки очистит сервер
             set({
               user: null,
-              accessToken: null,
-              refreshToken: null,
               isAuthenticated: false,
               isLoading: false,
               error: null,
@@ -91,8 +88,9 @@ export const useAuthStore = create<AuthStore>()(
                 isLoading: false,
               });
             }
-          } catch (error) {
+          } catch (error: any) {
             // Если проверка токена не удалась, пользователь не авторизован
+            // Не логируем ошибку как error, это нормальная ситуация для неавторизованного пользователя
             set({
               user: null,
               isAuthenticated: false,
@@ -107,6 +105,12 @@ export const useAuthStore = create<AuthStore>()(
 
         setUser: (user: User) => {
           set({ user });
+        },
+
+        updateUser: (userData: Partial<User>) => {
+          set((state) => ({
+            user: state.user ? { ...state.user, ...userData } : null
+          }));
         },
       }),
       {

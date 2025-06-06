@@ -47,7 +47,7 @@ export class RequestsService {
     const request = await this.getRequestById(id);
     const exCreator = await employeeRepository.findOne({
       where: { user: { id: creatorId } },
-      relations: ["creator"]
+      relations: ["user"]
     });
     if (exCreator.id === request.creator.id ||
       exCreator.user.role !== UserRoleEnum.EMPLOYEE) {
@@ -136,13 +136,12 @@ export class RequestsService {
 
   async getRequestsByStatus(status: string) {
     const requests = await requestRepository.find({
-      where: { priority: RequestStatusEnum[status] },
-      relations: ["creator", "assignees"]
+      where: { status: RequestStatusEnum[status] },
+      relations: ["creator", "assignee"]
     });
     if (!requests) {
       throw createHttpError(404, "Requests not found");
     }
     return requests;
-
   }
 }

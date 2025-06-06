@@ -24,6 +24,8 @@ export interface IUpdateRequest {
 export interface IRequestFilter {
   type?: RequestTypeEnum | RequestTypeEnum[];
   status?: RequestStatusEnum | RequestStatusEnum[];
+  description?: string;
+  title?: string;
   employeeId?: string;
   startDateFrom?: Date;
   startDateTo?: Date;

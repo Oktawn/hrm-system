@@ -6,6 +6,8 @@ const taskRouter = Router();
 const tasksController = new TasksController();
 
 taskRouter.get("/", authMiddleware(), tasksController.getAllTasks);
+taskRouter.get("/stats", authMiddleware(), tasksController.getTaskStats);
+taskRouter.get("/recent", authMiddleware(), tasksController.getRecentTasks);
 taskRouter.get("/:id", authMiddleware(), tasksController.getTaskById);
 taskRouter.get("/assignee/:assigneeId", authMiddleware(), tasksController.getTasksByAssignee);
 taskRouter.get("/creator/:creatorId", authMiddleware(), tasksController.getTasksByCreator);

@@ -26,8 +26,10 @@ export interface IUpdateEmployee {
 export interface IEmployeeFilter {
   firstName?: string;
   lastName?: string;
+  email?: string;
   departmentId?: number;
   positionId?: number;
+  isActive?: boolean;
   page?: number;
   limit?: number;
 }

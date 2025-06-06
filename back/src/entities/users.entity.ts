@@ -18,6 +18,9 @@ export class UsersEntity {
   @Column({ type: "enum", enum: UserRoleEnum, default: UserRoleEnum.EMPLOYEE })
   role: UserRoleEnum;
 
+  @Column({ type: "boolean", default: true })
+  isActive: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 

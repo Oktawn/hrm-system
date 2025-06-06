@@ -22,11 +22,11 @@ export class RequestEntity {
   @Column({ type: "enum", enum: RequestStatusEnum, default: RequestStatusEnum.PENDING })
   status: RequestStatusEnum;
 
-  @ManyToOne(() => EmployeesEntity)
+  @ManyToOne(() => EmployeesEntity, employee => employee.createdRequests, { onDelete: "CASCADE" })
   creator: EmployeesEntity;
 
   @ManyToOne(() => EmployeesEntity, { onDelete: "SET NULL" })
-  assignees: EmployeesEntity;
+  assignee: EmployeesEntity;
 
   @Column({ type: "date", nullable: true })
   startDate: Date; // для отпусков

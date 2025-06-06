@@ -84,7 +84,7 @@ export class TasksService {
   async getAllTasks(filter: ITaskFilter) {
     const { page, limit, ...data } = filter;
     const queryB = taskRepository.createQueryBuilder("task");
-    queryB.leftJoinAndSelect("task.assignee", "assignee");
+    queryB.leftJoinAndSelect("task.assignees", "assignees");
     queryB.leftJoinAndSelect("task.creator", "creator");
 
     if (data.title) {
@@ -108,11 +108,11 @@ export class TasksService {
         { deadline: data.deadline });
     }
     if (data.creatorId) {
-      queryB.andWhere("task.creatorId = :creatorId",
+      queryB.andWhere("creator.id = :creatorId",
         { creatorId: data.creatorId });
     }
     if (data.assigneesId) {
-      queryB.andWhere("task.assigneesId IN (:...assigneesId)",
+      queryB.andWhere("assignees.id IN (:...assigneesId)",
         { assigneesId: data.assigneesId });
     }
     queryB.skip((page - 1) * limit).take(limit);
@@ -159,5 +159,31 @@ export class TasksService {
     });
     return tasks;
 
+  }
+
+  async getTaskStats() {
+    const totalTasks = await taskRepository.count();
+    const todoTasks = await taskRepository.count({ where: { status: TaskStatusEnum.TODO } });
+    const inProgressTasks = await taskRepository.count({ where: { status: TaskStatusEnum.IN_PROGRESS } });
+    const reviewTasks = await taskRepository.count({ where: { status: TaskStatusEnum.REVIEW } });
+    const doneTasks = await taskRepository.count({ where: { status: TaskStatusEnum.DONE } });
+    const cancelledTasks = await taskRepository.count({ where: { status: TaskStatusEnum.CANCELLED } });
+
+    return {
+      total: totalTasks,
+      todo: todoTasks,
+      inProgress: inProgressTasks,
+      review: reviewTasks,
+      done: doneTasks,
+      cancelled: cancelledTasks
+    };
+  }
+
+  async getRecentTasks(limit: number = 5) {
+    return await taskRepository.find({
+      relations: ["assignees", "creator"],
+      order: { createdAt: "DESC" },
+      take: limit
+    });
   }
 }

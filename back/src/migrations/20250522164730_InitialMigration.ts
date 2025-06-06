@@ -9,6 +9,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string("password").notNullable();
     table.string("email").notNullable().unique();
     table.enum("role", Object.values(UserRoleEnum)).defaultTo(UserRoleEnum.EMPLOYEE);
+    table.boolean("isActive").defaultTo(true);
     table.timestamp('createdAt').defaultTo(knex.fn.now());
     table.timestamp('updatedAt').defaultTo(knex.fn.now());
   });
@@ -61,6 +62,7 @@ export async function up(knex: Knex): Promise<void> {
     table.enum('priority', Object.values(TaskPriorityEnum)).defaultTo(TaskPriorityEnum.MEDIUM);
     table.date('deadline').nullable();
     table.uuid('creatorId').references('id').inTable('employees').onDelete('SET NULL');
+    table.uuid('assigneeId').nullable().references('id').inTable('employees').onDelete('SET NULL');
     table.jsonb('attachments').nullable();
     table.timestamp('createdAt').defaultTo(knex.fn.now());
     table.timestamp('updatedAt').defaultTo(knex.fn.now());

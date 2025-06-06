@@ -42,7 +42,21 @@ export class AuthService {
         userId: user.id,
         role: user.role,
       })
-      return tokens;
+
+      return {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        data: {
+          email: user.email,
+          role: user.role,
+          firstName: user.employee?.firstName || null,
+          lastName: user.employee?.lastName || null,
+          phone: user.employee?.phone || null,
+          position: user.employee?.position?.name || null,
+          department: user.employee?.department?.name || null,
+
+        }
+      };
     } catch (error) {
       throw createError(500, "Internal server error");
     }

@@ -76,7 +76,7 @@ export function LoginPage() {
 
   return (
     <div className="login-container">
-      <Card className="login-card" bordered={false}>
+      <Card className="login-card">
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <div className="login-header">
             <Title level={2} style={{ textAlign: 'center', marginBottom: 8 }}>

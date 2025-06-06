@@ -7,19 +7,27 @@ import createError from "http-errors";
 export class EmployeesService {
   async getAllEmployees(filter: IEmployeeFilter) {
     filter.page = filter.page || 1;
-    filter.limit = filter.limit || 10;
+    filter.limit = filter.limit || 100; // Увеличиваем лимит по умолчанию
 
     const queryB = employeeRepository.createQueryBuilder("employee");
     queryB.leftJoinAndSelect("employee.department", "department");
     queryB.leftJoinAndSelect("employee.position", "position");
+    queryB.leftJoinAndSelect("employee.user", "user");
+    
     if (filter.firstName) {
-      queryB.andWhere("employee.firstName LIKE :firstName", {
+      queryB.andWhere("employee.firstName ILIKE :firstName", {
         firstName: `%${filter.firstName}%`,
       });
     }
     if (filter.lastName) {
-      queryB.andWhere("employee.lastName LIKE :lastName", {
+      queryB.andWhere("employee.lastName ILIKE :lastName", {
         lastName: `%${filter.lastName}%`,
+      });
+    }
+
+    if (filter.email) {
+      queryB.andWhere("user.email ILIKE :email", {
+        email: `%${filter.email}%`,
       });
     }
 
@@ -31,17 +39,32 @@ export class EmployeesService {
       queryB.andWhere("employee.positionId = :positionId", { positionId: filter.positionId });
     }
 
+    if (filter.isActive !== undefined) {
+      queryB.andWhere("user.isActive = :isActive", { isActive: filter.isActive });
+    }
+
+    // Сортировка по фамилии и имени
+    queryB.orderBy("employee.lastName", "ASC")
+         .addOrderBy("employee.firstName", "ASC");
+
     const page = (filter.page - 1) * filter.limit;
     queryB.skip(page).take(filter.limit);
     const [employees, total] = await queryB.getManyAndCount();
+    
     const modifiedEmployees = employees.map(employee => ({
       ...employee,
-      user: employee.user ? { email: employee.user.email } : null
+      user: employee.user ? { 
+        id: employee.user.id,
+        email: employee.user.email,
+        role: employee.user.role,
+        isActive: employee.user.isActive
+      } : null
     }));
+    
     return {
       data: modifiedEmployees,
       meta: {
-        page: page,
+        page: filter.page,
         limit: filter.limit,
         total: total,
         totalPages: Math.ceil(total / filter.limit),
@@ -130,6 +153,29 @@ export class EmployeesService {
       await employeeRepository.remove(employee);
     } catch (error) {
       throw createError(500, "Error deleting employee");
+    }
+  }
+
+  async getEmployeeStats() {
+    try {
+      const totalEmployees = await employeeRepository.count();
+      
+      // Считаем активных и неактивных сотрудников
+      const activeEmployees = await employeeRepository
+        .createQueryBuilder("employee")
+        .leftJoin("employee.user", "user")
+        .where("user.isActive = :isActive", { isActive: true })
+        .getCount();
+        
+      const inactiveEmployees = totalEmployees - activeEmployees;
+      
+      return {
+        total: totalEmployees,
+        active: activeEmployees,
+        inactive: inactiveEmployees
+      };
+    } catch (error) {
+      throw createError(500, "Error fetching employee statistics");
     }
   }
 }

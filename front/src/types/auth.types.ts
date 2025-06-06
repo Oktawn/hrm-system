@@ -4,24 +4,41 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: User;
+  message: string;
+  user?: User;
 }
 
 export interface User {
-  id: number;
+  id: string;
   email: string;
+  role: string;
   firstName?: string;
   lastName?: string;
-  role?: string;
+  phone?: string;
+  position?: string;
+  department?: string;
 }
 
 export interface AuthState {
   user: User | null;
-  accessToken: string | null;
-  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+}
+
+export interface UpdateProfileRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface ProfileResponse {
+  message: string;
+  user: User;
 }

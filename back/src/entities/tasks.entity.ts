@@ -22,11 +22,15 @@ export class TasksEntity {
   @Column({ type: "date", nullable: true })
   deadline: Date;
 
-  @ManyToMany(() => EmployeesEntity, { onDelete: "SET NULL" })
-  @JoinTable()
+  @ManyToMany(() => EmployeesEntity, { onDelete: "CASCADE" })
+  @JoinTable({
+    name: "tasks_assignees_employees",
+    joinColumn: { name: "tasksId", referencedColumnName: "id" },
+    inverseJoinColumn: { name: "employeesId", referencedColumnName: "id" }
+  })
   assignees: EmployeesEntity[];
 
-  @ManyToOne(() => EmployeesEntity, employee => employee.createdTasks)
+  @ManyToOne(() => EmployeesEntity, employee => employee.createdTasks, { onDelete: "SET NULL" })
   creator: EmployeesEntity;
 
   @Column({ type: "jsonb", nullable: true })

@@ -34,6 +34,7 @@ export class AuthController {
     try {
       const logingData: ILogin = req.body;
       const result = await authService.login(logingData);
+      
       res.cookie('access_token', result.accessToken, {
         httpOnly: true,
         maxAge: jwtConfig.getExpiration("JWT_EXPIRES_IN"),
@@ -46,8 +47,9 @@ export class AuthController {
         secure: process.env.NODE_ENV === 'production',
         sameSite: "strict"
       })
+      
       res.status(200).json({
-        message: 'Login successful',
+        message: 'Login successful'
       })
     } catch (error) {
       next(error);

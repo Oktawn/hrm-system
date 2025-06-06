@@ -1,6 +1,11 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '../pages/LoginPage/LoginPage';
 import { HomePage } from '../pages/HomePage/HomePage';
+import { ProfilePage } from '../pages/ProfilePage/ProfilePage';
+import { TasksPage } from '../pages/TasksPage/TasksPage';
+import { MyTasksPage } from '../pages/MyTasksPage/MyTasksPage';
+import { RequestsPage } from '../pages/RequestsPage/RequestsPage';
+import { EmployeesPage } from '../pages/EmployeesPage';
 import { AppLayout } from '../components/Layout/AppLayout';
 import { ProtectedRoute } from '../components/ProtectedRoute/ProtectedRoute';
 
@@ -23,10 +28,7 @@ export function AppRoutes() {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <div style={{ padding: '24px' }}>
-                <h2>Сотрудники</h2>
-                <p>Страница в разработке...</p>
-              </div>
+              <EmployeesPage />
             </AppLayout>
           </ProtectedRoute>
         }
@@ -36,10 +38,17 @@ export function AppRoutes() {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <div style={{ padding: '24px' }}>
-                <h2>Задачи</h2>
-                <p>Страница в разработке...</p>
-              </div>
+              <TasksPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/my-tasks"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <MyTasksPage />
             </AppLayout>
           </ProtectedRoute>
         }
@@ -49,10 +58,7 @@ export function AppRoutes() {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <div style={{ padding: '24px' }}>
-                <h2>Заявки</h2>
-                <p>Страница в разработке...</p>
-              </div>
+              <RequestsPage />
             </AppLayout>
           </ProtectedRoute>
         }
@@ -62,10 +68,7 @@ export function AppRoutes() {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <div style={{ padding: '24px' }}>
-                <h2>Профиль</h2>
-                <p>Страница в разработке...</p>
-              </div>
+              <ProfilePage />
             </AppLayout>
           </ProtectedRoute>
         }

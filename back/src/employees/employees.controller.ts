@@ -85,4 +85,16 @@ export class EmployeesController {
       next(error);
     }
   }
+
+  async getEmployeeStats(req: Request, res: Response, next: NextFunction) {
+    try {
+      const stats = await employeeService.getEmployeeStats();
+      res.status(200).json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

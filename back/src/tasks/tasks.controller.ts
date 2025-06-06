@@ -103,4 +103,29 @@ export class TasksController {
       next(error);
     }
   }
+
+  async getTaskStats(req: Request, res: Response, next: NextFunction) {
+    try {
+      const stats = await tasksService.getTaskStats();
+      res.status(200).json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getRecentTasks(req: Request, res: Response, next: NextFunction) {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
+      const tasks = await tasksService.getRecentTasks(limit);
+      res.status(200).json({
+        success: true,
+        data: tasks
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

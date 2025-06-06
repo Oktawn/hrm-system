@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { AxiosResponse } from 'axios';
 import type { LoginRequest, LoginResponse } from '../types/auth.types';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'http://localhost:8000/api';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -18,8 +18,13 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Проверяем, что это ошибка 401 и запрос еще не повторялся
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Проверяем, что это ошибка 401, запрос еще не повторялся, и это НЕ запрос на refresh или login
+    if (
+      error.response?.status === 401 && 
+      !originalRequest._retry &&
+      !originalRequest.url?.includes('/auth/refresh') &&
+      !originalRequest.url?.includes('/auth/login')
+    ) {
       originalRequest._retry = true;
 
       try {
@@ -39,8 +44,10 @@ api.interceptors.response.use(
           console.error('Logout error:', logoutError);
         }
         
-        // Перенаправляем на страницу логина
-        window.location.href = '/login';
+        // Перенаправляем на страницу логина только если мы не на странице логина
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       }
     }
