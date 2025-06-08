@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Layout, Typography, Card, Table, Tag, Space, Button, Input, Select } from 'antd';
-import { PlusOutlined, SearchOutlined, MessageOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/auth.store';
 import tasksAPI, { type Task, type TaskFilter } from '../../services/tasks.service';
-import Comments from '../../components/Comments/Comments';
+import TaskDetail from '../../components/TaskDetail/TaskDetail';
 import StatusSelector from '../../components/StatusSelector/StatusSelector';
 
 const { Content } = Layout;
@@ -15,7 +16,11 @@ export function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<TaskFilter>({});
-  const [showComments, setShowComments] = useState<{ taskId: number; visible: boolean }>({ taskId: 0, visible: false });
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Получаем ID задачи из URL
+  const selectedTaskId = searchParams.get('task');
+  const taskDetailVisible = Boolean(selectedTaskId);
 
   // Определяем, показывать ли только мои задачи
   const isEmployee = user?.role === 'EMPLOYEE';
@@ -23,11 +28,11 @@ export function TasksPage() {
 
   const fetchTasks = async () => {
     if (!user) return;
-    
+
     try {
       setLoading(true);
       let response;
-      
+
       if (isEmployee) {
         // Для обычных сотрудников показываем только их задачи
         response = await tasksAPI.getByAssignee(user.id);
@@ -35,7 +40,7 @@ export function TasksPage() {
         // Для руководителей показываем все задачи
         response = await tasksAPI.getAll(filter);
       }
-      
+
       setTasks(response.data || []);
     } catch (error) {
       console.error('Ошибка загрузки задач:', error);
@@ -109,12 +114,16 @@ export function TasksPage() {
     }
   };
 
-  const handleCommentsClick = (taskId: number) => {
-    setShowComments({ taskId, visible: true });
+  const handleTaskClick = (taskId: number) => {
+    setSearchParams({ task: taskId.toString() });
   };
 
-  const closeComments = () => {
-    setShowComments({ taskId: 0, visible: false });
+  const closeTaskDetail = () => {
+    setSearchParams({});
+  };
+
+  const handleTaskUpdate = () => {
+    fetchTasks(); // Обновляем список задач после изменения
   };
 
   const columns = [
@@ -150,7 +159,7 @@ export function TasksPage() {
       dataIndex: 'assignees',
       key: 'assignees',
       width: '15%',
-      render: (assignees: any[]) => 
+      render: (assignees: any[]) =>
         assignees?.map(assignee => `${assignee.firstName} ${assignee.lastName}`).join(', ') || '—',
     },
     {
@@ -158,7 +167,7 @@ export function TasksPage() {
       dataIndex: 'status',
       key: 'status',
       width: '12%',
-      render: (status: string, record: Task) => 
+      render: (status: string, record: Task) =>
         canChangeStatus(record) ? (
           <StatusSelector
             currentStatus={status}
@@ -204,9 +213,9 @@ export function TasksPage() {
         <Space>
           <Button
             type="text"
-            icon={<MessageOutlined />}
-            onClick={() => handleCommentsClick(record.id)}
-            title="Комментарии"
+            icon={<EyeOutlined />}
+            onClick={() => handleTaskClick(record.id)}
+            title="Посмотреть детали"
           />
         </Space>
       ),
@@ -267,6 +276,10 @@ export function TasksPage() {
             dataSource={tasks}
             loading={loading}
             rowKey="id"
+            onRow={(record) => ({
+              onClick: () => handleTaskClick(record.id),
+              style: { cursor: 'pointer' }
+            })}
             pagination={{
               pageSize: 10,
               showSizeChanger: true,
@@ -275,11 +288,11 @@ export function TasksPage() {
           />
         </Card>
 
-        <Comments
-          type="task"
-          itemId={showComments.taskId}
-          isVisible={showComments.visible}
-          onClose={closeComments}
+        <TaskDetail
+          taskId={selectedTaskId ? parseInt(selectedTaskId, 10) : null}
+          visible={taskDetailVisible}
+          onClose={closeTaskDetail}
+          onTaskUpdate={handleTaskUpdate}
         />
       </Content>
     </Layout>

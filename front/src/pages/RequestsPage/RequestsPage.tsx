@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Layout, Typography, Card, Table, Tag, Space, Button, Input, Select } from 'antd';
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/auth.store';
 import requestsAPI, { type Request, type RequestFilter } from '../../services/requests.service';
+import RequestDetail from '../../components/RequestDetail/RequestDetail';
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -13,6 +15,11 @@ export function RequestsPage() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<RequestFilter>({});
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Получаем ID заявки из URL
+  const selectedRequestId = searchParams.get('request');
+  const requestDetailVisible = Boolean(selectedRequestId);
 
   // Определяем, показывать ли только мои заявки
   const isEmployee = user?.role === 'EMPLOYEE';
@@ -44,6 +51,18 @@ export function RequestsPage() {
   useEffect(() => {
     fetchRequests();
   }, [filter, user]);
+
+  const handleRequestClick = (requestId: number) => {
+    setSearchParams({ request: requestId.toString() });
+  };
+
+  const closeRequestDetail = () => {
+    setSearchParams({});
+  };
+
+  const handleRequestUpdate = () => {
+    fetchRequests(); // Обновляем список заявок после изменения
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -100,6 +119,13 @@ export function RequestsPage() {
 
   const columns = [
     {
+      title: '№',
+      dataIndex: 'id',
+      key: 'id',
+      width: '8%',
+      render: (id: number) => `#${id}`,
+    },
+    {
       title: 'Название',
       dataIndex: 'title',
       key: 'title',
@@ -153,6 +179,21 @@ export function RequestsPage() {
       key: 'createdAt',
       width: '15%',
       render: (date: string) => new Date(date).toLocaleDateString(),
+    },
+    {
+      title: 'Действия',
+      key: 'actions',
+      width: '8%',
+      render: (_: any, record: Request) => (
+        <Space>
+          <Button
+            type="text"
+            icon={<EyeOutlined />}
+            onClick={() => handleRequestClick(record.id)}
+            title="Посмотреть детали"
+          />
+        </Space>
+      ),
     },
   ];
 
@@ -222,6 +263,10 @@ export function RequestsPage() {
             dataSource={requests}
             loading={loading}
             rowKey="id"
+            onRow={(record) => ({
+              onClick: () => handleRequestClick(record.id),
+              style: { cursor: 'pointer' }
+            })}
             pagination={{
               pageSize: 10,
               showSizeChanger: true,
@@ -229,6 +274,13 @@ export function RequestsPage() {
             }}
           />
         </Card>
+
+        <RequestDetail
+          requestId={selectedRequestId ? parseInt(selectedRequestId, 10) : null}
+          visible={requestDetailVisible}
+          onClose={closeRequestDetail}
+          onRequestUpdate={handleRequestUpdate}
+        />
       </Content>
     </Layout>
   );

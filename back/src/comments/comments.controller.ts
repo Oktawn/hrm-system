@@ -11,7 +11,7 @@ export class CommentsController {
     try {
       const commentData: ICreateComment = req.body;
       const user = req.user;
-      
+
       const comment = await commentsService.createComment(commentData, user);
       res.status(201).json(comment);
     } catch (error) {
@@ -19,7 +19,7 @@ export class CommentsController {
     }
   }
 
-  async getCommentsByTask(req: Request, res: Response) {
+  async getCommentsByTask(req: AuthenticatedRequest, res: Response) {
     try {
       const taskId = parseInt(req.params.taskId);
       const comments = await commentsService.getCommentsByTask(taskId);
@@ -29,7 +29,7 @@ export class CommentsController {
     }
   }
 
-  async getCommentsByRequest(req: Request, res: Response) {
+  async getCommentsByRequest(req: AuthenticatedRequest, res: Response) {
     try {
       const requestId = parseInt(req.params.requestId);
       const comments = await commentsService.getCommentsByRequest(requestId);
@@ -41,7 +41,7 @@ export class CommentsController {
 
   async updateComment(req: AuthenticatedRequest, res: Response) {
     try {
-      const commentId = req.params.commentId;
+      const commentId = parseInt(req.params.commentId);
       const commentData: IUpdateComment = req.body;
       const user = req.user;
       
@@ -54,9 +54,9 @@ export class CommentsController {
 
   async deleteComment(req: AuthenticatedRequest, res: Response) {
     try {
-      const commentId = req.params.commentId;
+      const commentId = parseInt(req.params.commentId);
       const user = req.user;
-      
+
       const result = await commentsService.deleteComment(commentId, user);
       res.json(result);
     } catch (error) {

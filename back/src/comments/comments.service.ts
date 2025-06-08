@@ -58,7 +58,7 @@ export class CommentsService {
     });
   }
 
-  async updateComment(commentId: string, commentData: IUpdateComment, user: TokenPayload) {
+  async updateComment(commentId: number, commentData: IUpdateComment, user: TokenPayload) {
     const comment = await commentRepository.findOne({
       where: { id: commentId },
       relations: ['author', 'author.user']
@@ -77,7 +77,7 @@ export class CommentsService {
     return await commentRepository.save(comment);
   }
 
-  async deleteComment(commentId: string, user: TokenPayload) {
+  async deleteComment(commentId: number, user: TokenPayload) {
     const comment = await commentRepository.findOne({
       where: { id: commentId },
       relations: ['author', 'author.user']

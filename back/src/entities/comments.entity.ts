@@ -3,10 +3,10 @@ import { TasksEntity } from './tasks.entity';
 import { RequestEntity } from './request.entity';
 import { EmployeesEntity } from './employees.entity';
 
-@Entity()
+@Entity("comments")
 export class CommentsEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column('text')
   content: string;

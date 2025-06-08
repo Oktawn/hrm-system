@@ -91,9 +91,21 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid('employeesId').notNullable().references('id').inTable('employees').onDelete('CASCADE');
     table.unique(['tasksId', 'employeesId']);
   });
+
+  await knex.schema.createTable('comments', (table) => {
+    table.increments('id').primary();
+    table.text('content').notNullable();
+    table.enum('type', ['task', 'request']).defaultTo('task');
+    table.integer('taskId').nullable().references('id').inTable('tasks').onDelete('CASCADE');
+    table.integer('requestId').nullable().references('id').inTable('requests').onDelete('CASCADE');
+    table.uuid('authorId').notNullable().references('id').inTable('employees').onDelete('CASCADE');
+    table.timestamp('created_at').defaultTo(knex.fn.now());
+    table.timestamp('updated_at').defaultTo(knex.fn.now());
+  });
 }
 
 export async function down(knex: Knex): Promise<void> {
+  await knex.schema.dropTableIfExists('comments');
   await knex.schema.dropTableIfExists('tasks_assignees_employees');
   await knex.schema.dropTableIfExists('requests');
   await knex.schema.dropTableIfExists('tasks');

@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000/api';
+import { api } from './auth.service';
 
 export interface IComment {
   id: string;
@@ -25,77 +25,28 @@ export interface IUpdateComment {
 }
 
 class CommentsService {
-  private getAuthHeaders() {
-    const token = localStorage.getItem('accessToken');
-    return {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    };
-  }
-
   async createComment(commentData: ICreateComment): Promise<IComment> {
-    const response = await fetch(`${API_BASE_URL}/comments`, {
-      method: 'POST',
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify(commentData),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to create comment');
-    }
-
-    return response.json();
+    const response = await api.post('/comments', commentData);
+    return response.data;
   }
 
   async getCommentsByTask(taskId: number): Promise<IComment[]> {
-    const response = await fetch(`${API_BASE_URL}/comments/task/${taskId}`, {
-      method: 'GET',
-      headers: this.getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch task comments');
-    }
-
-    return response.json();
+    const response = await api.get(`/comments/task/${taskId}`);
+    return response.data;
   }
 
   async getCommentsByRequest(requestId: number): Promise<IComment[]> {
-    const response = await fetch(`${API_BASE_URL}/comments/request/${requestId}`, {
-      method: 'GET',
-      headers: this.getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch request comments');
-    }
-
-    return response.json();
+    const response = await api.get(`/comments/request/${requestId}`);
+    return response.data;
   }
 
   async updateComment(commentId: string, commentData: IUpdateComment): Promise<IComment> {
-    const response = await fetch(`${API_BASE_URL}/comments/${commentId}`, {
-      method: 'PUT',
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify(commentData),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to update comment');
-    }
-
-    return response.json();
+    const response = await api.put(`/comments/${commentId}`, commentData);
+    return response.data;
   }
 
   async deleteComment(commentId: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/comments/${commentId}`, {
-      method: 'DELETE',
-      headers: this.getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to delete comment');
-    }
+    await api.delete(`/comments/${commentId}`);
   }
 }
 
