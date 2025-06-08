@@ -7,11 +7,12 @@ import {
   DatePicker,
   Button,
   message,
-  Space
+  Space,
 } from 'antd';
 import { useAuthStore } from '../../stores/auth.store';
 import tasksAPI, { type CreateTaskData } from '../../services/tasks.service';
 import employeesAPI, { type Employee } from '../../services/employees.service';
+import FileUpload from '../FileUpload/FileUpload';
 import dayjs from 'dayjs';
 
 const { TextArea } = Input;
@@ -32,11 +33,13 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [attachments, setAttachments] = useState<any[]>([]);
 
   useEffect(() => {
     if (visible) {
       fetchEmployees();
       form.resetFields();
+      setAttachments([]);
     }
   }, [visible, form]);
 
@@ -61,13 +64,15 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         priority: values.priority || 'medium',
         deadline: values.deadline ? values.deadline.toISOString() : undefined,
         assigneesId: values.assigneesId || [],
-        creatorId: user?.id || ''
+        creatorId: user?.id || '',
+        attachments: attachments.length > 0 ? attachments : undefined
       };
 
       await tasksAPI.create(taskData);
       
       message.success('Задача успешно создана');
       form.resetFields();
+      setAttachments([]);
       onClose();
       onTaskCreated?.();
     } catch (error: any) {
@@ -106,7 +111,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         </Button>
       ]}
       width={600}
-      destroyOnClose
+      destroyOnHidden={true}
     >
       <Form
         form={form}
@@ -187,6 +192,17 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
               ))}
             </Select>
           </Form.Item>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
+              Прикрепленные файлы
+            </label>
+            <FileUpload
+              value={attachments}
+              onChange={setAttachments}
+              maxFiles={5}
+            />
+          </div>
         </Space>
       </Form>
     </Modal>

@@ -19,7 +19,7 @@ export interface Task {
     firstName?: string;
     lastName?: string;
   }>;
-  attachments?: any;
+  attachments?: any[];
 }
 
 export interface TaskStats {
@@ -61,6 +61,7 @@ export interface CreateTaskData {
   deadline?: string;
   assigneesId?: string[];
   creatorId: string;
+  attachments?: any[];
 }
 
 class TasksService {

@@ -16,6 +16,7 @@ export class TasksService {
       creator: exCreator,
       assignees: [],
       deadline: taskData.deadline ? new Date(taskData.deadline) : undefined,
+      attachments: taskData.attachments || null,
     });
     if (taskData.assigneesId) {
       let exAssignees = await employeeRepository.findBy({ id: In(taskData.assigneesId) })

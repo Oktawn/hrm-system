@@ -29,6 +29,7 @@ import employeesAPI, { type Employee } from '../../services/employees.service';
 import { commentsService } from '../../services/comments.service';
 import { type IComment, type ICreateComment } from '../../services/comments.service';
 import StatusSelector from '../StatusSelector/StatusSelector';
+import FileUpload from '../FileUpload/FileUpload';
 import dayjs from 'dayjs';
 import './TaskDetail.css';
 
@@ -56,6 +57,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [newComment, setNewComment] = useState('');
+  const [attachments, setAttachments] = useState<any[]>([]);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -73,6 +75,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
       setLoading(true);
       const response = await tasksAPI.getById(taskId);
       setTask(response.data);
+      setAttachments(response.data.attachments || []);
 
       // Заполняем форму данными
       form.setFieldsValue({
@@ -132,7 +135,8 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
         description: values.description,
         priority: values.priority,
         deadline: values.deadline ? values.deadline.toISOString() : undefined,
-        assigneesId: values.assignees
+        assigneesId: values.assignees,
+        attachments: attachments.length > 0 ? attachments : undefined
       });
 
       await fetchTaskDetails();
@@ -251,6 +255,18 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
               </Select>
             </Form.Item>
 
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                Прикрепленные файлы
+              </label>
+              <FileUpload
+                value={attachments}
+                onChange={setAttachments}
+                maxFiles={5}
+                showDownload={true}
+              />
+            </div>
+
             <Form.Item>
               <Space>
                 <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>
@@ -325,6 +341,20 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                     <Text strong>Описание:</Text>
                     <div style={{ marginTop: 8, padding: 12, background: '#f5f5f5', borderRadius: 6 }}>
                       <Text>{task.description}</Text>
+                    </div>
+                  </div>
+                )}
+
+                {(task.attachments && task.attachments.length > 0) && (
+                  <div>
+                    <Text strong>Прикрепленные файлы:</Text>
+                    <div style={{ marginTop: 8 }}>
+                      <FileUpload
+                        value={task.attachments}
+                        onChange={() => {}} // Только для просмотра в режиме чтения
+                        disabled={true}
+                        showDownload={true}
+                      />
                     </div>
                   </div>
                 )}
