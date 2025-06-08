@@ -5,7 +5,7 @@ import { PlusOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/auth.store';
 import tasksAPI, { type Task, type TaskFilter } from '../../services/tasks.service';
 import TaskDetail from '../../components/TaskDetail/TaskDetail';
-import StatusSelector from '../../components/StatusSelector/StatusSelector';
+import CreateTaskModal from '../../components/CreateTaskModal/CreateTaskModal';
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -17,31 +17,52 @@ export function TasksPage() {
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<TaskFilter>({});
   const [searchParams, setSearchParams] = useSearchParams();
+  const [createTaskModalVisible, setCreateTaskModalVisible] = useState(false);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
 
   // Получаем ID задачи из URL
   const selectedTaskId = searchParams.get('task');
   const taskDetailVisible = Boolean(selectedTaskId);
 
   // Определяем, показывать ли только мои задачи
-  const isEmployee = user?.role === 'EMPLOYEE';
-  const isManager = user?.role === 'MANAGER' || user?.role === 'HR' || user?.role === 'ADMIN';
+  const isEmployee = user?.role === 'employee';
+  const isManager = user?.role === 'manager' || user?.role === 'hr' || user?.role === 'admin';
 
-  const fetchTasks = async () => {
+  const fetchTasks = async (page = 1, pageSize = 10) => {
     if (!user) return;
 
     try {
       setLoading(true);
-      let response;
 
       if (isEmployee) {
         // Для обычных сотрудников показываем только их задачи
-        response = await tasksAPI.getByAssignee(user.id);
+        const response = await tasksAPI.getByAssignee(user.id);
+        setTasks(response.data || []);
+        setPagination(prev => ({
+          ...prev,
+          total: response.data?.length || 0,
+          current: 1,
+          pageSize: response.data?.length || 10,
+        }));
       } else {
-        // Для руководителей показываем все задачи
-        response = await tasksAPI.getAll(filter);
+        // Для руководителей показываем все задачи с пагинацией
+        const filterWithPagination = {
+          ...filter,
+          page,
+          limit: pageSize,
+        };
+        const response = await tasksAPI.getAll(filterWithPagination);
+        setTasks(response.data || []);
+        setPagination({
+          current: response.meta?.page || 1,
+          pageSize: response.meta?.limit || 10,
+          total: response.meta?.total || 0,
+        });
       }
-
-      setTasks(response.data || []);
     } catch (error) {
       console.error('Ошибка загрузки задач:', error);
     } finally {
@@ -50,7 +71,7 @@ export function TasksPage() {
   };
 
   useEffect(() => {
-    fetchTasks();
+    fetchTasks(pagination.current, pagination.pageSize);
   }, [filter, user]);
 
   const getStatusColor = (status: string) => {
@@ -95,25 +116,6 @@ export function TasksPage() {
     }
   };
 
-  const canChangeStatus = (task: Task) => {
-    if (!user) return false;
-
-    const isCreator = task.creator.id === user.id.toString();
-    const isAssignee = task.assignees.some(assignee => assignee.id === user.id.toString());
-    const isManagerRole = user.role === 'ADMIN' || user.role === 'HR' || user.role === 'MANAGER';
-
-    return isCreator || isAssignee || isManagerRole;
-  };
-
-  const handleStatusChange = async (taskId: number, newStatus: string) => {
-    try {
-      await tasksAPI.updateStatus(taskId, newStatus);
-      fetchTasks(); // Обновляем список задач
-    } catch (error) {
-      console.error('Ошибка при изменении статуса задачи:', error);
-    }
-  };
-
   const handleTaskClick = (taskId: number) => {
     setSearchParams({ task: taskId.toString() });
   };
@@ -123,7 +125,7 @@ export function TasksPage() {
   };
 
   const handleTaskUpdate = () => {
-    fetchTasks(); // Обновляем список задач после изменения
+    fetchTasks(pagination.current, pagination.pageSize); // Обновляем список задач после изменения
   };
 
   const columns = [
@@ -167,18 +169,11 @@ export function TasksPage() {
       dataIndex: 'status',
       key: 'status',
       width: '12%',
-      render: (status: string, record: Task) =>
-        canChangeStatus(record) ? (
-          <StatusSelector
-            currentStatus={status}
-            onStatusChange={(newStatus) => handleStatusChange(record.id, newStatus)}
-            type="task"
-          />
-        ) : (
-          <Tag color={getStatusColor(status)}>
-            {getStatusText(status)}
-          </Tag>
-        ),
+      render: (status: string) => (
+        <Tag color={getStatusColor(status)}>
+          {getStatusText(status)}
+        </Tag>
+      ),
     },
     {
       title: 'Приоритет',
@@ -230,7 +225,7 @@ export function TasksPage() {
             <Title level={2}>
               {isEmployee ? 'Мои задачи' : 'Задачи'}
             </Title>
-            <Button type="primary" icon={<PlusOutlined />}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateTaskModalVisible(true)}>
               Создать задачу
             </Button>
           </div>
@@ -281,9 +276,20 @@ export function TasksPage() {
               style: { cursor: 'pointer' }
             })}
             pagination={{
-              pageSize: 10,
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
               showSizeChanger: true,
+              showQuickJumper: true,
               showTotal: (total) => `Всего: ${total} задач`,
+              onChange: (page, pageSize) => {
+                setPagination(prev => ({ ...prev, current: page, pageSize }));
+                fetchTasks(page, pageSize);
+              },
+              onShowSizeChange: (_, size) => {
+                setPagination(prev => ({ ...prev, current: 1, pageSize: size }));
+                fetchTasks(1, size);
+              },
             }}
           />
         </Card>
@@ -293,6 +299,15 @@ export function TasksPage() {
           visible={taskDetailVisible}
           onClose={closeTaskDetail}
           onTaskUpdate={handleTaskUpdate}
+        />
+
+        <CreateTaskModal
+          visible={createTaskModalVisible}
+          onClose={() => setCreateTaskModalVisible(false)}
+          onTaskCreated={() => {
+            setCreateTaskModalVisible(false);
+            fetchTasks(pagination.current, pagination.pageSize); // Обновляем список задач после создания
+          }}
         />
       </Content>
     </Layout>

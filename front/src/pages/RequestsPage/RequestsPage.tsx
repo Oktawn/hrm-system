@@ -22,8 +22,8 @@ export function RequestsPage() {
   const requestDetailVisible = Boolean(selectedRequestId);
 
   // Определяем, показывать ли только мои заявки
-  const isEmployee = user?.role === 'EMPLOYEE';
-  const isManager = user?.role === 'MANAGER' || user?.role === 'HR' || user?.role === 'ADMIN';
+  const isEmployee = user?.role === 'employee';
+  const isManager = user?.role === 'manager' || user?.role === 'hr' || user?.role === 'admin';
 
   const fetchRequests = async () => {
     if (!user) return;

@@ -95,9 +95,9 @@ const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose })
 
   const canEditComment = (comment: IComment) => {
     return comment.author.id === currentUser?.id || 
-           currentUser?.role === 'ADMIN' || 
-           currentUser?.role === 'HR' || 
-           currentUser?.role === 'MANAGER';
+           currentUser?.role === 'admin' || 
+           currentUser?.role === 'hr' || 
+           currentUser?.role === 'manager';
   };
 
   if (!isVisible) return null;

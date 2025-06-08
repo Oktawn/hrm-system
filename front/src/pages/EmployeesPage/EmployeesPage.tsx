@@ -146,7 +146,7 @@ export function EmployeesPage() {
         <div style={{ marginBottom: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <Title level={2}>Сотрудники</Title>
-            {(user?.role === 'ADMIN' || user?.role === 'HR') && (
+            {(user?.role === 'admin' || user?.role === 'hr') && (
               <Button type="primary" icon={<PlusOutlined />}>
                 Добавить сотрудника
               </Button>
@@ -235,7 +235,7 @@ export function EmployeesPage() {
                       onClick={() => showEmployeeDetails(employee)}
                       title="Подробности"
                     />,
-                    ...(user?.role === 'ADMIN' || user?.role === 'HR' ? [
+                    ...(user?.role === 'admin' || user?.role === 'hr' ? [
                       <EditOutlined key="edit" title="Редактировать" />
                     ] : [])
                   ]}
@@ -329,7 +329,7 @@ export function EmployeesPage() {
             <Button key="close" onClick={() => setDetailModalVisible(false)}>
               Закрыть
             </Button>,
-            ...(user?.role === 'ADMIN' || user?.role === 'HR' ? [
+            ...(user?.role === 'admin' || user?.role === 'hr' ? [
               <Button key="edit" type="primary" icon={<EditOutlined />}>
                 Редактировать
               </Button>

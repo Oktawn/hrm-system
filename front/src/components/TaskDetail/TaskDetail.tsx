@@ -169,7 +169,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
     if (!user || !task) return false;
     const isCreator = task.creator.id === user.id.toString();
     const isAssignee = task.assignees.some(a => a.id === user.id.toString());
-    const isManager = ['ADMIN', 'HR', 'MANAGER'].includes(user.role);
+    const isManager = ['admin', 'hr', 'manager'].includes(user.role);
     return isCreator || isAssignee || isManager;
   };
 

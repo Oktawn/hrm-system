@@ -31,6 +31,17 @@ export interface TaskStats {
   cancelled: number;
 }
 
+export interface PaginatedResponse<T> {
+  success: boolean;
+  data: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export interface TaskFilter {
   page?: number;
   limit?: number;
@@ -53,7 +64,7 @@ export interface CreateTaskData {
 }
 
 class TasksService {
-  async getAll(filter?: TaskFilter): Promise<{ success: boolean; data: Task[]; meta?: any }> {
+  async getAll(filter?: TaskFilter): Promise<PaginatedResponse<Task>> {
     const params = new URLSearchParams();
     if (filter) {
       Object.entries(filter).forEach(([key, value]) => {

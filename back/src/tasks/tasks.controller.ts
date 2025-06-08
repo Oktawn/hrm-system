@@ -100,13 +100,14 @@ export class TasksController {
       next(error);
     }
   }
-  async updateTask(req: Request, res: Response, next: NextFunction) {
+  async updateTask(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     const taskData = req.body as IUpdateTask;
     try {
-      await tasksService.updateTask(taskData);
+      const result = await tasksService.updateTask(taskData, req.user.userId);
       res.status(200).json({
         success: true,
         message: "Task updated successfully",
+        data: result,
       });
     } catch (error) {
       next(error);

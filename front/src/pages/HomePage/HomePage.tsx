@@ -75,7 +75,7 @@ export function HomePage() {
         if (user && user.id) {
           try {
             let requestsData;
-            if (user.role === 'EMPLOYEE') {
+            if (user.role === 'employee') {
               // Для обычных сотрудников загружаем только их заявки
               requestsData = await requestsAPI.getByEmployee(user.id.toString());
             } else {
@@ -431,7 +431,7 @@ export function HomePage() {
             {/* Заявки */}
             <Col xs={24} lg={user && user.role !== 'ADMIN' ? 8 : 12}>
               <Card 
-                title={user?.role === 'EMPLOYEE' ? 'Мои заявки' : 'Последние заявки'} 
+                title={user?.role === 'employee' ? 'Мои заявки' : 'Последние заявки'} 
                 size="small"
                 extra={
                   <Button 
@@ -439,7 +439,7 @@ export function HomePage() {
                     icon={<EyeOutlined />}
                     onClick={() => navigate('/requests')}
                   >
-                    {user?.role === 'EMPLOYEE' ? 'Все мои заявки' : 'Все заявки'}
+                    {user?.role === 'employee' ? 'Все мои заявки' : 'Все заявки'}
                   </Button>
                 }
               >

@@ -40,27 +40,62 @@ export class TasksService {
     }
   }
 
-  async updateTask(taskData: IUpdateTask) {
+  async updateTask(taskData: IUpdateTask, userId: string) {
     const { idTask, ...data } = taskData
     const exTask = await this.getTaskById(idTask);
+    
+    // Проверяем права на редактирование
+    const exUser = await employeeRepository.findOne({ 
+      where: { user: { id: userId } }, 
+      relations: ["user"] 
+    });
+    
+    if (!exUser) {
+      throw createError(404, "User not found");
+    }
+    
+    const isCreator = exTask.creator.id === exUser.id;
+    const isAssignee = exTask.assignees.some(assignee => assignee.id === exUser.id);
+    const isManager = ['admin', 'hr', 'manager'].includes(exUser.user.role);
+    
+    if (!isCreator && !isAssignee && !isManager) {
+      throw createError(403, "Forbidden: You don't have permission to edit this task");
+    }
+    
+    // Обрабатываем assigneesId отдельно
+    if (data.assigneesId) {
+      const exAssignees = await employeeRepository.findBy({ id: In(data.assigneesId) });
+      if (exAssignees.length !== data.assigneesId.length) {
+        throw createError(404, "One or more assignees not found");
+      }
+      exTask.assignees = exAssignees;
+      delete data.assigneesId; // Удаляем из data, так как уже обработали
+    }
+    
+    // Обновляем остальные поля
     for (const key in data) {
       if (data[key] !== undefined) {
-        exTask[key] = data[key];
+        if (key === 'deadline' && data[key]) {
+          exTask[key] = new Date(data[key]);
+        } else {
+          exTask[key] = data[key];
+        }
       }
     }
+    
     try {
-      taskRepository.save(exTask);
+      const savedTask = await taskRepository.save(exTask);
+      return await this.getTaskById(savedTask.id); // Возвращаем полную задачу с relations
     } catch (error) {
       throw createError(500, "Error updating task");
     }
-
   }
 
   async deleteTask(id: number, creatorId: string) {
     const task = await this.getTaskById(id);
     const exCreator = await employeeRepository.findOne({ where: { user: { id: creatorId } }, relations: ["user"] });
     if (exCreator.id === task.creator.id ||
-      exCreator.user.role === UserRoleEnum.ADMIN) {
+      exCreator.user.role === 'admin') {
       try {
         await taskRepository.remove(task);
       } catch (error) {
@@ -218,9 +253,7 @@ export class TasksService {
     // Проверяем права на изменение статуса
     const isCreator = task.creator?.id === employee.id;
     const isAssignee = task.assignees.some(assignee => assignee.id === employee.id);
-    const isManager = employee.user.role === UserRoleEnum.ADMIN || 
-                     employee.user.role === UserRoleEnum.HR || 
-                     employee.user.role === UserRoleEnum.MANAGER;
+    const isManager = ['admin', 'hr', 'manager'].includes(employee.user.role);
 
     if (!isCreator && !isAssignee && !isManager) {
       throw createError(403, "You don't have permission to change this task status");

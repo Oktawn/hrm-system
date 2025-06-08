@@ -21,7 +21,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({ requests, onRequestUpdate
     
     const isCreator = request.creator.id === currentUser.id;
     const isAssignee = request.assignee?.id === currentUser.id;
-    const isManager = currentUser.role === 'ADMIN' || currentUser.role === 'HR' || currentUser.role === 'MANAGER';
+    const isManager = currentUser.role === 'admin' || currentUser.role === 'hr' || currentUser.role === 'manager';
     
     return isCreator || isAssignee || isManager;
   };
