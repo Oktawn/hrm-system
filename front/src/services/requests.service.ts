@@ -92,6 +92,11 @@ class RequestsService {
     return response.data;
   }
 
+  async updateStatus(id: number, status: string): Promise<{ success: boolean; data: Request; message?: string }> {
+    const response = await api.patch(`/requests/${id}/status`, { status });
+    return response.data;
+  }
+
   async delete(id: number): Promise<{ success: boolean; message: string }> {
     const response = await api.delete(`/requests/${id}`);
     return response.data;

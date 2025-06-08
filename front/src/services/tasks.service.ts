@@ -116,6 +116,11 @@ class TasksService {
     return response.data;
   }
 
+  async updateStatus(id: number, status: string): Promise<{ success: boolean; data: Task; message?: string }> {
+    const response = await api.patch(`/tasks/${id}/status`, { status });
+    return response.data;
+  }
+
   async delete(id: number): Promise<{ success: boolean; message: string }> {
     const response = await api.delete(`/tasks/${id}`);
     return response.data;

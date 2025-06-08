@@ -47,6 +47,7 @@ export class AuthService {
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
         data: {
+          id: user.id,
           email: user.email,
           role: user.role,
           firstName: user.employee?.firstName || null,
@@ -54,7 +55,6 @@ export class AuthService {
           phone: user.employee?.phone || null,
           position: user.employee?.position?.name || null,
           department: user.employee?.department?.name || null,
-
         }
       };
     } catch (error) {
@@ -81,14 +81,22 @@ export class AuthService {
   }
 
   async generateAccessToken(payload: TokenPayload) {
-    const accessToken = jwt.sign(payload, jwtConfig.get("JWT_SECRET"), {
+    const clearPayload: TokenPayload = {
+      userId: payload.userId,
+      role: payload.role,
+    };
+    const accessToken = jwt.sign(clearPayload, jwtConfig.get("JWT_SECRET"), {
       expiresIn: jwtConfig.getExpiration("JWT_EXPIRES_IN")
     });
     return accessToken;
   }
 
   async generateRefreshToken(payload: TokenPayload) {
-    const refreshToken = jwt.sign(payload, jwtConfig.get("JWT_SECRET"), {
+    const clearPayload: TokenPayload = {
+      userId: payload.userId,
+      role: payload.role,
+    }
+    const refreshToken = jwt.sign(clearPayload, jwtConfig.get("JWT_SECRET"), {
       expiresIn: jwtConfig.getExpiration("JWT_REFRESH_EXPIRATION")
     });
     try {
@@ -154,6 +162,28 @@ export class AuthService {
       }
       throw createError(401, "Invalid access token");
     }
+  }
+
+  async getUserData(userId: string) {
+    const user = await userRepository.findOne({
+      where: { id: userId },
+      relations: ["employee", "employee.position", "employee.department"]
+    });
+
+    if (!user) {
+      throw createError(404, "User not found");
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      firstName: user.employee?.firstName || null,
+      lastName: user.employee?.lastName || null,
+      phone: user.employee?.phone || null,
+      position: user.employee?.position?.name || null,
+      department: user.employee?.department?.name || null,
+    };
   }
 
   async logout(userId: string) {

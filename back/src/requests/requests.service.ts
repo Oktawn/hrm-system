@@ -74,7 +74,12 @@ export class RequestsService {
 
   async getAllRequests(filet: IRequestFilter) {
 
-    const { page = 1, limit = 10, ...filter } = filet;
+    const { page, limit, ...filter } = filet;
+    
+    // Обеспечиваем, что page и limit являются числами
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 10;
+    
     const queryB = requestRepository.createQueryBuilder("request")
       .leftJoinAndSelect("request.creator", "creator");
 
@@ -109,16 +114,16 @@ export class RequestsService {
       queryB.andWhere("request.endDate <= :endDateTo", { endDateTo: filter.endDateTo });
     }
     queryB.orderBy("request.createdAt", "DESC");
-    queryB.skip((page - 1) * limit).take(limit);
+    queryB.skip((pageNum - 1) * limitNum).take(limitNum);
     const [requests, total] = await queryB.getManyAndCount();
 
     return {
       data: requests,
       meta: {
         total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit)
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum)
       }
     };
   }
@@ -143,5 +148,41 @@ export class RequestsService {
       throw createHttpError(404, "Requests not found");
     }
     return requests;
+  }
+
+  async updateRequestStatus(requestId: number, status: RequestStatusEnum, userId: string) {
+    const request = await requestRepository.findOne({
+      where: { id: requestId },
+      relations: ["creator", "assignee", "creator.user", "assignee.user"]
+    });
+
+    if (!request) {
+      throw createHttpError(404, "Request not found");
+    }
+
+    const employee = await employeeRepository.findOne({
+      where: { user: { id: userId } },
+      relations: ["user"]
+    });
+
+    if (!employee) {
+      throw createHttpError(404, "Employee not found");
+    }
+
+    // Проверяем права на изменение статуса
+    const isCreator = request.creator?.id === employee.id;
+    const isAssignee = request.assignee?.id === employee.id;
+    const isManager = employee.user.role === UserRoleEnum.ADMIN || 
+                     employee.user.role === UserRoleEnum.HR || 
+                     employee.user.role === UserRoleEnum.MANAGER;
+
+    if (!isCreator && !isAssignee && !isManager) {
+      throw createHttpError(403, "You don't have permission to change this request status");
+    }
+
+    request.status = status;
+    await requestRepository.save(request);
+
+    return await this.getRequestById(requestId);
   }
 }

@@ -15,6 +15,7 @@ taskRouter.get("/status/:status", authMiddleware(), tasksController.getTasksBySt
 taskRouter.get("/priority/:priority", authMiddleware(), tasksController.getTasksByPriority);
 taskRouter.post("/create", authMiddleware(), tasksController.createTask);
 taskRouter.put("/update/:id", authMiddleware(), tasksController.updateTask);
+taskRouter.patch("/:id/status", authMiddleware(), tasksController.updateTaskStatus);
 taskRouter.delete("/:id", authMiddleware(), tasksController.deleteTask);
 
 export { taskRouter };

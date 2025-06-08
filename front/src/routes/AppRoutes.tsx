@@ -3,7 +3,6 @@ import { LoginPage } from '../pages/LoginPage/LoginPage';
 import { HomePage } from '../pages/HomePage/HomePage';
 import { ProfilePage } from '../pages/ProfilePage/ProfilePage';
 import { TasksPage } from '../pages/TasksPage/TasksPage';
-import { MyTasksPage } from '../pages/MyTasksPage/MyTasksPage';
 import { RequestsPage } from '../pages/RequestsPage/RequestsPage';
 import { EmployeesPage } from '../pages/EmployeesPage';
 import { AppLayout } from '../components/Layout/AppLayout';
@@ -39,16 +38,6 @@ export function AppRoutes() {
           <ProtectedRoute>
             <AppLayout>
               <TasksPage />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/my-tasks"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <MyTasksPage />
             </AppLayout>
           </ProtectedRoute>
         }

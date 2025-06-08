@@ -215,9 +215,6 @@ export function EmployeesPage() {
                 <Option value={50}>50</Option>
                 <Option value={100}>100</Option>
               </Select>
-              <Text type="secondary">
-                Показано {employees.length} из {total} сотрудников
-              </Text>
             </div>
           </div>
         </div>

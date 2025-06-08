@@ -74,4 +74,18 @@ export class RequestsController {
     }
   }
 
+  async updateRequestStatus(req: AuthenticatedRequest, res: Response) {
+    try {
+      const requestId = parseInt(req.params.id);
+      const { status } = req.body;
+      const request = await requestsService.updateRequestStatus(requestId, status, req.user.userId);
+      res.status(200).json({
+        success: true,
+        message: "Request status updated successfully",
+        data: request
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }

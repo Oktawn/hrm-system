@@ -72,7 +72,7 @@ export function HomePage() {
         }
 
         // Загружаем заявки в зависимости от роли пользователя
-        if (user) {
+        if (user && user.id) {
           try {
             let requestsData;
             if (user.role === 'EMPLOYEE') {
@@ -89,7 +89,7 @@ export function HomePage() {
         }
 
         // Загружаем задачи пользователя, если он не администратор
-        if (user && user.role !== 'ADMIN') {
+        if (user && user.id && user.role !== 'ADMIN') {
           try {
             const userTasksData = await tasksAPI.getByAssignee(user.id.toString());
             setUserTasks(userTasksData.data || []);
@@ -111,11 +111,11 @@ export function HomePage() {
 
   const getTaskStatusColor = (status: string) => {
     switch (status) {
-      case 'TODO':
+      case 'todo':
         return 'default';
-      case 'IN_PROGRESS':
+      case 'in_progress':
         return 'processing';
-      case 'DONE':
+      case 'done':
         return 'success';
       default:
         return 'default';
@@ -124,11 +124,11 @@ export function HomePage() {
 
   const getTaskStatusText = (status: string) => {
     switch (status) {
-      case 'TODO':
+      case 'todo':
         return 'К выполнению';
-      case 'IN_PROGRESS':
+      case 'in_progress':
         return 'В работе';
-      case 'DONE':
+      case 'done':
         return 'Выполнено';
       default:
         return status;
@@ -137,11 +137,13 @@ export function HomePage() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'HIGH':
+      case 'critical':
         return 'red';
-      case 'MEDIUM':
+      case 'high':
         return 'orange';
-      case 'LOW':
+      case 'medium':
+        return 'blue';
+      case 'low':
         return 'green';
       default:
         return 'default';
@@ -150,11 +152,13 @@ export function HomePage() {
 
   const getPriorityText = (priority: string) => {
     switch (priority) {
-      case 'HIGH':
+      case 'critical':
+        return 'Критический';
+      case 'high':
         return 'Высокий';
-      case 'MEDIUM':
+      case 'medium':
         return 'Средний';
-      case 'LOW':
+      case 'low':
         return 'Низкий';
       default:
         return priority;
@@ -163,11 +167,11 @@ export function HomePage() {
 
   const getRequestStatusColor = (status: string) => {
     switch (status) {
-      case 'PENDING':
+      case 'pending':
         return 'warning';
-      case 'APPROVED':
+      case 'approved':
         return 'success';
-      case 'REJECTED':
+      case 'rejected':
         return 'error';
       default:
         return 'default';
@@ -176,11 +180,11 @@ export function HomePage() {
 
   const getRequestStatusText = (status: string) => {
     switch (status) {
-      case 'PENDING':
+      case 'pending':
         return 'На рассмотрении';
-      case 'APPROVED':
+      case 'approved':
         return 'Одобрено';
-      case 'REJECTED':
+      case 'rejected':
         return 'Отклонено';
       default:
         return status;
@@ -393,7 +397,7 @@ export function HomePage() {
                     <Button 
                       type="link" 
                       icon={<EyeOutlined />}
-                      onClick={() => navigate('/my-tasks')}
+                      onClick={() => navigate('/tasks')}
                     >
                       Все мои задачи
                     </Button>

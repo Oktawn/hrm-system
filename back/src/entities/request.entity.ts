@@ -1,5 +1,6 @@
-import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { EmployeesEntity } from "./employees.entity";
+import { CommentsEntity } from "./comments.entity";
 import { RequestStatusEnum, RequestTypeEnum, TaskPriorityEnum } from "../commons/enums/enums";
 
 @Entity("requests")
@@ -39,6 +40,9 @@ export class RequestEntity {
 
   @Column({ type: "jsonb", nullable: true })
   attachments: object;
+
+  @OneToMany(() => CommentsEntity, comment => comment.request)
+  comments: CommentsEntity[];
 
   @CreateDateColumn()
   createdAt: Date;

@@ -6,6 +6,7 @@ import { RefreshTokenEntity } from "../entities/refresh-tokens.entity";
 import { RequestEntity } from "../entities/request.entity";
 import { TasksEntity } from "../entities/tasks.entity";
 import { UsersEntity } from "../entities/users.entity";
+import { CommentsEntity } from "../entities/comments.entity";
 
 const userRepository = AppDataSource.getRepository(UsersEntity);
 const refreshTokenRepository = AppDataSource.getRepository(RefreshTokenEntity);
@@ -14,6 +15,7 @@ const departmentRepository = AppDataSource.getRepository(DepartmentsEntity);
 const positionRepository = AppDataSource.getRepository(PositionsEntity);
 const taskRepository = AppDataSource.getRepository(TasksEntity);
 const requestRepository = AppDataSource.getRepository(RequestEntity);
+const commentRepository = AppDataSource.getRepository(CommentsEntity);
 
 export {
   userRepository,
@@ -23,4 +25,5 @@ export {
   positionRepository,
   taskRepository,
   requestRepository,
-}
+  commentRepository
+};

@@ -1,5 +1,6 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { EmployeesEntity } from "./employees.entity";
+import { CommentsEntity } from "./comments.entity";
 import { TaskPriorityEnum, TaskStatusEnum } from "../commons/enums/enums";
 
 @Entity("tasks")
@@ -35,6 +36,9 @@ export class TasksEntity {
 
   @Column({ type: "jsonb", nullable: true })
   attachments: object;
+
+  @OneToMany(() => CommentsEntity, comment => comment.task)
+  comments: CommentsEntity[];
 
   @CreateDateColumn()
   createdAt: Date;

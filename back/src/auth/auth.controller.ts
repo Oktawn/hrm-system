@@ -49,7 +49,8 @@ export class AuthController {
       })
       
       res.status(200).json({
-        message: 'Login successful'
+        message: 'Login successful',
+        user: result.data
       })
     } catch (error) {
       next(error);
@@ -122,13 +123,12 @@ export class AuthController {
       }
 
       const payload = await authService.verifyAccessToken(accessToken);
+      const userData = await authService.getUserData(payload.userId);
+      
       res.status(200).json({ 
         message: "Token is valid", 
         valid: true,
-        user: {
-          userId: payload.userId,
-          role: payload.role
-        }
+        user: userData
       });
     } catch (error) {
       res.status(401).json({ message: "Invalid or expired token", valid: false });

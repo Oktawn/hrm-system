@@ -71,6 +71,7 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('requests', (table) => {
     table.increments('id').primary();
     table.enum('type', Object.values(RequestTypeEnum)).defaultTo(RequestTypeEnum.LEAVE_VACATION);
+    table.enum('priority', Object.values(TaskPriorityEnum)).defaultTo(TaskPriorityEnum.MEDIUM);
     table.enum('status', Object.values(RequestStatusEnum)).defaultTo(RequestStatusEnum.PENDING);
     table.string('title').notNullable();
     table.text('description').nullable();

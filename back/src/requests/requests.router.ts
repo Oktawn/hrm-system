@@ -13,6 +13,7 @@ requestRouter.get("/status/:status", authMiddleware(), requestsController.getReq
 requestRouter.get("/employee/:employeeId", authMiddleware(), requestsController.getRequestsByEmployeeId);
 requestRouter.post("/create", authMiddleware(), requestsController.createRequest);
 requestRouter.put("/update/:id", authMiddleware(), requestsController.updateRequest);
+requestRouter.patch("/:id/status", authMiddleware(), requestsController.updateRequestStatus);
 requestRouter.delete("/:id", authMiddleware(), requestsController.deleteRequest);
 
 export { requestRouter };

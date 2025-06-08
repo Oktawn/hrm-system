@@ -11,7 +11,10 @@ export class TasksController {
     const filter = req.query;
     try {
       const tasks = await tasksService.getAllTasks(filter);
-      res.status(200).json(tasks);
+      res.status(200).json({
+        success: true,
+        ...tasks
+      });
     } catch (error) {
       next(error);
     }
@@ -21,7 +24,10 @@ export class TasksController {
     const { id } = req.params;
     try {
       const task = await tasksService.getTaskById(Number(id));
-      res.status(200).json(task);
+      res.status(200).json({
+        success: true,
+        data: task
+      });
     } catch (error) {
       next(error);
     }
@@ -31,7 +37,10 @@ export class TasksController {
     const { assigneeId } = req.params;
     try {
       const tasks = await tasksService.getTasksByAssignee(assigneeId);
-      res.status(200).json(tasks);
+      res.status(200).json({
+        success: true,
+        data: tasks
+      });
     } catch (error) {
       next(error);
     }
@@ -41,7 +50,10 @@ export class TasksController {
     const { creatorId } = req.params;
     try {
       const tasks = await tasksService.getTasksByCreator(creatorId);
-      res.status(200).json(tasks);
+      res.status(200).json({
+        success: true,
+        data: tasks
+      });
     } catch (error) {
       next(error);
     }
@@ -51,7 +63,10 @@ export class TasksController {
     const { status } = req.params;
     try {
       const tasks = await tasksService.getTasksByStatus(status);
-      res.status(200).json(tasks);
+      res.status(200).json({
+        success: true,
+        data: tasks
+      });
     } catch (error) {
       next(error);
     }
@@ -60,7 +75,10 @@ export class TasksController {
     const { priority } = req.params;
     try {
       const tasks = await tasksService.getTasksByPriority(priority);
-      res.status(200).json(tasks);
+      res.status(200).json({
+        success: true,
+        data: tasks
+      });
     } catch (error) {
       next(error);
     }
@@ -74,6 +92,7 @@ export class TasksController {
     try {
       const result = await tasksService.createTask(taskData);
       res.status(201).json({
+        success: true,
         message: "Task created successfully",
         data: result,
       });
@@ -86,6 +105,7 @@ export class TasksController {
     try {
       await tasksService.updateTask(taskData);
       res.status(200).json({
+        success: true,
         message: "Task updated successfully",
       });
     } catch (error) {
@@ -97,6 +117,7 @@ export class TasksController {
     try {
       await tasksService.deleteTask(Number(id), req.user.userId);
       res.status(200).json({
+        success: true,
         message: "Task deleted successfully",
       });
     } catch (error) {
@@ -116,13 +137,28 @@ export class TasksController {
     }
   }
 
-  async getRecentTasks(req: Request, res: Response, next: NextFunction) {
+  async getRecentTasks(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
       const tasks = await tasksService.getRecentTasks(limit);
       res.status(200).json({
         success: true,
         data: tasks
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateTaskStatus(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const taskId = parseInt(req.params.id);
+      const { status } = req.body;
+      const task = await tasksService.updateTaskStatus(taskId, status, req.user.userId);
+      res.status(200).json({
+        success: true,
+        message: "Task status updated successfully",
+        data: task
       });
     } catch (error) {
       next(error);

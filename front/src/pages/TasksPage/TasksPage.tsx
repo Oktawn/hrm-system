@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Layout, Typography, Card, Table, Tag, Space, Button, Input, Select } from 'antd';
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, MessageOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/auth.store';
 import tasksAPI, { type Task, type TaskFilter } from '../../services/tasks.service';
+import Comments from '../../components/Comments/Comments';
+import StatusSelector from '../../components/StatusSelector/StatusSelector';
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -13,12 +15,28 @@ export function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<TaskFilter>({});
+  const [showComments, setShowComments] = useState<{ taskId: number; visible: boolean }>({ taskId: 0, visible: false });
+
+  // Определяем, показывать ли только мои задачи
+  const isEmployee = user?.role === 'EMPLOYEE';
+  const isManager = user?.role === 'MANAGER' || user?.role === 'HR' || user?.role === 'ADMIN';
 
   const fetchTasks = async () => {
+    if (!user) return;
+    
     try {
       setLoading(true);
-      const response = await tasksAPI.getAll(filter);
-      setTasks(response.data);
+      let response;
+      
+      if (isEmployee) {
+        // Для обычных сотрудников показываем только их задачи
+        response = await tasksAPI.getByAssignee(user.id);
+      } else {
+        // Для руководителей показываем все задачи
+        response = await tasksAPI.getAll(filter);
+      }
+      
+      setTasks(response.data || []);
     } catch (error) {
       console.error('Ошибка загрузки задач:', error);
     } finally {
@@ -28,7 +46,7 @@ export function TasksPage() {
 
   useEffect(() => {
     fetchTasks();
-  }, [filter]);
+  }, [filter, user]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -72,12 +90,46 @@ export function TasksPage() {
     }
   };
 
+  const canChangeStatus = (task: Task) => {
+    if (!user) return false;
+
+    const isCreator = task.creator.id === user.id.toString();
+    const isAssignee = task.assignees.some(assignee => assignee.id === user.id.toString());
+    const isManagerRole = user.role === 'ADMIN' || user.role === 'HR' || user.role === 'MANAGER';
+
+    return isCreator || isAssignee || isManagerRole;
+  };
+
+  const handleStatusChange = async (taskId: number, newStatus: string) => {
+    try {
+      await tasksAPI.updateStatus(taskId, newStatus);
+      fetchTasks(); // Обновляем список задач
+    } catch (error) {
+      console.error('Ошибка при изменении статуса задачи:', error);
+    }
+  };
+
+  const handleCommentsClick = (taskId: number) => {
+    setShowComments({ taskId, visible: true });
+  };
+
+  const closeComments = () => {
+    setShowComments({ taskId: 0, visible: false });
+  };
+
   const columns = [
+    {
+      title: '№',
+      dataIndex: 'id',
+      key: 'id',
+      width: '8%',
+      render: (id: number) => `#${id}`,
+    },
     {
       title: 'Название',
       dataIndex: 'title',
       key: 'title',
-      width: '25%',
+      width: '20%',
     },
     {
       title: 'Описание',
@@ -86,22 +138,44 @@ export function TasksPage() {
       width: '25%',
       render: (text: string) => text || '—',
     },
+    ...(isManager ? [{
+      title: 'Создатель',
+      dataIndex: 'creator',
+      key: 'creator',
+      width: '12%',
+      render: (creator: any) => creator ? `${creator.firstName} ${creator.lastName}` : '—',
+    }] : []),
+    {
+      title: 'Исполнители',
+      dataIndex: 'assignees',
+      key: 'assignees',
+      width: '15%',
+      render: (assignees: any[]) => 
+        assignees?.map(assignee => `${assignee.firstName} ${assignee.lastName}`).join(', ') || '—',
+    },
     {
       title: 'Статус',
       dataIndex: 'status',
       key: 'status',
       width: '12%',
-      render: (status: string) => (
-        <Tag color={getStatusColor(status)}>
-          {getStatusText(status)}
-        </Tag>
-      ),
+      render: (status: string, record: Task) => 
+        canChangeStatus(record) ? (
+          <StatusSelector
+            currentStatus={status}
+            onStatusChange={(newStatus) => handleStatusChange(record.id, newStatus)}
+            type="task"
+          />
+        ) : (
+          <Tag color={getStatusColor(status)}>
+            {getStatusText(status)}
+          </Tag>
+        ),
     },
     {
       title: 'Приоритет',
       dataIndex: 'priority',
       key: 'priority',
-      width: '12%',
+      width: '10%',
       render: (priority: string) => (
         <Tag color={getPriorityColor(priority)}>
           {getPriorityText(priority)}
@@ -109,25 +183,33 @@ export function TasksPage() {
       ),
     },
     {
-      title: 'Исполнители',
-      dataIndex: 'assignees',
-      key: 'assignees',
-      width: '20%',
-      render: (assignees: any[]) => (
-        <div>
-          {assignees && assignees.length > 0
-            ? assignees.map(a => `${a.firstName} ${a.lastName}`).join(', ')
-            : '—'
-          }
-        </div>
-      ),
-    },
-    {
       title: 'Дедлайн',
       dataIndex: 'deadline',
       key: 'deadline',
       width: '12%',
-      render: (deadline: string) => deadline ? new Date(deadline).toLocaleDateString() : '—',
+      render: (date: string) => date ? new Date(date).toLocaleDateString() : '—',
+    },
+    {
+      title: 'Дата создания',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      width: '12%',
+      render: (date: string) => new Date(date).toLocaleDateString(),
+    },
+    {
+      title: 'Действия',
+      key: 'actions',
+      width: '8%',
+      render: (_: any, record: Task) => (
+        <Space>
+          <Button
+            type="text"
+            icon={<MessageOutlined />}
+            onClick={() => handleCommentsClick(record.id)}
+            title="Комментарии"
+          />
+        </Space>
+      ),
     },
   ];
 
@@ -136,21 +218,23 @@ export function TasksPage() {
       <Content style={{ padding: '24px' }}>
         <div style={{ marginBottom: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <Title level={2}>Все задачи</Title>
-            {(user?.role === 'ADMIN' || user?.role === 'HR' || user?.role === 'MANAGER') && (
-              <Button type="primary" icon={<PlusOutlined />}>
-                Создать задачу
-              </Button>
-            )}
+            <Title level={2}>
+              {isEmployee ? 'Мои задачи' : 'Задачи'}
+            </Title>
+            <Button type="primary" icon={<PlusOutlined />}>
+              Создать задачу
+            </Button>
           </div>
 
           <Space style={{ marginBottom: '16px' }}>
-            <Input
-              placeholder="Поиск по названию"
-              prefix={<SearchOutlined />}
-              style={{ width: 200 }}
-              onChange={(e) => setFilter({ ...filter, title: e.target.value })}
-            />
+            {!isEmployee && (
+              <Input
+                placeholder="Поиск по названию"
+                prefix={<SearchOutlined />}
+                style={{ width: 200 }}
+                onChange={(e) => setFilter({ ...filter, title: e.target.value })}
+              />
+            )}
             <Select
               placeholder="Статус"
               style={{ width: 150 }}
@@ -190,6 +274,13 @@ export function TasksPage() {
             }}
           />
         </Card>
+
+        <Comments
+          type="task"
+          itemId={showComments.taskId}
+          isVisible={showComments.visible}
+          onClose={closeComments}
+        />
       </Content>
     </Layout>
   );

@@ -82,7 +82,16 @@ export class TasksService {
   }
 
   async getAllTasks(filter: ITaskFilter) {
-    const { page, limit, ...data } = filter;
+    const data = { ...filter };
+    
+    // Обеспечиваем, что page и limit являются числами
+    const pageNum = Number(data.page) || 1;
+    const limitNum = Number(data.limit) || 10;
+    
+    // Удаляем page и limit из data для фильтрации
+    delete data.page;
+    delete data.limit;
+    
     const queryB = taskRepository.createQueryBuilder("task");
     queryB.leftJoinAndSelect("task.assignees", "assignees");
     queryB.leftJoinAndSelect("task.creator", "creator");
@@ -115,15 +124,15 @@ export class TasksService {
       queryB.andWhere("assignees.id IN (:...assigneesId)",
         { assigneesId: data.assigneesId });
     }
-    queryB.skip((page - 1) * limit).take(limit);
+    queryB.skip((pageNum - 1) * limitNum).take(limitNum);
     const [tasks, total] = await queryB.getManyAndCount();
     return {
       data: tasks,
       meta: {
-        page,
-        limit,
+        page: pageNum,
+        limit: limitNum,
         total,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.ceil(total / limitNum),
       },
     };
   }
@@ -185,5 +194,41 @@ export class TasksService {
       order: { createdAt: "DESC" },
       take: limit
     });
+  }
+
+  async updateTaskStatus(taskId: number, status: TaskStatusEnum, userId: string) {
+    const task = await taskRepository.findOne({
+      where: { id: taskId },
+      relations: ["creator", "assignees", "assignees.user"]
+    });
+
+    if (!task) {
+      throw createError(404, "Task not found");
+    }
+
+    const employee = await employeeRepository.findOne({
+      where: { user: { id: userId } },
+      relations: ["user"]
+    });
+
+    if (!employee) {
+      throw createError(404, "Employee not found");
+    }
+
+    // Проверяем права на изменение статуса
+    const isCreator = task.creator?.id === employee.id;
+    const isAssignee = task.assignees.some(assignee => assignee.id === employee.id);
+    const isManager = employee.user.role === UserRoleEnum.ADMIN || 
+                     employee.user.role === UserRoleEnum.HR || 
+                     employee.user.role === UserRoleEnum.MANAGER;
+
+    if (!isCreator && !isAssignee && !isManager) {
+      throw createError(403, "You don't have permission to change this task status");
+    }
+
+    task.status = status;
+    await taskRepository.save(task);
+
+    return await this.getTaskById(taskId);
   }
 }

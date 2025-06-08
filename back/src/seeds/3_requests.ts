@@ -1,5 +1,5 @@
 import { Knex } from "knex";
-import { RequestStatusEnum, RequestTypeEnum } from "../commons/enums/enums";
+import { RequestStatusEnum, RequestTypeEnum, TaskPriorityEnum } from "../commons/enums/enums";
 import { faker } from '@faker-js/faker';
 
 export async function seed(knex: Knex): Promise<void> {
@@ -129,6 +129,7 @@ export async function seed(knex: Knex): Promise<void> {
 
         requests.push({
             type: requestType,
+            priority: Object.values(TaskPriorityEnum)[Math.floor(Math.random() * Object.values(TaskPriorityEnum).length)],
             status: Object.values(RequestStatusEnum)[Math.floor(Math.random() * Object.values(RequestStatusEnum).length)],
             title: title,
             description: description,

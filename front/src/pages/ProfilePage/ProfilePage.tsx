@@ -27,7 +27,6 @@ import type { UpdateProfileRequest, ChangePasswordRequest } from '../../types/au
 import './ProfilePage.css';
 
 const { Title, Text } = Typography;
-const { TabPane } = Tabs;
 
 export const ProfilePage: React.FC = () => {
   const { user, updateUser } = useAuthStore();
@@ -66,7 +65,7 @@ export const ProfilePage: React.FC = () => {
     setLoading(true);
     try {
       await profileAPI.updateProfile(values);
-      updateUser(values); // Обновляем данные пользователя в store
+      updateUser(values);
       message.success('Профиль успешно обновлен');
       setIsEditing(false);
     } catch (error: any) {
@@ -270,31 +269,40 @@ export const ProfilePage: React.FC = () => {
     </Card>
   );
 
+  const tabItems = [
+    {
+      key: 'profile',
+      label: (
+        <span>
+          <UserOutlined />
+          Личная информация
+        </span>
+      ),
+      children: <ProfileInfo />
+    },
+    {
+      key: 'settings',
+      label: (
+        <span>
+          <SettingOutlined />
+          Настройки
+        </span>
+      ),
+      children: <SecuritySettings />
+    }
+  ];
+
   return (
     <div className="profile-page">
       <div className="profile-header-section">
         <Title level={2}>Профиль пользователя</Title>
       </div>
 
-      <Tabs defaultActiveKey="profile" className="profile-tabs">
-        <TabPane tab={
-          <span>
-            <UserOutlined />
-            Личная информация
-          </span>
-        } key="profile">
-          <ProfileInfo />
-        </TabPane>
-
-        <TabPane tab={
-          <span>
-            <SettingOutlined />
-            Настройки
-          </span>
-        } key="settings">
-          <SecuritySettings />
-        </TabPane>
-      </Tabs>
+      <Tabs 
+        defaultActiveKey="profile" 
+        className="profile-tabs"
+        items={tabItems}
+      />
     </div>
   );
 };

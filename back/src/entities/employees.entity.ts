@@ -4,6 +4,7 @@ import { DepartmentsEntity } from "./departments.entity";
 import { PositionsEntity } from "./positions.entity";
 import { TasksEntity } from "./tasks.entity";
 import { RequestEntity } from "./request.entity";
+import { CommentsEntity } from "./comments.entity";
 
 @Entity("employees")
 export class EmployeesEntity {
@@ -50,4 +51,7 @@ export class EmployeesEntity {
 
   @OneToMany(() => RequestEntity, request => request.creator)
   createdRequests: RequestEntity[];
+
+  @OneToMany(() => CommentsEntity, comment => comment.author)
+  comments: CommentsEntity[];
 }
