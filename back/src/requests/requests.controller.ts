@@ -2,19 +2,49 @@ import { AuthenticatedRequest } from "../auth/auth.interface";
 import { IUpdateRequest } from "./requests.interface";
 import { RequestsService } from "./requests.service";
 import { Request, Response } from "express";
+import { uploadMultiple, createAttachment } from '../middleware/upload.middleware';
 
 const requestsService = new RequestsService();
 
 export class RequestsController {
   async createRequest(req: AuthenticatedRequest, res: Response) {
-    try {
-      const requestData = req.body;
-      requestData.userId = req.user.userId;
-      const createdRequest = await requestsService.createRequest(requestData);
-      res.status(201).json(createdRequest);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
+    // Используем middleware для обработки файлов
+    uploadMultiple(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({
+          success: false,
+          message: err.message
+        });
+      }
+
+      try {
+        const requestData = req.body;
+        
+        // Обрабатываем загруженные файлы
+        let attachments = [];
+        if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+          attachments = (req.files as Express.Multer.File[]).map(createAttachment);
+        }
+
+        // Добавляем attachments к данным запроса
+        const requestDataWithAttachments = {
+          ...requestData,
+          attachments: attachments.length > 0 ? attachments : undefined
+        };
+
+        const createdRequest = await requestsService.createRequest(requestDataWithAttachments);
+        res.status(201).json({
+          success: true,
+          data: createdRequest,
+          message: 'Заявка успешно создана'
+        });
+      } catch (error) {
+        res.status(500).json({ 
+          success: false,
+          error: error.message 
+        });
+      }
+    });
   }
 
   async updateRequest(req: AuthenticatedRequest, res: Response) {
@@ -41,7 +71,10 @@ export class RequestsController {
     try {
       const { id } = req.params;
       const request = await requestsService.getRequestById(parseInt(id));
-      res.status(200).json(request);
+      res.status(200).json({
+        success: true,
+        data: request
+      });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -50,7 +83,10 @@ export class RequestsController {
     try {
       const filter = req.query;
       const requests = await requestsService.getAllRequests(filter);
-      res.status(200).json(requests);
+      res.status(200).json({
+        success: true,
+        ...requests
+      });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -59,7 +95,10 @@ export class RequestsController {
     try {
       const { status } = req.params;
       const requests = await requestsService.getRequestsByStatus(status);
-      res.status(200).json(requests);
+      res.status(200).json({
+        success: true,
+        data: requests
+      });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -68,7 +107,10 @@ export class RequestsController {
     try {
       const { employeeId } = req.params;
       const requests = await requestsService.getAllRequestsByEmployeeId(employeeId);
-      res.status(200).json(requests);
+      res.status(200).json({
+        success: true,
+        data: requests
+      });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }

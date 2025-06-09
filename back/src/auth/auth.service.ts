@@ -48,6 +48,7 @@ export class AuthService {
         refreshToken: tokens.refreshToken,
         data: {
           id: user.id,
+          employeeId: user.employee?.id || null,
           email: user.email,
           role: user.role,
           firstName: user.employee?.firstName || null,
@@ -132,19 +133,21 @@ export class AuthService {
         throw createError(401, "Invalid refresh token");
       }
 
-      // Проверяем не истек ли токен
       if (tokenRecord.expires_at < new Date()) {
         await refreshTokenRepository.remove(tokenRecord);
         throw createError(401, "Refresh token expired");
       }
 
-      // Генерируем новые токены
-      const newTokens = await this.generateTokens({
+
+      const newAccessToken = await this.generateAccessToken({
         userId: payload.userId,
         role: payload.role,
       });
 
-      return newTokens;
+      return {
+        accessToken: newAccessToken,
+        refreshToken: refreshToken 
+      };
     } catch (error) {
       if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
         throw createError(401, "Invalid refresh token");
@@ -176,6 +179,7 @@ export class AuthService {
 
     return {
       id: user.id,
+      employeeId: user.employee?.id || null,
       email: user.email,
       role: user.role,
       firstName: user.employee?.firstName || null,

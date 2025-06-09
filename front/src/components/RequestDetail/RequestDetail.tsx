@@ -19,13 +19,17 @@ import {
   ClockCircleOutlined, 
   EditOutlined,
   SaveOutlined,
-  CloseOutlined
+  CloseOutlined,
+  DownloadOutlined,
+  EyeOutlined
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/auth.store';
 import requestsAPI, { type Request } from '../../services/requests.service';
 import employeesAPI, { type Employee } from '../../services/employees.service';
 import { commentsService, type IComment, type ICreateComment } from '../../services/comments.service';
 import StatusSelector from '../StatusSelector/StatusSelector';
+import SimpleFileUpload from '../SimpleFileUpload/SimpleFileUpload';
+import { getPriorityColor, getPriorityText, getRequestTypeText } from '../../utils/status.utils';
 import './RequestDetail.css';
 
 const { Title, Text } = Typography;
@@ -52,6 +56,7 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [newComment, setNewComment] = useState('');
+  const [commentAttachments, setCommentAttachments] = useState<File[]>([]);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -149,8 +154,14 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
         requestId: request.id
       };
 
-      await commentsService.createComment(commentData);
+      if (commentAttachments.length > 0) {
+        await commentsService.createCommentWithFiles(commentData, commentAttachments);
+      } else {
+        await commentsService.createComment(commentData);
+      }
+
       setNewComment('');
+      setCommentAttachments([]);
       fetchComments();
       message.success('Комментарий добавлен');
     } catch (error) {
@@ -167,35 +178,25 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
     return isCreator || isAssignee || isManager;
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'red';
-      case 'high': return 'orange';
-      case 'medium': return 'blue';
-      case 'low': return 'green';
-      default: return 'default';
-    }
+  // Функции для работы с файлами комментариев
+  const handleDownload = (filename: string) => {
+    window.open(`/api/uploads/download/${filename}`, '_blank');
   };
 
-  const getPriorityText = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'Критический';
-      case 'high': return 'Высокий';
-      case 'medium': return 'Средний';
-      case 'low': return 'Низкий';
-      default: return priority;
-    }
+  const handleView = (filename: string) => {
+    window.open(`/api/uploads/view/${filename}`, '_blank');
   };
 
-  const getTypeText = (type: string) => {
-    switch (type) {
-      case 'vacation': return 'Отпуск';
-      case 'sick_leave': return 'Больничный';
-      case 'business_trip': return 'Командировка';
-      case 'equipment': return 'Оборудование';
-      case 'other': return 'Другое';
-      default: return type;
-    }
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const isImage = (mimetype?: string) => {
+    return mimetype && mimetype.startsWith('image/');
   };
 
   if (!request) return null;
@@ -285,7 +286,7 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
                 <div>
                   <Text strong>Тип: </Text>
                   <Tag color="purple">
-                    {getTypeText(request.type)}
+                    {getRequestTypeText(request.type)}
                   </Tag>
                 </div>
                 
@@ -347,24 +348,86 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
                           </Text>
                         </Space>
                       }
-                      description={comment.content}
+                      description={
+                        <div>
+                          <div>{comment.content}</div>
+                          {/* Отображение вложений */}
+                          {comment.attachments && comment.attachments.length > 0 && (
+                            <div style={{ marginTop: 8 }}>
+                              <Text strong style={{ fontSize: '12px', color: '#666' }}>
+                                Вложения:
+                              </Text>
+                              <div style={{ marginTop: 4 }}>
+                                {comment.attachments.map((attachment: any, index: number) => (
+                                  <div key={index} style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    marginBottom: 4,
+                                    padding: '4px 8px',
+                                    backgroundColor: '#f5f5f5',
+                                    borderRadius: '4px',
+                                    fontSize: '12px'
+                                  }}>
+                                    <span style={{ flex: 1, marginRight: 8 }}>
+                                      {attachment.originalName} ({formatFileSize(attachment.size)})
+                                    </span>
+                                    <div style={{ display: 'flex', gap: 4 }}>
+                                      {isImage(attachment.mimetype) && (
+                                        <Button
+                                          type="text"
+                                          size="small"
+                                          icon={<EyeOutlined />}
+                                          onClick={() => handleView(attachment.filename)}
+                                          title="Просмотр"
+                                        />
+                                      )}
+                                      <Button
+                                        type="text"
+                                        size="small"
+                                        icon={<DownloadOutlined />}
+                                        onClick={() => handleDownload(attachment.filename)}
+                                        title="Скачать"
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      }
                     />
                   </List.Item>
                 )}
               />
               
               <div className="add-comment" style={{ marginTop: 16 }}>
-                <Space.Compact style={{ width: '100%' }}>
-                  <Input
+                <div style={{ marginBottom: 12 }}>
+                  <Input.TextArea
                     placeholder="Добавить комментарий..."
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
-                    onPressEnter={handleAddComment}
+                    rows={3}
                   />
-                  <Button type="primary" onClick={handleAddComment}>
-                    Отправить
-                  </Button>
-                </Space.Compact>
+                </div>
+                
+                <div style={{ marginBottom: 12 }}>
+                  <SimpleFileUpload
+                    files={commentAttachments}
+                    onFilesChange={setCommentAttachments}
+                    maxFiles={3}
+                    maxSize={5 * 1024 * 1024} // 5MB
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                  />
+                </div>
+                
+                <Button 
+                  type="primary" 
+                  onClick={handleAddComment}
+                  disabled={!newComment.trim()}
+                >
+                  Отправить
+                </Button>
               </div>
             </div>
           </>

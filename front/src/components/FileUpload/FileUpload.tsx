@@ -9,7 +9,7 @@ const { Text } = Typography;
 interface FileAttachment {
   filename: string;
   originalName: string;
-  mimetype: string;
+  mimetype?: string;
   size: number;
   uploadDate: string;
 }
@@ -102,8 +102,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const isImage = (mimetype: string) => {
-    return mimetype.startsWith('image/');
+  const isImage = (mimetype?: string) => {
+    return mimetype && mimetype.startsWith('image/');
   };
 
   return (

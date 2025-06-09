@@ -3,6 +3,7 @@ import requestsService, { type Request } from '../../services/requests.service';
 import Comments from '../Comments/Comments';
 import StatusSelector from '../StatusSelector/StatusSelector';
 import { useAuthStore } from '../../stores/auth.store';
+import { getPriorityCSSColor, getPriorityText, getRequestTypeText } from '../../utils/status.utils';
 import './RequestsTable.css';
 
 interface RequestsTableProps {
@@ -53,37 +54,6 @@ const RequestsTable: React.FC<RequestsTableProps> = ({ requests, onRequestUpdate
     setExpandedRows(newExpanded);
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'low': return '#28a745';
-      case 'medium': return '#ffc107';
-      case 'high': return '#fd7e14';
-      case 'critical': return '#dc3545';
-      default: return '#6c757d';
-    }
-  };
-
-  const getPriorityLabel = (priority: string) => {
-    switch (priority) {
-      case 'low': return 'Низкий';
-      case 'medium': return 'Средний';
-      case 'high': return 'Высокий';
-      case 'critical': return 'Критический';
-      default: return priority;
-    }
-  };
-
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'vacation': return 'Отпуск';
-      case 'sick_leave': return 'Больничный';
-      case 'business_trip': return 'Командировка';
-      case 'remote_work': return 'Удаленная работа';
-      case 'other': return 'Другое';
-      default: return type;
-    }
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ru-RU');
   };
@@ -123,7 +93,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({ requests, onRequestUpdate
                   </td>
                   <td>
                     <span className="type-badge">
-                      {getTypeLabel(request.type)}
+                      {getRequestTypeText(request.type)}
                     </span>
                   </td>
                   <td>
@@ -137,9 +107,9 @@ const RequestsTable: React.FC<RequestsTableProps> = ({ requests, onRequestUpdate
                   <td>
                     <span 
                       className="priority-badge"
-                      style={{ backgroundColor: getPriorityColor(request.priority) }}
+                      style={{ backgroundColor: getPriorityCSSColor(request.priority) }}
                     >
-                      {getPriorityLabel(request.priority)}
+                      {getPriorityText(request.priority)}
                     </span>
                   </td>
                   <td>

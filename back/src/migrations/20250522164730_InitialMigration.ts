@@ -99,6 +99,7 @@ export async function up(knex: Knex): Promise<void> {
     table.integer('taskId').nullable().references('id').inTable('tasks').onDelete('CASCADE');
     table.integer('requestId').nullable().references('id').inTable('requests').onDelete('CASCADE');
     table.uuid('authorId').notNullable().references('id').inTable('employees').onDelete('CASCADE');
+    table.jsonb('attachments').nullable();
     table.timestamp('created_at').defaultTo(knex.fn.now());
     table.timestamp('updated_at').defaultTo(knex.fn.now());
   });

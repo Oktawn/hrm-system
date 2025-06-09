@@ -6,6 +6,12 @@ import { useAuthStore } from '../../stores/auth.store';
 import tasksAPI, { type Task, type TaskFilter } from '../../services/tasks.service';
 import TaskDetail from '../../components/TaskDetail/TaskDetail';
 import CreateTaskModal from '../../components/CreateTaskModal/CreateTaskModal';
+import { 
+  getTaskStatusColor, 
+  getTaskStatusText, 
+  getPriorityColor, 
+  getPriorityText 
+} from '../../utils/status.utils';
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -28,7 +34,7 @@ export function TasksPage() {
   const selectedTaskId = searchParams.get('task');
   const taskDetailVisible = Boolean(selectedTaskId);
 
-  // Определяем, показывать ли только мои задачи
+  // Определяем, какие задачи показывать
   const isEmployee = user?.role === 'employee';
   const isManager = user?.role === 'manager' || user?.role === 'hr' || user?.role === 'admin';
 
@@ -39,14 +45,32 @@ export function TasksPage() {
       setLoading(true);
 
       if (isEmployee) {
-        // Для обычных сотрудников показываем только их задачи
-        const response = await tasksAPI.getByAssignee(user.id);
-        setTasks(response.data || []);
+        // Для обычных сотрудников нужен employeeId
+        if (!user.employeeId) return;
+        
+        // Показываем задачи, где они исполнители И создатели
+        const [assignedResponse, createdResponse] = await Promise.all([
+          tasksAPI.getByAssignee(user.employeeId),
+          tasksAPI.getByCreator(user.employeeId)
+        ]);
+        
+        const assignedTasks = assignedResponse.data || [];
+        const createdTasks = createdResponse.data || [];
+        
+        // Объединяем задачи и убираем дублирование по ID
+        const allTasks = [...assignedTasks];
+        createdTasks.forEach(createdTask => {
+          if (!allTasks.some(task => task.id === createdTask.id)) {
+            allTasks.push(createdTask);
+          }
+        });
+        
+        setTasks(allTasks);
         setPagination(prev => ({
           ...prev,
-          total: response.data?.length || 0,
+          total: allTasks.length,
           current: 1,
-          pageSize: response.data?.length || 10,
+          pageSize: allTasks.length || 10,
         }));
       } else {
         // Для руководителей показываем все задачи с пагинацией
@@ -73,48 +97,6 @@ export function TasksPage() {
   useEffect(() => {
     fetchTasks(pagination.current, pagination.pageSize);
   }, [filter, user]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'todo': return 'default';
-      case 'in_progress': return 'processing';
-      case 'review': return 'warning';
-      case 'done': return 'success';
-      case 'cancelled': return 'error';
-      default: return 'default';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'todo': return 'К выполнению';
-      case 'in_progress': return 'В работе';
-      case 'review': return 'На проверке';
-      case 'done': return 'Выполнено';
-      case 'cancelled': return 'Отменено';
-      default: return status;
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'red';
-      case 'high': return 'orange';
-      case 'medium': return 'blue';
-      case 'low': return 'green';
-      default: return 'default';
-    }
-  };
-
-  const getPriorityText = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'Критический';
-      case 'high': return 'Высокий';
-      case 'medium': return 'Средний';
-      case 'low': return 'Низкий';
-      default: return priority;
-    }
-  };
 
   const handleTaskClick = (taskId: number) => {
     setSearchParams({ task: taskId.toString() });
@@ -170,8 +152,8 @@ export function TasksPage() {
       key: 'status',
       width: '12%',
       render: (status: string) => (
-        <Tag color={getStatusColor(status)}>
-          {getStatusText(status)}
+        <Tag color={getTaskStatusColor(status)}>
+          {getTaskStatusText(status)}
         </Tag>
       ),
     },

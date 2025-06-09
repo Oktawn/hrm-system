@@ -3,10 +3,12 @@ export interface ICreateComment {
   type: 'task' | 'request';
   taskId?: number;
   requestId?: number;
+  attachments?: any;
 }
 
 export interface IUpdateComment {
   content: string;
+  attachments?: any;
 }
 
 export interface ICommentResponse {
@@ -18,6 +20,7 @@ export interface ICommentResponse {
     firstName: string;
     lastName: string;
   };
+  attachments?: any;
   created_at: Date;
   updated_at: Date;
 }

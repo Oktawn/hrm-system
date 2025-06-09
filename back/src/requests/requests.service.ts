@@ -7,18 +7,47 @@ export class RequestsService {
 
   async createRequest(requestData: ICreateRequest) {
     const { userId, ...request } = requestData;
+    
+    // Валидация для отпусков
+    if (['leave_vacation', 'leave_sick', 'leave_personal'].includes(request.type) && request.startDate && request.endDate) {
+      const startDate = new Date(request.startDate);
+      const endDate = new Date(request.endDate);
+      const currentDate = new Date();
+      
+      // Минимальный срок подачи заявки - 3 дня
+      const threeDaysFromNow = new Date();
+      threeDaysFromNow.setDate(currentDate.getDate() + 3);
+      threeDaysFromNow.setHours(0, 0, 0, 0);
+      
+      if (startDate < threeDaysFromNow) {
+        throw createHttpError(400, "Отпуск нельзя подавать раньше чем за 3 дня от текущей даты");
+      }
+      
+      // Для оплачиваемого отпуска максимум 30 дней
+      if (request.type === 'leave_vacation') {
+        const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        
+        if (diffDays > 30) {
+          throw createHttpError(400, "Оплачиваемый отпуск не может быть больше 30 дней");
+        }
+      }
+    }
+    
     const exEmployee = await employeeRepository.findOne({
       where: { id: userId },
     });
     if (!exEmployee) {
-      throw new Error("Employee not found");
+      throw createHttpError(404, "Employee not found");
     }
     const newRequest = requestRepository.create({
       ...request,
       creator: exEmployee
     });
     try {
-      await requestRepository.save(newRequest);
+      const savedRequest = await requestRepository.save(newRequest);
+      // Возвращаем сохраненный запрос с полными отношениями
+      return await this.getRequestById(savedRequest.id);
     } catch (error) {
       throw createHttpError(500, "Error creating request");
     }
@@ -64,7 +93,7 @@ export class RequestsService {
   async getRequestById(id: number) {
     const exRequest = await requestRepository.findOne({
       where: { id },
-      relations: ["creator"]
+      relations: ["creator", "assignee", "creator.user", "assignee.user"]
     });
     if (!exRequest) {
       throw createHttpError(404, "Request not found");
@@ -131,7 +160,8 @@ export class RequestsService {
   async getAllRequestsByEmployeeId(employeeId: string) {
     const requests = await requestRepository.find({
       where: { creator: { id: employeeId } },
-      relations: ["creator"]
+      relations: ["creator", "assignee", "creator.user", "assignee.user"],
+      order: { createdAt: "DESC" }
     });
     if (!requests) {
       throw createHttpError(404, "Requests not found");
@@ -142,7 +172,8 @@ export class RequestsService {
   async getRequestsByStatus(status: string) {
     const requests = await requestRepository.find({
       where: { status: RequestStatusEnum[status] },
-      relations: ["creator", "assignee"]
+      relations: ["creator", "assignee", "creator.user", "assignee.user"],
+      order: { createdAt: "DESC" }
     });
     if (!requests) {
       throw createHttpError(404, "Requests not found");

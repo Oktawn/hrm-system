@@ -5,6 +5,14 @@ import { PlusOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/auth.store';
 import requestsAPI, { type Request, type RequestFilter } from '../../services/requests.service';
 import RequestDetail from '../../components/RequestDetail/RequestDetail';
+import CreateRequestModal from '../../components/CreateRequestModal/CreateRequestModal';
+import { 
+  getRequestStatusColor, 
+  getRequestStatusText, 
+  getPriorityColor, 
+  getPriorityText, 
+  getRequestTypeText 
+} from '../../utils/status.utils';
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -16,6 +24,7 @@ export function RequestsPage() {
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<RequestFilter>({});
   const [searchParams, setSearchParams] = useSearchParams();
+  const [createRequestModalVisible, setCreateRequestModalVisible] = useState(false);
 
   // Получаем ID заявки из URL
   const selectedRequestId = searchParams.get('request');
@@ -34,7 +43,11 @@ export function RequestsPage() {
       
       if (isEmployee) {
         // Для обычных сотрудников показываем только их заявки
-        response = await requestsAPI.getByEmployee(user.id.toString());
+        if (!user.employeeId) {
+          console.error('EmployeeId отсутствует для сотрудника');
+          return;
+        }
+        response = await requestsAPI.getByEmployee(user.employeeId);
       } else {
         // Для руководителей показываем все заявки
         response = await requestsAPI.getAll(filter);
@@ -64,59 +77,6 @@ export function RequestsPage() {
     fetchRequests(); // Обновляем список заявок после изменения
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'warning';
-      case 'approved': return 'success';
-      case 'rejected': return 'error';
-      case 'completed': return 'success';
-      case 'cancelled': return 'default';
-      default: return 'default';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'pending': return 'На рассмотрении';
-      case 'approved': return 'Одобрено';
-      case 'rejected': return 'Отклонено';
-      case 'completed': return 'Выполнено';
-      case 'cancelled': return 'Отменено';
-      default: return status;
-    }
-  };
-
-  const getTypeText = (type: string) => {
-    switch (type) {
-      case 'document': return 'Документ';
-      case 'certificate': return 'Справка';
-      case 'leave_vacation': return 'Отпуск';
-      case 'leave_sick': return 'Больничный';
-      case 'leave_personal': return 'Личный отпуск';
-      default: return type;
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'red';
-      case 'high': return 'orange';
-      case 'medium': return 'blue';
-      case 'low': return 'green';
-      default: return 'default';
-    }
-  };
-
-  const getPriorityText = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'Критический';
-      case 'high': return 'Высокий';
-      case 'medium': return 'Средний';
-      case 'low': return 'Низкий';
-      default: return priority;
-    }
-  };
-
   const columns = [
     {
       title: '№',
@@ -136,7 +96,7 @@ export function RequestsPage() {
       dataIndex: 'type',
       key: 'type',
       width: '15%',
-      render: (type: string) => getTypeText(type),
+      render: (type: string) => getRequestTypeText(type),
     },
     {
       title: 'Описание',
@@ -157,8 +117,8 @@ export function RequestsPage() {
       key: 'status',
       width: '12%',
       render: (status: string) => (
-        <Tag color={getStatusColor(status)}>
-          {getStatusText(status)}
+        <Tag color={getRequestStatusColor(status)}>
+          {getRequestStatusText(status)}
         </Tag>
       ),
     },
@@ -205,7 +165,11 @@ export function RequestsPage() {
             <Title level={2}>
               {isEmployee ? 'Мои заявки' : 'Заявки'}
             </Title>
-            <Button type="primary" icon={<PlusOutlined />}>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={() => setCreateRequestModalVisible(true)}
+            >
               Создать заявку
             </Button>
           </div>
@@ -280,6 +244,15 @@ export function RequestsPage() {
           visible={requestDetailVisible}
           onClose={closeRequestDetail}
           onRequestUpdate={handleRequestUpdate}
+        />
+
+        <CreateRequestModal
+          visible={createRequestModalVisible}
+          onClose={() => setCreateRequestModalVisible(false)}
+          onRequestCreated={() => {
+            setCreateRequestModalVisible(false);
+            fetchRequests();
+          }}
         />
       </Content>
     </Layout>

@@ -3,6 +3,7 @@ import tasksService, { type Task } from '../../services/tasks.service';
 import Comments from '../Comments/Comments';
 import StatusSelector from '../StatusSelector/StatusSelector';
 import { useAuthStore } from '../../stores/auth.store';
+import { getPriorityCSSColor, getPriorityText } from '../../utils/status.utils';
 import './TasksTable.css';
 
 interface TasksTableProps {
@@ -17,10 +18,10 @@ const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) => {
   const { user: currentUser } = useAuthStore();
 
   const canChangeStatus = (task: Task) => {
-    if (!currentUser) return false;
+    if (!currentUser || !currentUser.employeeId) return false;
 
-    const isCreator = task.creator.id === currentUser.id;
-    const isAssignee = task.assignees.some(assignee => assignee.id === currentUser.id);
+    const isCreator = task.creator.id === currentUser.employeeId;
+    const isAssignee = task.assignees.some(assignee => assignee.id === currentUser.employeeId);
     const isManager = currentUser.role === 'admin' || currentUser.role === 'hr' || currentUser.role === 'manager';
 
     return isCreator || isAssignee || isManager;
@@ -51,26 +52,6 @@ const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) => {
       newExpanded.add(taskId);
     }
     setExpandedRows(newExpanded);
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'low': return '#28a745';
-      case 'medium': return '#ffc107';
-      case 'high': return '#fd7e14';
-      case 'critical': return '#dc3545';
-      default: return '#6c757d';
-    }
-  };
-
-  const getPriorityLabel = (priority: string) => {
-    switch (priority) {
-      case 'low': return 'Низкий';
-      case 'medium': return 'Средний';
-      case 'high': return 'Высокий';
-      case 'critical': return 'Критический';
-      default: return priority;
-    }
   };
 
   const formatDate = (dateString: string) => {
@@ -120,9 +101,9 @@ const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) => {
                   <td>
                     <span
                       className="priority-badge"
-                      style={{ backgroundColor: getPriorityColor(task.priority) }}
+                      style={{ backgroundColor: getPriorityCSSColor(task.priority) }}
                     >
-                      {getPriorityLabel(task.priority)}
+                      {getPriorityText(task.priority)}
                     </span>
                   </td>
                   <td>

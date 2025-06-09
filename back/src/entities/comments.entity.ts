@@ -27,6 +27,9 @@ export class CommentsEntity {
   @ManyToOne(() => EmployeesEntity, employee => employee.comments, { onDelete: 'CASCADE' })
   author: EmployeesEntity;
 
+  @Column({ type: "jsonb", nullable: true })
+  attachments: object;
+
   @CreateDateColumn()
   created_at: Date;
 

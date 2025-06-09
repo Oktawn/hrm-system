@@ -56,7 +56,7 @@ export const upload = multer({
 });
 
 // Middleware для обработки множественных файлов
-export const uploadMultiple = upload.array('files', 5); // максимум 5 файлов
+export const uploadMultiple = upload.array('attachments', 5); // максимум 5 файлов
 
 // Middleware для одного файла
 export const uploadSingle = upload.single('file');

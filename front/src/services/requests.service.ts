@@ -87,6 +87,29 @@ class RequestsService {
     return response.data;
   }
 
+  async createWithFiles(requestData: CreateRequestData, files: File[]): Promise<{ success: boolean; data: Request; message?: string }> {
+    const formData = new FormData();
+    
+    // Добавляем данные заявки
+    Object.entries(requestData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, value.toString());
+      }
+    });
+    
+    // Добавляем файлы
+    files.forEach((file) => {
+      formData.append('attachments', file);
+    });
+
+    const response = await api.post('/requests/create', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
   async update(id: number, requestData: Partial<CreateRequestData>): Promise<{ success: boolean; data: Request; message?: string }> {
     const response = await api.put(`/requests/update/${id}`, { id, ...requestData });
     return response.data;

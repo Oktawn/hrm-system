@@ -9,6 +9,7 @@ export interface IComment {
     firstName: string;
     lastName: string;
   };
+  attachments?: any[];
   created_at: string;
   updated_at: string;
 }
@@ -18,16 +19,42 @@ export interface ICreateComment {
   type: 'task' | 'request';
   taskId?: number;
   requestId?: number;
+  attachments?: any[];
 }
 
 export interface IUpdateComment {
   content: string;
+  attachments?: any[];
 }
 
 class CommentsService {
   async createComment(commentData: ICreateComment): Promise<IComment> {
     const response = await api.post('/comments', commentData);
     return response.data;
+  }
+
+  async createCommentWithFiles(commentData: ICreateComment, files: File[]): Promise<IComment> {
+    const formData = new FormData();
+    
+    // Добавляем данные комментария
+    Object.entries(commentData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, value.toString());
+      }
+    });
+    
+    // Добавляем файлы
+    files.forEach((file) => {
+      formData.append('attachments', file);
+    });
+
+    const response = await api.post('/comments', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return response.data.success ? response.data.data : response.data;
   }
 
   async getCommentsByTask(taskId: number): Promise<IComment[]> {

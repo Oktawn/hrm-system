@@ -9,6 +9,12 @@ import {
   ExclamationCircleOutlined,
   EyeOutlined,
 } from '@ant-design/icons';
+import { 
+  getTaskStatusColor,
+  getTaskStatusText, 
+  getPriorityColor, 
+  getPriorityText 
+} from '../../utils/status.utils';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import employeesAPI, { type EmployeeStats } from '../../services/employees.service';
@@ -72,12 +78,12 @@ export function HomePage() {
         }
 
         // Загружаем заявки в зависимости от роли пользователя
-        if (user && user.id) {
+        if (user && user.employeeId) {
           try {
             let requestsData;
             if (user.role === 'employee') {
               // Для обычных сотрудников загружаем только их заявки
-              requestsData = await requestsAPI.getByEmployee(user.id.toString());
+              requestsData = await requestsAPI.getByEmployee(user.employeeId);
             } else {
               // Для руководителей загружаем последние заявки
               requestsData = await requestsAPI.getAll({ limit: 5 });
@@ -89,9 +95,9 @@ export function HomePage() {
         }
 
         // Загружаем задачи пользователя, если он не администратор
-        if (user && user.id && user.role !== 'ADMIN') {
+        if (user && user.employeeId && user.role !== 'ADMIN') {
           try {
-            const userTasksData = await tasksAPI.getByAssignee(user.id.toString());
+            const userTasksData = await tasksAPI.getByAssignee(user.employeeId);
             setUserTasks(userTasksData.data || []);
           } catch (error) {
             console.warn('Ошибка загрузки задач пользователя:', error);
@@ -108,62 +114,6 @@ export function HomePage() {
 
     fetchData();
   }, [user]);
-
-  const getTaskStatusColor = (status: string) => {
-    switch (status) {
-      case 'todo':
-        return 'default';
-      case 'in_progress':
-        return 'processing';
-      case 'done':
-        return 'success';
-      default:
-        return 'default';
-    }
-  };
-
-  const getTaskStatusText = (status: string) => {
-    switch (status) {
-      case 'todo':
-        return 'К выполнению';
-      case 'in_progress':
-        return 'В работе';
-      case 'done':
-        return 'Выполнено';
-      default:
-        return status;
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical':
-        return 'red';
-      case 'high':
-        return 'orange';
-      case 'medium':
-        return 'blue';
-      case 'low':
-        return 'green';
-      default:
-        return 'default';
-    }
-  };
-
-  const getPriorityText = (priority: string) => {
-    switch (priority) {
-      case 'critical':
-        return 'Критический';
-      case 'high':
-        return 'Высокий';
-      case 'medium':
-        return 'Средний';
-      case 'low':
-        return 'Низкий';
-      default:
-        return priority;
-    }
-  };
 
   const getRequestStatusColor = (status: string) => {
     switch (status) {

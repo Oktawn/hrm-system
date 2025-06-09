@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { commentsService, type IComment, type ICreateComment } from '../../services/comments.service';
 import { useAuthStore } from '../../stores/auth.store';
+import SimpleFileUpload from '../SimpleFileUpload/SimpleFileUpload';
+import { Button, Typography } from 'antd';
+import { DownloadOutlined, EyeOutlined } from '@ant-design/icons';
 import './Comments.css';
+
+const { Text } = Typography;
 
 interface CommentsProps {
   type: 'task' | 'request';
@@ -13,6 +18,7 @@ interface CommentsProps {
 const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose }) => {
   const [comments, setComments] = useState<IComment[]>([]);
   const [newComment, setNewComment] = useState('');
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingComment, setEditingComment] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
@@ -49,9 +55,16 @@ const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose })
         ...(type === 'task' ? { taskId: itemId } : { requestId: itemId })
       };
 
-      const createdComment = await commentsService.createComment(commentData);
+      let createdComment;
+      if (attachments.length > 0) {
+        createdComment = await commentsService.createCommentWithFiles(commentData, attachments);
+      } else {
+        createdComment = await commentsService.createComment(commentData);
+      }
+
       setComments([...comments, createdComment]);
       setNewComment('');
+      setAttachments([]);
     } catch (error) {
       console.error('Error creating comment:', error);
     }
@@ -98,6 +111,26 @@ const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose })
            currentUser?.role === 'admin' || 
            currentUser?.role === 'hr' || 
            currentUser?.role === 'manager';
+  };
+
+  const handleDownload = (filename: string) => {
+    window.open(`/api/uploads/download/${filename}`, '_blank');
+  };
+
+  const handleView = (filename: string) => {
+    window.open(`/api/uploads/view/${filename}`, '_blank');
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const isImage = (mimetype?: string) => {
+    return mimetype && mimetype.startsWith('image/');
   };
 
   if (!isVisible) return null;
@@ -154,6 +187,51 @@ const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose })
                     ) : (
                       <div className="comment-content-wrapper">
                         <div className="comment-text">{comment.content}</div>
+                        
+                        {/* Отображение вложений */}
+                        {comment.attachments && comment.attachments.length > 0 && (
+                          <div className="comment-attachments">
+                            <Text strong style={{ fontSize: '12px', color: '#666' }}>
+                              Вложения:
+                            </Text>
+                            <div style={{ marginTop: 8 }}>
+                              {comment.attachments.map((attachment: any, index: number) => (
+                                <div key={index} className="attachment-item" style={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  marginBottom: 4,
+                                  padding: '4px 8px',
+                                  backgroundColor: '#f5f5f5',
+                                  borderRadius: '4px',
+                                  fontSize: '12px'
+                                }}>
+                                  <span style={{ flex: 1, marginRight: 8 }}>
+                                    {attachment.originalName} ({formatFileSize(attachment.size)})
+                                  </span>
+                                  <div style={{ display: 'flex', gap: 4 }}>
+                                    {isImage(attachment.mimetype) && (
+                                      <Button
+                                        type="text"
+                                        size="small"
+                                        icon={<EyeOutlined />}
+                                        onClick={() => handleView(attachment.filename)}
+                                        title="Просмотр"
+                                      />
+                                    )}
+                                    <Button
+                                      type="text"
+                                      size="small"
+                                      icon={<DownloadOutlined />}
+                                      onClick={() => handleDownload(attachment.filename)}
+                                      title="Скачать"
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
                         {canEditComment(comment) && (
                           <div className="comment-actions">
                             <button 
@@ -185,6 +263,18 @@ const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose })
               placeholder="Добавить комментарий..."
               className="comment-textarea"
             />
+            
+            {/* Компонент загрузки файлов */}
+            <div style={{ marginTop: 12, marginBottom: 12 }}>
+              <SimpleFileUpload
+                files={attachments}
+                onFilesChange={setAttachments}
+                maxFiles={3}
+                maxSize={5 * 1024 * 1024} // 5MB
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+              />
+            </div>
+            
             <button 
               onClick={handleAddComment}
               className="add-comment-button"

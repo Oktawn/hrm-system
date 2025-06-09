@@ -2,21 +2,51 @@ import { Request, Response } from "express";
 import { CommentsService } from "./comments.service";
 import { ICreateComment, IUpdateComment } from "./comments.interface";
 import { AuthenticatedRequest } from "../auth/auth.interface";
+import { uploadMultiple, createAttachment } from '../middleware/upload.middleware';
 
 const commentsService = new CommentsService();
 
 export class CommentsController {
 
   async createComment(req: AuthenticatedRequest, res: Response) {
-    try {
-      const commentData: ICreateComment = req.body;
-      const user = req.user;
+    // Используем middleware для обработки файлов
+    uploadMultiple(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({
+          success: false,
+          message: err.message
+        });
+      }
 
-      const comment = await commentsService.createComment(commentData, user);
-      res.status(201).json(comment);
-    } catch (error) {
-      res.status(error.status || 500).json({ message: error.message });
-    }
+      try {
+        const commentData: ICreateComment = req.body;
+        const user = req.user;
+
+        // Обрабатываем загруженные файлы
+        let attachments = [];
+        if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+          attachments = (req.files as Express.Multer.File[]).map(createAttachment);
+        }
+
+        // Добавляем attachments к данным комментария
+        const commentDataWithAttachments = {
+          ...commentData,
+          attachments: attachments.length > 0 ? attachments : undefined
+        };
+
+        const comment = await commentsService.createComment(commentDataWithAttachments, user);
+        res.status(201).json({
+          success: true,
+          data: comment,
+          message: 'Комментарий успешно создан'
+        });
+      } catch (error) {
+        res.status(error.status || 500).json({ 
+          success: false,
+          message: error.message 
+        });
+      }
+    });
   }
 
   async getCommentsByTask(req: AuthenticatedRequest, res: Response) {
