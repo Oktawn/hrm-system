@@ -32,6 +32,7 @@ export class CommentsService {
       author: employee,
       task: commentData.type === 'task' ? { id: commentData.taskId } : null,
       request: commentData.type === 'request' ? { id: commentData.requestId } : null,
+      attachments: commentData.attachments || null,
     });
 
     const savedComment = await commentRepository.save(comment);
