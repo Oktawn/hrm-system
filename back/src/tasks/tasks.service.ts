@@ -44,25 +44,25 @@ export class TasksService {
   async updateTask(taskData: IUpdateTask, userId: string) {
     const { idTask, ...data } = taskData
     const exTask = await this.getTaskById(idTask);
-    
+
     // Проверяем права на редактирование
-    const exUser = await employeeRepository.findOne({ 
-      where: { user: { id: userId } }, 
-      relations: ["user"] 
+    const exUser = await employeeRepository.findOne({
+      where: { user: { id: userId } },
+      relations: ["user"]
     });
-    
+
     if (!exUser) {
       throw createError(404, "User not found");
     }
-    
+
     const isCreator = exTask.creator.id === exUser.id;
     const isAssignee = exTask.assignees.some(assignee => assignee.id === exUser.id);
     const isManager = ['admin', 'hr', 'manager'].includes(exUser.user.role);
-    
+
     if (!isCreator && !isAssignee && !isManager) {
       throw createError(403, "Forbidden: You don't have permission to edit this task");
     }
-    
+
     // Обрабатываем assigneesId отдельно
     if (data.assigneesId) {
       const exAssignees = await employeeRepository.findBy({ id: In(data.assigneesId) });
@@ -72,7 +72,7 @@ export class TasksService {
       exTask.assignees = exAssignees;
       delete data.assigneesId; // Удаляем из data, так как уже обработали
     }
-    
+
     // Обновляем остальные поля
     for (const key in data) {
       if (data[key] !== undefined) {
@@ -83,7 +83,7 @@ export class TasksService {
         }
       }
     }
-    
+
     try {
       const savedTask = await taskRepository.save(exTask);
       return await this.getTaskById(savedTask.id); // Возвращаем полную задачу с relations
@@ -119,15 +119,21 @@ export class TasksService {
 
   async getAllTasks(filter: ITaskFilter) {
     const data = { ...filter };
-    
+
     // Обеспечиваем, что page и limit являются числами
     const pageNum = Number(data.page) || 1;
     const limitNum = Number(data.limit) || 10;
-    
-    // Удаляем page и limit из data для фильтрации
+
+    // Извлекаем параметры сортировки
+    const sortBy = data.sortBy;
+    const sortOrder = data.sortOrder || 'ASC';
+
+    // Удаляем page, limit и sort параметры из data для фильтрации
     delete data.page;
     delete data.limit;
-    
+    delete data.sortBy;
+    delete data.sortOrder;
+
     const queryB = taskRepository.createQueryBuilder("task");
     queryB.leftJoinAndSelect("task.assignees", "assignees");
     queryB.leftJoinAndSelect("task.creator", "creator");
@@ -160,6 +166,16 @@ export class TasksService {
       queryB.andWhere("assignees.id IN (:...assigneesId)",
         { assigneesId: data.assigneesId });
     }
+
+    if (sortBy) {
+      const allowedSortFields = ['id', 'deadline', 'createdAt'];
+      const sortField = allowedSortFields.includes(sortBy) ? `task.${sortBy}` : 'task.createdAt';
+      queryB.orderBy(sortField, sortOrder);
+    } else {
+      // Сортировка по умолчанию
+      queryB.orderBy("task.createdAt", "DESC");
+    }
+
     queryB.skip((pageNum - 1) * limitNum).take(limitNum);
     const [tasks, total] = await queryB.getManyAndCount();
     return {

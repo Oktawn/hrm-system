@@ -6,11 +6,11 @@ import { useAuthStore } from '../../stores/auth.store';
 import tasksAPI, { type Task, type TaskFilter } from '../../services/tasks.service';
 import TaskDetail from '../../components/TaskDetail/TaskDetail';
 import CreateTaskModal from '../../components/CreateTaskModal/CreateTaskModal';
-import { 
-  getTaskStatusColor, 
-  getTaskStatusText, 
-  getPriorityColor, 
-  getPriorityText 
+import {
+  getTaskStatusColor,
+  getTaskStatusText,
+  getPriorityColor,
+  getPriorityText
 } from '../../utils/status.utils';
 
 const { Content } = Layout;
@@ -30,52 +30,75 @@ export function TasksPage() {
     total: 0,
   });
 
-  // Получаем ID задачи из URL
   const selectedTaskId = searchParams.get('task');
   const taskDetailVisible = Boolean(selectedTaskId);
 
-  // Определяем, какие задачи показывать
   const isEmployee = user?.role === 'employee';
   const isManager = user?.role === 'manager' || user?.role === 'hr' || user?.role === 'admin';
 
-  const fetchTasks = async (page = 1, pageSize = 10) => {
+  const fetchTasks = async (page = 1, pageSize = 10, currentFilter = filter) => {
     if (!user) return;
 
     try {
       setLoading(true);
 
       if (isEmployee) {
-        // Для обычных сотрудников нужен employeeId
         if (!user.employeeId) return;
-        
-        // Показываем задачи, где они исполнители И создатели
+
         const [assignedResponse, createdResponse] = await Promise.all([
           tasksAPI.getByAssignee(user.employeeId),
           tasksAPI.getByCreator(user.employeeId)
         ]);
-        
+
         const assignedTasks = assignedResponse.data || [];
         const createdTasks = createdResponse.data || [];
-        
-        // Объединяем задачи и убираем дублирование по ID
+
         const allTasks = [...assignedTasks];
         createdTasks.forEach(createdTask => {
           if (!allTasks.some(task => task.id === createdTask.id)) {
             allTasks.push(createdTask);
           }
         });
-        
-        setTasks(allTasks);
+
+        // Применяем клиентскую сортировку для сотрудников
+        let sortedTasks = [...allTasks];
+        if (currentFilter.sortBy && currentFilter.sortOrder) {
+          const allowedSortFields = ['id', 'title', 'deadline', 'createdAt'];
+          if (allowedSortFields.includes(currentFilter.sortBy)) {
+            sortedTasks.sort((a, b) => {
+              const field = currentFilter.sortBy!;
+              let aValue: any = a[field as keyof Task];
+              let bValue: any = b[field as keyof Task];
+
+              // Обрабатываем даты
+              if (field === 'deadline' || field === 'createdAt') {
+                aValue = aValue ? new Date(aValue).getTime() : 0;
+                bValue = bValue ? new Date(bValue).getTime() : 0;
+              }
+
+              // Обрабатываем строки
+              if (field === 'title' && typeof aValue === 'string' && typeof bValue === 'string') {
+                aValue = aValue.toLowerCase();
+                bValue = bValue.toLowerCase();
+              }
+
+              if (aValue < bValue) return currentFilter.sortOrder === 'ASC' ? -1 : 1;
+              if (aValue > bValue) return currentFilter.sortOrder === 'ASC' ? 1 : -1;
+              return 0;
+            });
+          }
+        }
+
+        setTasks(sortedTasks);
         setPagination(prev => ({
           ...prev,
-          total: allTasks.length,
+          total: sortedTasks.length,
           current: 1,
-          pageSize: allTasks.length || 10,
+          pageSize: sortedTasks.length || 10,
         }));
       } else {
-        // Для руководителей показываем все задачи с пагинацией
         const filterWithPagination = {
-          ...filter,
+          ...currentFilter,
           page,
           limit: pageSize,
         };
@@ -95,7 +118,7 @@ export function TasksPage() {
   };
 
   useEffect(() => {
-    fetchTasks(pagination.current, pagination.pageSize);
+    fetchTasks(pagination.current, pagination.pageSize, filter);
   }, [filter, user]);
 
   const handleTaskClick = (taskId: number) => {
@@ -107,7 +130,33 @@ export function TasksPage() {
   };
 
   const handleTaskUpdate = () => {
-    fetchTasks(pagination.current, pagination.pageSize); // Обновляем список задач после изменения
+    fetchTasks(pagination.current, pagination.pageSize, filter);
+  };
+
+  const handleTableChange = (pagination: any, _filters: any, sorter: any) => {
+    let newSortField = '';
+    let newSortOrder: 'ascend' | 'descend' | null = null;
+    
+    if (sorter && sorter.field && sorter.order) {
+      newSortField = sorter.field;
+      newSortOrder = sorter.order;
+    }
+    
+    const newPagination = {
+      current: pagination.current,
+      pageSize: pagination.pageSize,
+      total: pagination.total,
+    };
+    setPagination(newPagination);
+    
+    // Обновляем фильтр с параметрами сортировки
+    const updatedFilter: TaskFilter = {
+      ...filter,
+      sortBy: newSortField || undefined,
+      sortOrder: newSortOrder === 'ascend' ? 'ASC' : newSortOrder === 'descend' ? 'DESC' : undefined,
+    };
+    
+    setFilter(updatedFilter);
   };
 
   const columns = [
@@ -116,6 +165,7 @@ export function TasksPage() {
       dataIndex: 'id',
       key: 'id',
       width: '8%',
+      sorter: true,
       render: (id: number) => `#${id}`,
     },
     {
@@ -123,6 +173,7 @@ export function TasksPage() {
       dataIndex: 'title',
       key: 'title',
       width: '20%',
+      sorter: true,
     },
     {
       title: 'Описание',
@@ -173,6 +224,7 @@ export function TasksPage() {
       dataIndex: 'deadline',
       key: 'deadline',
       width: '12%',
+      sorter: true,
       render: (date: string) => date ? new Date(date).toLocaleDateString() : '—',
     },
     {
@@ -180,6 +232,7 @@ export function TasksPage() {
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: '12%',
+      sorter: true,
       render: (date: string) => new Date(date).toLocaleDateString(),
     },
     {
@@ -253,6 +306,7 @@ export function TasksPage() {
             dataSource={tasks}
             loading={loading}
             rowKey="id"
+            onChange={handleTableChange}
             onRow={(record) => ({
               onClick: () => handleTaskClick(record.id),
               style: { cursor: 'pointer' }
@@ -266,11 +320,11 @@ export function TasksPage() {
               showTotal: (total) => `Всего: ${total} задач`,
               onChange: (page, pageSize) => {
                 setPagination(prev => ({ ...prev, current: page, pageSize }));
-                fetchTasks(page, pageSize);
+                fetchTasks(page, pageSize, filter);
               },
               onShowSizeChange: (_, size) => {
                 setPagination(prev => ({ ...prev, current: 1, pageSize: size }));
-                fetchTasks(1, size);
+                fetchTasks(1, size, filter);
               },
             }}
           />
@@ -288,7 +342,7 @@ export function TasksPage() {
           onClose={() => setCreateTaskModalVisible(false)}
           onTaskCreated={() => {
             setCreateTaskModalVisible(false);
-            fetchTasks(pagination.current, pagination.pageSize); // Обновляем список задач после создания
+            fetchTasks(pagination.current, pagination.pageSize, filter);
           }}
         />
       </Content>

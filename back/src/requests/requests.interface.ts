@@ -35,4 +35,6 @@ export interface IRequestFilter {
   createdAtTo?: Date;
   page?: number;
   limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
 }

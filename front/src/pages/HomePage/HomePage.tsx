@@ -13,7 +13,9 @@ import {
   getTaskStatusColor,
   getTaskStatusText, 
   getPriorityColor, 
-  getPriorityText 
+  getPriorityText, 
+  getRequestStatusColor,
+  getRequestStatusText
 } from '../../utils/status.utils';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
@@ -62,7 +64,7 @@ export function HomePage() {
         setTasksStats(tasksStatsData);
         setRecentTasks(recentTasksData);
 
-        // Загружаем статистику по отделам
+        // статистика по отделам
         try {
           const departmentsData = await departmentsAPI.getAll();
           if (departmentsData.data && Array.isArray(departmentsData.data)) {
@@ -77,15 +79,13 @@ export function HomePage() {
           console.warn('Ошибка загрузки отделов:', error);
         }
 
-        // Загружаем заявки в зависимости от роли пользователя
+        
         if (user && user.employeeId) {
           try {
             let requestsData;
             if (user.role === 'employee') {
-              // Для обычных сотрудников загружаем только их заявки
               requestsData = await requestsAPI.getByEmployee(user.employeeId);
             } else {
-              // Для руководителей загружаем последние заявки
               requestsData = await requestsAPI.getAll({ limit: 5 });
             }
             setRecentRequests(requestsData.data || []);
@@ -94,8 +94,7 @@ export function HomePage() {
           }
         }
 
-        // Загружаем задачи пользователя, если он не администратор
-        if (user && user.employeeId && user.role !== 'ADMIN') {
+        if (user && user.employeeId && user.role !== 'admin') {
           try {
             const userTasksData = await tasksAPI.getByAssignee(user.employeeId);
             setUserTasks(userTasksData.data || []);
@@ -115,31 +114,6 @@ export function HomePage() {
     fetchData();
   }, [user]);
 
-  const getRequestStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'warning';
-      case 'approved':
-        return 'success';
-      case 'rejected':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  const getRequestStatusText = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'На рассмотрении';
-      case 'approved':
-        return 'Одобрено';
-      case 'rejected':
-        return 'Отклонено';
-      default:
-        return status;
-    }
-  };
 
   if (loading) {
     return (

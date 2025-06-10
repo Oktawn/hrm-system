@@ -4,6 +4,7 @@ import { PlusOutlined, SearchOutlined, UserOutlined, EyeOutlined, EditOutlined }
 import { useAuthStore } from '../../stores/auth.store';
 import employeesAPI, { type Employee } from '../../services/employees.service';
 import { debounce } from 'lodash';
+import { getRoleColor, getRoleText } from '../../utils/status.utils';
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
@@ -44,8 +45,7 @@ export function EmployeesPage() {
       const employeesData = response.data.data || [];
       setEmployees(employeesData);
       setTotal(response.data.total || 0);
-      
-      // Загружаем всех сотрудников только для фильтров отделов и должностей
+
       if (!filters || Object.keys(filters).length === 0) {
         const allResponse = await employeesAPI.getAll({ limit: 1000 });
         setAllEmployees(allResponse.data.data || []);
@@ -58,17 +58,15 @@ export function EmployeesPage() {
     }
   }, [currentPage, pageSize]);
 
-  // Debounced search function
+
   const debouncedSearch = useCallback(
     debounce((searchValue: string, deptId?: string, posId?: string, isActive?: boolean) => {
       const filters: any = {};
-      
+
       if (searchValue.trim()) {
-        // Проверяем, является ли поиск email
         if (searchValue.includes('@')) {
           filters.email = searchValue.trim();
         } else {
-          // Разделяем поиск по имени и фамилии
           const searchTerms = searchValue.trim().split(' ');
           if (searchTerms.length === 1) {
             filters.firstName = searchTerms[0];
@@ -78,12 +76,12 @@ export function EmployeesPage() {
           }
         }
       }
-      
+
       if (deptId) filters.departmentId = deptId;
       if (posId) filters.positionId = posId;
       if (isActive !== undefined) filters.isActive = isActive;
-      
-      setCurrentPage(1); // Сбрасываем на первую страницу при поиске
+
+      setCurrentPage(1); 
       fetchEmployees(Object.keys(filters).length > 0 ? filters : undefined);
     }, 500),
     [fetchEmployees]
@@ -93,10 +91,8 @@ export function EmployeesPage() {
     fetchEmployees();
   }, [fetchEmployees]);
 
-  // Обновляем данные при изменении страницы или размера страницы
   useEffect(() => {
     if (currentPage > 1 || pageSize !== 25) {
-      // Применяем текущие фильтры при изменении пагинации
       debouncedSearch(searchText, departmentFilter, positionFilter, activeFilter);
     }
   }, [currentPage, pageSize]);
@@ -106,26 +102,6 @@ export function EmployeesPage() {
   }, [searchText, departmentFilter, positionFilter, activeFilter, debouncedSearch]);
 
   const filteredEmployees = employees;
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'ADMIN': return 'red';
-      case 'HR': return 'purple';
-      case 'MANAGER': return 'blue';
-      case 'EMPLOYEE': return 'green';
-      default: return 'default';
-    }
-  };
-
-  const getRoleText = (role: string) => {
-    switch (role) {
-      case 'ADMIN': return 'Администратор';
-      case 'HR': return 'HR';
-      case 'MANAGER': return 'Менеджер';
-      case 'EMPLOYEE': return 'Сотрудник';
-      default: return role;
-    }
-  };
 
   const showEmployeeDetails = (employee: Employee) => {
     setSelectedEmployee(employee);
@@ -310,7 +286,7 @@ export function EmployeesPage() {
               total={total}
               showSizeChanger={false}
               showQuickJumper
-              showTotal={(total, range) => 
+              showTotal={(total, range) =>
                 `${range[0]}-${range[1]} из ${total} сотрудников`
               }
               onChange={(page) => {

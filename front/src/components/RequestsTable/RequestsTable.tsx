@@ -175,6 +175,11 @@ const RequestsTable: React.FC<RequestsTableProps> = ({ requests, onRequestUpdate
                               <strong>Продолжительность:</strong> {request.duration} дней
                             </div>
                           )}
+                          {request.attachments && request.attachments.length > 0 && (
+                            <div className="meta-item">
+                              <strong>Файлы:</strong> {request.attachments.length} прикреплено
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>

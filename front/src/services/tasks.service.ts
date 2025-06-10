@@ -52,6 +52,8 @@ export interface TaskFilter {
   deadline?: string;
   creatorId?: string;
   assigneesId?: string[];
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
 }
 
 export interface CreateTaskData {
@@ -120,6 +122,33 @@ class TasksService {
 
   async create(taskData: CreateTaskData): Promise<{ success: boolean; data: Task; message?: string }> {
     const response = await api.post('/tasks/create', taskData);
+    return response.data;
+  }
+
+  async createWithFiles(taskData: CreateTaskData, files: File[]): Promise<{ success: boolean; data: Task; message?: string }> {
+    const formData = new FormData();
+    
+    // Добавляем данные задачи
+    Object.entries(taskData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        if (Array.isArray(value)) {
+          value.forEach(v => formData.append(key, v.toString()));
+        } else {
+          formData.append(key, value.toString());
+        }
+      }
+    });
+    
+    // Добавляем файлы
+    files.forEach((file) => {
+      formData.append('attachments', file);
+    });
+
+    const response = await api.post('/tasks/create', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   }
 

@@ -91,7 +91,6 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
         assignees: response.data.assignees.map(a => a.id)
       });
     } catch (error) {
-      console.error('Ошибка загрузки задачи:', error);
       message.error('Не удалось загрузить задачу');
     } finally {
       setLoading(false);
@@ -363,7 +362,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                     <div style={{ marginTop: 8 }}>
                       <FileUpload
                         value={task.attachments}
-                        onChange={() => {}} // Только для просмотра в режиме чтения
+                        onChange={() => { }}
                         disabled={true}
                         showDownload={true}
                       />
@@ -395,7 +394,6 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                       description={
                         <div>
                           <div>{comment.content}</div>
-                          {/* Отображение вложений */}
                           {comment.attachments && comment.attachments.length > 0 && (
                             <div style={{ marginTop: 8 }}>
                               <Text strong style={{ fontSize: '12px', color: '#666' }}>
@@ -403,9 +401,9 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                               </Text>
                               <div style={{ marginTop: 4 }}>
                                 {comment.attachments.map((attachment: any, index: number) => (
-                                  <div key={index} style={{ 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
+                                  <div key={index} style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
                                     marginBottom: 4,
                                     padding: '4px 8px',
                                     backgroundColor: '#f5f5f5',
@@ -454,7 +452,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                     rows={3}
                   />
                 </div>
-                
+
                 <div style={{ marginBottom: 12 }}>
                   <SimpleFileUpload
                     files={commentAttachments}
@@ -464,9 +462,9 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
                   />
                 </div>
-                
-                <Button 
-                  type="primary" 
+
+                <Button
+                  type="primary"
                   onClick={handleAddComment}
                   disabled={!newComment.trim()}
                 >

@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Drawer, 
-  Typography, 
-  Tag, 
-  Space, 
-  Button, 
-  Select, 
-  Card, 
-  Divider, 
-  List, 
-  Avatar, 
+import {
+  Drawer,
+  Typography,
+  Tag,
+  Space,
+  Button,
+  Select,
+  Card,
+  Divider,
+  List,
+  Avatar,
   Input,
   Form,
   message
 } from 'antd';
-import { 
-  UserOutlined, 
-  ClockCircleOutlined, 
+import {
+  UserOutlined,
+  ClockCircleOutlined,
   EditOutlined,
   SaveOutlined,
   CloseOutlined,
@@ -29,7 +29,11 @@ import employeesAPI, { type Employee } from '../../services/employees.service';
 import { commentsService, type IComment, type ICreateComment } from '../../services/comments.service';
 import StatusSelector from '../StatusSelector/StatusSelector';
 import SimpleFileUpload from '../SimpleFileUpload/SimpleFileUpload';
-import { getPriorityColor, getPriorityText, getRequestTypeText } from '../../utils/status.utils';
+import {
+  getPriorityColor, getPriorityText,
+  getRequestTypeText,
+  getRequestStatusText, getRequestStatusColor
+} from '../../utils/status.utils';
 import './RequestDetail.css';
 
 const { Title, Text } = Typography;
@@ -43,11 +47,11 @@ interface RequestDetailProps {
   onRequestUpdate?: () => void;
 }
 
-export const RequestDetail: React.FC<RequestDetailProps> = ({ 
-  requestId, 
-  visible, 
-  onClose, 
-  onRequestUpdate 
+export const RequestDetail: React.FC<RequestDetailProps> = ({
+  requestId,
+  visible,
+  onClose,
+  onRequestUpdate
 }) => {
   const { user } = useAuthStore();
   const [request, setRequest] = useState<Request | null>(null);
@@ -69,13 +73,12 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
 
   const fetchRequestDetails = async () => {
     if (!requestId) return;
-    
+
     try {
       setLoading(true);
       const response = await requestsAPI.getById(requestId);
       setRequest(response.data);
-      
-      // Заполняем форму данными
+
       form.setFieldsValue({
         title: response.data.title,
         description: response.data.description,
@@ -101,7 +104,7 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
 
   const fetchComments = async () => {
     if (!requestId) return;
-    
+
     try {
       const data = await commentsService.getCommentsByRequest(requestId);
       setComments(data);
@@ -112,7 +115,7 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
 
   const handleStatusChange = async (newStatus: string) => {
     if (!request) return;
-    
+
     try {
       await requestsAPI.updateStatus(request.id, newStatus);
       setRequest({ ...request, status: newStatus as any });
@@ -133,7 +136,7 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
         priority: values.priority,
         userId: request!.creator.id
       });
-      
+
       await fetchRequestDetails();
       setEditing(false);
       onRequestUpdate?.();
@@ -174,7 +177,7 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
     if (!user || !request) return false;
     const isCreator = request.creator.id === user.id.toString();
     const isAssignee = request.assignee?.id === user.id.toString();
-    const isManager = ['ADMIN', 'HR', 'MANAGER'].includes(user.role);
+    const isManager = ['admin', 'hr', 'manager'].includes(user.role);
     return isCreator || isAssignee || isManager;
   };
 
@@ -229,11 +232,11 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
             <Form.Item name="title" label="Название" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
-            
+
             <Form.Item name="description" label="Описание">
               <TextArea rows={4} />
             </Form.Item>
-            
+
             <Form.Item name="priority" label="Приоритет">
               <Select>
                 <Option value="low">Низкий</Option>
@@ -242,7 +245,7 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
                 <Option value="critical">Критический</Option>
               </Select>
             </Form.Item>
-            
+
             <Form.Item name="assigneeId" label="Ответственный">
               <Select placeholder="Выберите ответственного" allowClear>
                 {employees.map(emp => (
@@ -252,7 +255,7 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
                 ))}
               </Select>
             </Form.Item>
-            
+
             <Form.Item>
               <Space>
                 <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>
@@ -268,40 +271,42 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
           <>
             <Card className="request-info">
               <Title level={4}>{request.title}</Title>
-              
+
               <Space direction="vertical" style={{ width: '100%' }}>
                 <div>
                   <Text strong>Статус: </Text>
                   {canEdit() ? (
                     <StatusSelector
                       currentStatus={request.status}
-                      onStatusChange={handleStatusChange}
                       type="request"
+                      onStatusChange={handleStatusChange}
                     />
                   ) : (
-                    <Tag color="blue">{request.status}</Tag>
+                    <Tag color={getRequestStatusColor(request.status)}>
+                      {getRequestStatusText(request.status)}
+                    </Tag>
                   )}
                 </div>
-                
+
                 <div>
                   <Text strong>Тип: </Text>
                   <Tag color="purple">
                     {getRequestTypeText(request.type)}
                   </Tag>
                 </div>
-                
+
                 <div>
                   <Text strong>Приоритет: </Text>
                   <Tag color={getPriorityColor(request.priority)}>
                     {getPriorityText(request.priority)}
                   </Tag>
                 </div>
-                
+
                 <div>
                   <Text strong>Создатель: </Text>
                   <Text>{request.creator.firstName} {request.creator.lastName}</Text>
                 </div>
-                
+
                 {request.assignee && (
                   <div>
                     <Text strong>Ответственный: </Text>
@@ -310,14 +315,14 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
                     </Tag>
                   </div>
                 )}
-                
+
                 <div>
                   <Text strong>Создана: </Text>
                   <Tag icon={<ClockCircleOutlined />}>
                     {new Date(request.createdAt).toLocaleString()}
                   </Tag>
                 </div>
-                
+
                 {request.description && (
                   <div>
                     <Text strong>Описание:</Text>
@@ -326,11 +331,53 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
                     </div>
                   </div>
                 )}
+
+                {/* Отображение прикрепленных файлов заявки */}
+                {request.attachments && request.attachments.length > 0 && (
+                  <div>
+                    <Text strong>Прикрепленные файлы:</Text>
+                    <div style={{ marginTop: 8 }}>
+                      {request.attachments.map((attachment: any, index: number) => (
+                        <div key={index} style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          marginBottom: 4,
+                          padding: '8px 12px',
+                          backgroundColor: '#f0f0f0',
+                          borderRadius: '6px',
+                          fontSize: '14px'
+                        }}>
+                          <span style={{ flex: 1, marginRight: 8 }}>
+                            📎 {attachment.originalName} ({formatFileSize(attachment.size)})
+                          </span>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            {isImage(attachment.mimetype) && (
+                              <Button
+                                type="text"
+                                size="small"
+                                icon={<EyeOutlined />}
+                                onClick={() => handleView(attachment.filename)}
+                                title="Просмотр"
+                              />
+                            )}
+                            <Button
+                              type="text"
+                              size="small"
+                              icon={<DownloadOutlined />}
+                              onClick={() => handleDownload(attachment.filename)}
+                              title="Скачать"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </Space>
             </Card>
-            
+
             <Divider>Комментарии</Divider>
-            
+
             <div className="comments-section">
               <List
                 dataSource={comments}
@@ -359,9 +406,9 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
                               </Text>
                               <div style={{ marginTop: 4 }}>
                                 {comment.attachments.map((attachment: any, index: number) => (
-                                  <div key={index} style={{ 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
+                                  <div key={index} style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
                                     marginBottom: 4,
                                     padding: '4px 8px',
                                     backgroundColor: '#f5f5f5',
@@ -400,7 +447,7 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
                   </List.Item>
                 )}
               />
-              
+
               <div className="add-comment" style={{ marginTop: 16 }}>
                 <div style={{ marginBottom: 12 }}>
                   <Input.TextArea
@@ -410,7 +457,7 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
                     rows={3}
                   />
                 </div>
-                
+
                 <div style={{ marginBottom: 12 }}>
                   <SimpleFileUpload
                     files={commentAttachments}
@@ -420,9 +467,9 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
                     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
                   />
                 </div>
-                
-                <Button 
-                  type="primary" 
+
+                <Button
+                  type="primary"
                   onClick={handleAddComment}
                   disabled={!newComment.trim()}
                 >

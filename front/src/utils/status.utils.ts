@@ -97,7 +97,7 @@ export const getRequestTypeText = (type: string): string => {
     case 'vacation': return 'Отпуск';
     case 'leave_sick': return 'Больничный';
     case 'sick_leave': return 'Больничный';
-    case 'leave_personal': return 'Личный отпуск';
+    case 'leave_personal': return 'Неоплачиваемый отпуск';
     case 'business_trip': return 'Командировка';
     case 'remote_work': return 'Удаленная работа';
     case 'equipment': return 'Оборудование';
@@ -115,4 +115,26 @@ export const getStatusColor = (status: string, type: 'task' | 'request'): string
 
 export const getStatusText = (status: string, type: 'task' | 'request'): string => {
   return type === 'task' ? getTaskStatusText(status) : getRequestStatusText(status);
+};
+
+
+
+export const getRoleColor = (role: string) => {
+  switch (role) {
+    case 'admin': return 'red';
+    case 'hr': return 'purple';
+    case 'manager': return 'blue';
+    case 'employee': return 'green';
+    default: return 'default';
+  }
+};
+
+export const getRoleText = (role: string) => {
+  switch (role) {
+    case 'admin': return 'Администратор';
+    case 'hr': return 'HR';
+    case 'manager': return 'Менеджер';
+    case 'employee': return 'Сотрудник';
+    default: return role;
+  }
 };

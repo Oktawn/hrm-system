@@ -32,4 +32,6 @@ export interface ITaskFilter {
   assigneesId?: string[];
   page?: number;
   limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
 }

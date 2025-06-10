@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
+import '@ant-design/v5-patch-for-react-19';
 import ruRU from 'antd/locale/ru_RU';
 import { AppRoutes } from './routes/AppRoutes';
 import { useAuthStore } from './stores/auth.store';

@@ -12,7 +12,7 @@ import {
 import { useAuthStore } from '../../stores/auth.store';
 import tasksAPI, { type CreateTaskData } from '../../services/tasks.service';
 import employeesAPI, { type Employee } from '../../services/employees.service';
-import FileUpload from '../FileUpload/FileUpload';
+import SimpleFileUpload from '../SimpleFileUpload/SimpleFileUpload';
 import dayjs from 'dayjs';
 
 const { TextArea } = Input;
@@ -33,7 +33,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [attachments, setAttachments] = useState<any[]>([]);
+  const [attachments, setAttachments] = useState<File[]>([]);
 
   useEffect(() => {
     if (visible) {
@@ -64,11 +64,14 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         priority: values.priority || 'medium',
         deadline: values.deadline ? values.deadline.toISOString() : undefined,
         assigneesId: values.assigneesId || [],
-        creatorId: user?.id || '',
-        attachments: attachments.length > 0 ? attachments : undefined
+        creatorId: user?.id || ''
       };
 
-      await tasksAPI.create(taskData);
+      if (attachments.length > 0) {
+        await tasksAPI.createWithFiles(taskData, attachments);
+      } else {
+        await tasksAPI.create(taskData);
+      }
       
       message.success('Задача успешно создана');
       form.resetFields();
@@ -197,10 +200,12 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
               Прикрепленные файлы
             </label>
-            <FileUpload
-              value={attachments}
-              onChange={setAttachments}
+            <SimpleFileUpload
+              files={attachments}
+              onFilesChange={setAttachments}
               maxFiles={5}
+              maxSize={10 * 1024 * 1024} // 10MB
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
             />
           </div>
         </Space>

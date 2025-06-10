@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { TasksService } from "./tasks.service";
 import { ICreateTask, IUpdateTask } from './tasks.interface';
 import { AuthenticatedRequest } from '../auth/auth.interface';
+import { uploadMultiple, createAttachment } from '../middleware/upload.middleware';
 
 const tasksService = new TasksService();
 
@@ -85,20 +86,43 @@ export class TasksController {
   }
 
   async createTask(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-    const taskData: ICreateTask = {
-      ...req.body,
-      creatorId: req.user.userId,
-    };
-    try {
-      const result = await tasksService.createTask(taskData);
-      res.status(201).json({
-        success: true,
-        message: "Task created successfully",
-        data: result,
-      });
-    } catch (error) {
-      next(error);
-    }
+    uploadMultiple(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({
+          success: false,
+          message: err.message
+        });
+      }
+
+      try {
+        const taskData = req.body;
+        if (taskData.assigneesId) {
+          if (typeof taskData.assigneesId === 'string') {
+            taskData.assigneesId = [taskData.assigneesId];
+          }
+        }
+        
+        let attachments = [];
+        if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+          attachments = (req.files as Express.Multer.File[]).map(createAttachment);
+        }
+
+        const taskDataWithAttachments: ICreateTask = {
+          ...taskData,
+          creatorId: req.user.userId,
+          attachments: attachments.length > 0 ? attachments : undefined
+        };
+
+        const result = await tasksService.createTask(taskDataWithAttachments);
+        res.status(201).json({
+          success: true,
+          message: "Task created successfully",
+          data: result,
+        });
+      } catch (error) {
+        next(error);
+      }
+    });
   }
   async updateTask(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     const taskData = req.body as IUpdateTask;

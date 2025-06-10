@@ -25,16 +25,19 @@ export function RequestsPage() {
   const [filter, setFilter] = useState<RequestFilter>({});
   const [searchParams, setSearchParams] = useSearchParams();
   const [createRequestModalVisible, setCreateRequestModalVisible] = useState(false);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
 
-  // Получаем ID заявки из URL
   const selectedRequestId = searchParams.get('request');
   const requestDetailVisible = Boolean(selectedRequestId);
 
-  // Определяем, показывать ли только мои заявки
   const isEmployee = user?.role === 'employee';
   const isManager = user?.role === 'manager' || user?.role === 'hr' || user?.role === 'admin';
 
-  const fetchRequests = async () => {
+  const fetchRequests = async (page = 1, pageSize = 10, currentFilter = filter) => {
     if (!user) return;
     
     try {
@@ -42,18 +45,62 @@ export function RequestsPage() {
       let response;
       
       if (isEmployee) {
-        // Для обычных сотрудников показываем только их заявки
         if (!user.employeeId) {
           console.error('EmployeeId отсутствует для сотрудника');
           return;
         }
         response = await requestsAPI.getByEmployee(user.employeeId);
+        
+        // Применяем клиентскую сортировку для сотрудников
+        let sortedRequests = [...(response.data || [])];
+        if (currentFilter.sortBy && currentFilter.sortOrder) {
+          const allowedSortFields = ['id', 'title', 'createdAt'];
+          if (allowedSortFields.includes(currentFilter.sortBy)) {
+            sortedRequests.sort((a, b) => {
+              const field = currentFilter.sortBy!;
+              let aValue: any = a[field as keyof Request];
+              let bValue: any = b[field as keyof Request];
+
+              // Обрабатываем даты
+              if (field === 'createdAt') {
+                aValue = new Date(aValue).getTime();
+                bValue = new Date(bValue).getTime();
+              }
+
+              // Обрабатываем строки
+              if (field === 'title' && typeof aValue === 'string' && typeof bValue === 'string') {
+                aValue = aValue.toLowerCase();
+                bValue = bValue.toLowerCase();
+              }
+
+              if (aValue < bValue) return currentFilter.sortOrder === 'ASC' ? -1 : 1;
+              if (aValue > bValue) return currentFilter.sortOrder === 'ASC' ? 1 : -1;
+              return 0;
+            });
+          }
+        }
+        
+        setRequests(sortedRequests);
+        setPagination(prev => ({
+          ...prev,
+          total: sortedRequests.length,
+          current: 1,
+          pageSize: sortedRequests.length || 10,
+        }));
       } else {
-        // Для руководителей показываем все заявки
-        response = await requestsAPI.getAll(filter);
+        const filterWithPagination = {
+          ...currentFilter,
+          page,
+          limit: pageSize,
+        };
+        response = await requestsAPI.getAll(filterWithPagination);
+        setRequests(response.data || []);
+        setPagination({
+          current: response.meta?.page || 1,
+          pageSize: response.meta?.limit || 10,
+          total: response.meta?.total || 0,
+        });
       }
-      
-      setRequests(response.data);
     } catch (error) {
       console.error('Ошибка загрузки заявок:', error);
     } finally {
@@ -62,7 +109,7 @@ export function RequestsPage() {
   };
 
   useEffect(() => {
-    fetchRequests();
+    fetchRequests(pagination.current, pagination.pageSize, filter);
   }, [filter, user]);
 
   const handleRequestClick = (requestId: number) => {
@@ -74,7 +121,33 @@ export function RequestsPage() {
   };
 
   const handleRequestUpdate = () => {
-    fetchRequests(); // Обновляем список заявок после изменения
+    fetchRequests(pagination.current, pagination.pageSize, filter); 
+  };
+
+  const handleTableChange = (paginationInfo: any, _filters: any, sorter: any) => {
+    let newSortField = '';
+    let newSortOrder: 'ascend' | 'descend' | null = null;
+    
+    if (sorter && sorter.field && sorter.order) {
+      newSortField = sorter.field;
+      newSortOrder = sorter.order;
+    }
+    
+    const newPagination = {
+      current: paginationInfo.current,
+      pageSize: paginationInfo.pageSize,
+      total: paginationInfo.total,
+    };
+    setPagination(newPagination);
+    
+    // Обновляем фильтр с параметрами сортировки
+    const updatedFilter: RequestFilter = {
+      ...filter,
+      sortBy: newSortField || undefined,
+      sortOrder: newSortOrder === 'ascend' ? 'ASC' : newSortOrder === 'descend' ? 'DESC' : undefined,
+    };
+    
+    setFilter(updatedFilter);
   };
 
   const columns = [
@@ -83,6 +156,7 @@ export function RequestsPage() {
       dataIndex: 'id',
       key: 'id',
       width: '8%',
+      sorter: true,
       render: (id: number) => `#${id}`,
     },
     {
@@ -90,6 +164,7 @@ export function RequestsPage() {
       dataIndex: 'title',
       key: 'title',
       width: '20%',
+      sorter: true,
     },
     {
       title: 'Тип',
@@ -138,6 +213,7 @@ export function RequestsPage() {
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: '15%',
+      sorter: true,
       render: (date: string) => new Date(date).toLocaleDateString(),
     },
     {
@@ -193,7 +269,7 @@ export function RequestsPage() {
               <Option value="certificate">Справка</Option>
               <Option value="leave_vacation">Отпуск</Option>
               <Option value="leave_sick">Больничный</Option>
-              <Option value="leave_personal">Личный отпуск</Option>
+              <Option value="leave_personal">Неоплачиваемый отпуск</Option>
             </Select>
             <Select
               placeholder="Статус"
@@ -227,14 +303,26 @@ export function RequestsPage() {
             dataSource={requests}
             loading={loading}
             rowKey="id"
+            onChange={handleTableChange}
             onRow={(record) => ({
               onClick: () => handleRequestClick(record.id),
               style: { cursor: 'pointer' }
             })}
             pagination={{
-              pageSize: 10,
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
               showSizeChanger: true,
+              showQuickJumper: true,
               showTotal: (total) => `Всего: ${total} заявок`,
+              onChange: (page, pageSize) => {
+                setPagination(prev => ({ ...prev, current: page, pageSize }));
+                fetchRequests(page, pageSize, filter);
+              },
+              onShowSizeChange: (_, size) => {
+                setPagination(prev => ({ ...prev, current: 1, pageSize: size }));
+                fetchRequests(1, size, filter);
+              },
             }}
           />
         </Card>
@@ -251,7 +339,7 @@ export function RequestsPage() {
           onClose={() => setCreateRequestModalVisible(false)}
           onRequestCreated={() => {
             setCreateRequestModalVisible(false);
-            fetchRequests();
+            fetchRequests(pagination.current, pagination.pageSize, filter);
           }}
         />
       </Content>

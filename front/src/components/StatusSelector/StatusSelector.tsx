@@ -25,10 +25,11 @@ const StatusSelector: React.FC<StatusSelectorProps> = ({
   ];
 
   const requestStatuses = [
-    { value: 'pending', label: 'Ожидает', color: '#6c757d' },
+    { value: 'pending', label: 'На рассмотрении', color: '#ffc107' },
     { value: 'approved', label: 'Одобрено', color: '#28a745' },
     { value: 'rejected', label: 'Отклонено', color: '#dc3545' },
-    { value: 'in_progress', label: 'В работе', color: '#007bff' }
+    { value: 'completed', label: 'Выполнено', color: '#28a745' },
+    { value: 'cancelled', label: 'Отменено', color: '#6c757d' }
   ];
 
   const statuses = type === 'task' ? taskStatuses : requestStatuses;

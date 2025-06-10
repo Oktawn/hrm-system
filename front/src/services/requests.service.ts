@@ -10,7 +10,13 @@ export interface Request {
   startDate?: string;
   endDate?: string;
   duration?: number;
-  attachments?: any;
+  attachments?: Array<{
+    filename: string;
+    originalName: string;
+    mimetype?: string;
+    size: number;
+    uploadDate: string;
+  }>;
   createdAt: string;
   updatedAt: string;
   creator: {
@@ -39,6 +45,8 @@ export interface RequestFilter {
   startDateTo?: string;
   endDateFrom?: string;
   endDateTo?: string;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
 }
 
 export interface CreateRequestData {

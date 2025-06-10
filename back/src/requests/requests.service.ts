@@ -1,39 +1,37 @@
 import createHttpError from "http-errors";
 import { employeeRepository, requestRepository } from "../db/db-rep";
 import { ICreateRequest, IRequestFilter, IUpdateRequest } from "./requests.interface";
-import { RequestStatusEnum, TaskPriorityEnum, UserRoleEnum } from "../commons/enums/enums";
+import { RequestStatusEnum, UserRoleEnum } from "../commons/enums/enums";
 
 export class RequestsService {
 
   async createRequest(requestData: ICreateRequest) {
     const { userId, ...request } = requestData;
-    
-    // Валидация для отпусков
+
     if (['leave_vacation', 'leave_sick', 'leave_personal'].includes(request.type) && request.startDate && request.endDate) {
       const startDate = new Date(request.startDate);
       const endDate = new Date(request.endDate);
       const currentDate = new Date();
-      
-      // Минимальный срок подачи заявки - 3 дня
+
       const threeDaysFromNow = new Date();
       threeDaysFromNow.setDate(currentDate.getDate() + 3);
       threeDaysFromNow.setHours(0, 0, 0, 0);
-      
+
       if (startDate < threeDaysFromNow) {
         throw createHttpError(400, "Отпуск нельзя подавать раньше чем за 3 дня от текущей даты");
       }
-      
+
       // Для оплачиваемого отпуска максимум 30 дней
       if (request.type === 'leave_vacation') {
         const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-        
+
         if (diffDays > 30) {
           throw createHttpError(400, "Оплачиваемый отпуск не может быть больше 30 дней");
         }
       }
     }
-    
+
     const exEmployee = await employeeRepository.findOne({
       where: { id: userId },
     });
@@ -103,12 +101,12 @@ export class RequestsService {
 
   async getAllRequests(filet: IRequestFilter) {
 
-    const { page, limit, ...filter } = filet;
-    
-    // Обеспечиваем, что page и limit являются числами
+    const { page, limit, sortBy, sortOrder, ...filter } = filet;
+
     const pageNum = Number(page) || 1;
     const limitNum = Number(limit) || 10;
-    
+    const sortOrderValue = sortOrder || 'DESC';
+
     const queryB = requestRepository.createQueryBuilder("request")
       .leftJoinAndSelect("request.creator", "creator");
 
@@ -142,7 +140,15 @@ export class RequestsService {
     if (filter.endDateTo) {
       queryB.andWhere("request.endDate <= :endDateTo", { endDateTo: filter.endDateTo });
     }
-    queryB.orderBy("request.createdAt", "DESC");
+
+    if (sortBy) {
+      const allowedSortFields = ['id', 'createdAt'];
+      const sortField = allowedSortFields.includes(sortBy) ? `request.${sortBy}` : 'request.createdAt';
+      queryB.orderBy(sortField, sortOrderValue);
+    } else {
+      queryB.orderBy("request.createdAt", "DESC");
+    }
+
     queryB.skip((pageNum - 1) * limitNum).take(limitNum);
     const [requests, total] = await queryB.getManyAndCount();
 
@@ -203,9 +209,9 @@ export class RequestsService {
     // Проверяем права на изменение статуса
     const isCreator = request.creator?.id === employee.id;
     const isAssignee = request.assignee?.id === employee.id;
-    const isManager = employee.user.role === UserRoleEnum.ADMIN || 
-                     employee.user.role === UserRoleEnum.HR || 
-                     employee.user.role === UserRoleEnum.MANAGER;
+    const isManager = employee.user.role === UserRoleEnum.ADMIN ||
+      employee.user.role === UserRoleEnum.HR ||
+      employee.user.role === UserRoleEnum.MANAGER;
 
     if (!isCreator && !isAssignee && !isManager) {
       throw createHttpError(403, "You don't have permission to change this request status");
