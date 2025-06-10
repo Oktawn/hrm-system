@@ -1,0 +1,18 @@
+ДОКУМЕНТ
+
+{documentTitle}
+
+{documentContent}
+
+{additionalInfo}
+
+Документ выдан для предоставления {purpose}.
+
+{documentNumber}
+
+Дата выдачи: {issueDate}
+
+{signerName}
+Подпись: _________________
+
+М.П.

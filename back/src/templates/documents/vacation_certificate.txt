@@ -1,0 +1,32 @@
+СПРАВКА
+об отпуске
+
+Выдана {employeeFullName}, {employeeBirthDate} года рождения, работающему в {companyName} в должности {positionName}.
+
+ИНФОРМАЦИЯ ОБ ОТПУСКЕ:
+
+Вид отпуска: {vacationType}
+Период отпуска: с {vacationStartDate} по {vacationEndDate}
+Количество календарных дней: {vacationDays}
+
+{vacationDetails}
+
+ОСТАТОК ОТПУСКА:
+
+Использовано в {currentYear} году: {usedVacationDays} дней
+Остаток на {issueDate}: {remainingVacationDays} дней
+
+{additionalVacationInfo}
+
+{additionalInfo}
+
+Справка выдана для предоставления {purpose}.
+
+{documentNumber}
+
+Дата выдачи: {issueDate}
+
+Руководитель отдела кадров: {hrManagerName}
+Подпись: _________________
+
+М.П.

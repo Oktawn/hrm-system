@@ -2,13 +2,11 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-// Создаем директорию uploads если её нет
 const uploadsDir = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Конфигурация multer для сохранения файлов
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
@@ -22,12 +20,10 @@ const storage = multer.diskStorage({
   }
 });
 
-// Фильтр файлов (разрешенные типы)
 const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  // Разрешенные MIME типы
   const allowedMimes = [
     'image/jpeg',
-    'image/jpg', 
+    'image/jpg',
     'image/png',
     'image/gif',
     'application/pdf',
@@ -46,22 +42,18 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
   }
 };
 
-// Создаем экземпляр multer
 export const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB максимальный размер
+    fileSize: 10 * 1024 * 1024,
   }
 });
 
-// Middleware для обработки множественных файлов
-export const uploadMultiple = upload.array('attachments', 5); // максимум 5 файлов
+export const uploadMultiple = upload.array('attachments', 5);
 
-// Middleware для одного файла
 export const uploadSingle = upload.single('file');
 
-// Функция для создания объекта attachment из файла
 export const createAttachment = (file: Express.Multer.File) => {
   return {
     filename: file.filename,
@@ -73,7 +65,6 @@ export const createAttachment = (file: Express.Multer.File) => {
   };
 };
 
-// Функция для удаления файла
 export const deleteFile = (filename: string) => {
   const filePath = path.join(uploadsDir, filename);
   if (fs.existsSync(filePath)) {

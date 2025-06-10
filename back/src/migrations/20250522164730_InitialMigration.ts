@@ -1,5 +1,5 @@
 import type { Knex } from "knex";
-import { RequestStatusEnum, RequestTypeEnum, TaskPriorityEnum, TaskStatusEnum, UserRoleEnum } from "../commons/enums/enums";
+import { DocumentStatusEnum, DocumentTypeEnum, RequestStatusEnum, RequestTypeEnum, TaskPriorityEnum, TaskStatusEnum, UserRoleEnum } from "../commons/enums/enums";
 
 
 export async function up(knex: Knex): Promise<void> {
@@ -47,6 +47,7 @@ export async function up(knex: Knex): Promise<void> {
     table.date('birthDate').nullable();
     table.date('hireDate').nullable();
     table.string('phone').nullable();
+    table.uuid('assignedManagerId').nullable().references('id').inTable('employees').onDelete('SET NULL');
     table.uuid('userId').notNullable().unique().references('id').inTable('users').onDelete('CASCADE');
     table.integer('departmentId').nullable().references('id').inTable('departments').onDelete('SET NULL');
     table.integer('positionId').nullable().references('id').inTable('positions').onDelete('SET NULL');
@@ -103,9 +104,43 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp('created_at').defaultTo(knex.fn.now());
     table.timestamp('updated_at').defaultTo(knex.fn.now());
   });
+
+  await knex.schema.createTable('documents', (table) => {
+    table.increments('id').primary();
+    table.enum('type', Object.values(DocumentTypeEnum)).notNullable();
+    table.string('title').notNullable();
+    table.text('description').nullable();
+    table.enum('status', Object.values(DocumentStatusEnum)).defaultTo('under_review');
+    table.text('content').nullable();
+    table.string('templatePath').nullable(); // Путь к шаблону документа
+    table.string('filePath').nullable(); // Путь к сгенерированному файлу
+    table.string('fileUrl').nullable(); // URL для доступа к документу
+
+    table.integer('sourceRequestId').unsigned().references('id').inTable('requests').onDelete('CASCADE');
+    table.uuid('requestedById').references('id').inTable('employees').onDelete('CASCADE');
+    table.uuid('createdById').nullable().references('id').inTable('employees').onDelete('SET NULL');
+    table.uuid('signedById').nullable().references('id').inTable('employees').onDelete('SET NULL');
+
+    table.timestamp('signedAt').nullable();
+    table.text('rejectionReason').nullable();
+    table.jsonb('templateData').nullable(); // Данные для заполнения шаблона
+    table.jsonb('metadata').nullable();
+
+    table.timestamp('createdAt').defaultTo(knex.fn.now());
+    table.timestamp('updatedAt').defaultTo(knex.fn.now());
+
+    // Индексы для улучшения производительности
+    table.index(['type']);
+    table.index(['status']);
+    table.index(['requestedById']);
+    table.index(['createdById']);
+    table.index(['sourceRequestId']);
+    table.index(['createdAt']);
+  });
 }
 
 export async function down(knex: Knex): Promise<void> {
+  await knex.schema.dropTableIfExists('documents');
   await knex.schema.dropTableIfExists('comments');
   await knex.schema.dropTableIfExists('tasks_assignees_employees');
   await knex.schema.dropTableIfExists('requests');

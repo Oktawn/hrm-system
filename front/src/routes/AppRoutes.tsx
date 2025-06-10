@@ -4,6 +4,7 @@ import { HomePage } from '../pages/HomePage/HomePage';
 import { ProfilePage } from '../pages/ProfilePage/ProfilePage';
 import { TasksPage } from '../pages/TasksPage/TasksPage';
 import { RequestsPage } from '../pages/RequestsPage/RequestsPage';
+import { DocumentsPage } from '../pages/DocumentsPage/DocumentsPage';
 import { EmployeesPage } from '../pages/EmployeesPage';
 import { AppLayout } from '../components/Layout/AppLayout';
 import { ProtectedRoute } from '../components/ProtectedRoute/ProtectedRoute';
@@ -48,6 +49,16 @@ export function AppRoutes() {
           <ProtectedRoute>
             <AppLayout>
               <RequestsPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/documents"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <DocumentsPage />
             </AppLayout>
           </ProtectedRoute>
         }

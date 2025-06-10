@@ -138,3 +138,59 @@ export const getRoleText = (role: string) => {
     default: return role;
   }
 };
+
+/**
+ * Статусы документов
+ */
+export const getDocumentStatusColor = (status: string): string => {
+  switch (status) {
+    case 'under_review': return 'warning';
+    case 'signed': return 'success';
+    case 'rejected': return 'error';
+    case 'expired': return 'default';
+    case 'draft': return 'processing';
+    default: return 'default';
+  }
+};
+
+export const getDocumentStatusText = (status: string): string => {
+  switch (status) {
+    case 'under_review': return 'На рассмотрении';
+    case 'signed': return 'Подписан';
+    case 'rejected': return 'Отказано';
+    case 'expired': return 'Истёк срок';
+    case 'draft': return 'Черновик';
+    default: return status;
+  }
+};
+
+/**
+ * Типы документов
+ */
+export const getDocumentTypeText = (type: string): string => {
+  switch (type) {
+    case 'work_certificate': return 'Справка с места работы';
+    case 'salary_certificate': return 'Справка о доходах';
+    case 'employment_certificate': return 'Справка о трудоустройстве';
+    case 'vacation_certificate': return 'Справка об отпуске';
+    case 'medical_certificate': return 'Медицинская справка';
+    case 'personal_data_extract': return 'Выписка из личного дела';
+    case 'contract_copy': return 'Копия трудового договора';
+    case 'other': return 'Другое';
+    default: return type;
+  }
+};
+
+export const getDocumentTypeColor = (type: string): string => {
+  switch (type) {
+    case 'work_certificate': return 'blue';
+    case 'salary_certificate': return 'green';
+    case 'employment_certificate': return 'purple';
+    case 'vacation_certificate': return 'orange';
+    case 'medical_certificate': return 'red';
+    case 'personal_data_extract': return 'geekblue';
+    case 'contract_copy': return 'magenta';
+    case 'other': return 'default';
+    default: return 'default';
+  }
+};

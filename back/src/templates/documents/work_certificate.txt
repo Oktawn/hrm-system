@@ -1,0 +1,21 @@
+СПРАВКА
+с места работы
+
+Выдана {employeeFullName}, {employeeBirthDate} года рождения, в том, что {gender} действительно работает в {companyName} с {hireDate} по настоящее время.
+
+Должность: {positionName}
+Отдел: {departmentName}
+Тип трудового договора: {contractType}
+
+{additionalInfo}
+
+Справка выдана для предоставления по месту требования.
+
+{documentNumber}
+
+Дата выдачи: {issueDate}
+
+Руководитель отдела кадров: {hrManagerName}
+Подпись: _________________
+
+М.П.

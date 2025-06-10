@@ -1,0 +1,46 @@
+КОПИЯ ТРУДОВОГО ДОГОВОРА
+
+Работодатель: {companyName}
+Работник: {employeeFullName}
+
+ОСНОВНЫЕ УСЛОВИЯ ТРУДОВОГО ДОГОВОРА:
+
+Дата заключения договора: {contractDate}
+Дата начала работы: {hireDate}
+Должность: {positionName}
+Отдел/Подразделение: {departmentName}
+
+УСЛОВИЯ ОПЛАТЫ ТРУДА:
+
+Оклад: {baseSalary} рублей
+Система оплаты: {paymentSystem}
+{paymentConditions}
+
+РАБОЧЕЕ ВРЕМЯ:
+
+Режим работы: {workSchedule}
+{workTimeConditions}
+
+ОТПУСК:
+
+Ежегодный оплачиваемый отпуск: {annualVacationDays} календарных дней
+{vacationConditions}
+
+ДОПОЛНИТЕЛЬНЫЕ УСЛОВИЯ:
+
+{additionalContractConditions}
+
+{additionalInfo}
+
+Копия выдана для предоставления {purpose}.
+
+{documentNumber}
+
+Дата выдачи: {issueDate}
+
+Руководитель отдела кадров: {hrManagerName}
+Подпись: _________________
+
+М.П.
+
+ПРИМЕЧАНИЕ: Настоящая копия соответствует оригиналу трудового договора.

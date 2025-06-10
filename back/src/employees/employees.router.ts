@@ -8,6 +8,7 @@ const employeesController = new EmployeesController();
 
 employeesRouter.get("/account/me", authMiddleware(), employeesController.getEmployeeAccountById);
 employeesRouter.get("/stats", authMiddleware(), employeesController.getEmployeeStats);
+employeesRouter.get("/managers", authMiddleware([UserRoleEnum.ADMIN, UserRoleEnum.HR, UserRoleEnum.MANAGER]), employeesController.getAvailableManagers);
 employeesRouter.get("/", authMiddleware(), employeesController.getAllEmployees);
 employeesRouter.get("/:id", authMiddleware(), employeesController.getEmployeeById);
 employeesRouter.post("/create", authMiddleware([UserRoleEnum.ADMIN]), employeesController.createEmployee);

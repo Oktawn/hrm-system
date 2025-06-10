@@ -9,7 +9,6 @@ const commentsService = new CommentsService();
 export class CommentsController {
 
   async createComment(req: AuthenticatedRequest, res: Response) {
-    // Используем middleware для обработки файлов
     uploadMultiple(req, res, async (err) => {
       if (err) {
         return res.status(400).json({
@@ -22,13 +21,11 @@ export class CommentsController {
         const commentData: ICreateComment = req.body;
         const user = req.user;
 
-        // Обрабатываем загруженные файлы
         let attachments = [];
         if (req.files && Array.isArray(req.files) && req.files.length > 0) {
           attachments = (req.files as Express.Multer.File[]).map(createAttachment);
         }
 
-        // Добавляем attachments к данным комментария
         const commentDataWithAttachments = {
           ...commentData,
           attachments: attachments.length > 0 ? attachments : undefined

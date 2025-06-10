@@ -13,6 +13,7 @@ import { departmentsRouter } from './departments/departments.router';
 import { positionsRouter } from './positions/positions.router';
 import { commentsRouter } from './comments/comments.router';
 import { uploadsRouter } from './uploads/uploads.router';
+import { documentsRouter } from './documents/documents.router';
 
 const app = express();
 const port = envConfig.get("API_PORT");
@@ -35,6 +36,7 @@ app.use("/api/departments", departmentsRouter);
 app.use("/api/positions", positionsRouter);
 app.use("/api/comments", commentsRouter);
 app.use("/api/uploads", uploadsRouter);
+app.use("/api/documents", documentsRouter);
 
 AppDataSource.initialize()
   .then(() => {

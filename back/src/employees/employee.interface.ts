@@ -8,6 +8,7 @@ export interface ICreateEmployee {
   phone?: string;
   departmentId?: number;
   positionId?: number;
+  assignedManagerId?: string; 
 }
 
 export interface IUpdateEmployee {
@@ -21,6 +22,7 @@ export interface IUpdateEmployee {
   phone?: string;
   departmentId?: number;
   positionId?: number;
+  assignedManagerId?: string; 
 }
 
 export interface IEmployeeFilter {

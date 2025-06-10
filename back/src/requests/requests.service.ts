@@ -2,8 +2,10 @@ import createHttpError from "http-errors";
 import { employeeRepository, requestRepository } from "../db/db-rep";
 import { ICreateRequest, IRequestFilter, IUpdateRequest } from "./requests.interface";
 import { RequestStatusEnum, UserRoleEnum } from "../commons/enums/enums";
+import { DocumentsService } from "../documents/documents.service";
 
 export class RequestsService {
+  private documentsService = new DocumentsService();
 
   async createRequest(requestData: ICreateRequest) {
     const { userId, ...request } = requestData;
@@ -44,7 +46,9 @@ export class RequestsService {
     });
     try {
       const savedRequest = await requestRepository.save(newRequest);
-      // Возвращаем сохраненный запрос с полными отношениями
+
+      await this.autoCreateDocument(savedRequest);
+
       return await this.getRequestById(savedRequest.id);
     } catch (error) {
       throw createHttpError(500, "Error creating request");
@@ -206,7 +210,6 @@ export class RequestsService {
       throw createHttpError(404, "Employee not found");
     }
 
-    // Проверяем права на изменение статуса
     const isCreator = request.creator?.id === employee.id;
     const isAssignee = request.assignee?.id === employee.id;
     const isManager = employee.user.role === UserRoleEnum.ADMIN ||
@@ -221,5 +224,43 @@ export class RequestsService {
     await requestRepository.save(request);
 
     return await this.getRequestById(requestId);
+  }
+
+  private async autoCreateDocument(request: any) {
+    const autoDocumentTypes = [
+      'leave_vacation',   // Отпуск
+      'leave_sick',       // Больничный
+      'leave_personal',   // Отгул
+      'document',         // Запрос документа
+      'certificate'       // Запрос справки
+    ];
+
+    if (!autoDocumentTypes.includes(request.type)) {
+      return;
+    }
+
+    try {
+      const hrEmployee = await employeeRepository.findOne({
+        where: { user: { role: UserRoleEnum.HR } },
+        relations: ["user"]
+      });
+
+      if (!hrEmployee) {
+        const adminEmployee = await employeeRepository.findOne({
+          where: { user: { role: UserRoleEnum.ADMIN } },
+          relations: ["user"]
+        });
+
+        if (!adminEmployee) {
+          console.warn(`No HR or Admin employee found to create document for request ${request.id}`);
+          return;
+        }
+        await this.documentsService.generateDocumentFromRequest(request.id, adminEmployee.user.id);
+      } else {
+        await this.documentsService.generateDocumentFromRequest(request.id, hrEmployee.user.id);
+      }
+    } catch (error) {
+      console.error(`Failed to auto-create document for request ${request.id}:`, error.message);
+    }
   }
 }

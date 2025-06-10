@@ -3,38 +3,31 @@ import { RequestStatusEnum, RequestTypeEnum, TaskPriorityEnum } from "../commons
 import { faker } from '@faker-js/faker';
 
 export async function seed(knex: Knex): Promise<void> {
-    // Очищаем таблицу заявок
     await knex("requests").del();
-    console.log("Creating requests for employees...");
 
-    // Получаем всех сотрудников
     const employees = await knex("employees").select("*");
-    
-    // Получаем HR сотрудников для назначения заявок
+
     const hrEmployees = await knex("employees")
         .join("users", "employees.userId", "users.id")
         .where("users.role", "hr")
         .select("employees.*");
 
-    // Получаем менеджеров для назначения заявок
     const managers = await knex("employees")
         .join("users", "employees.userId", "users.id")
         .where("users.role", "IN", ["admin", "manager"])
         .select("employees.*");
 
     if (employees.length === 0) {
-        console.log("No employees found. Please run users seed first.");
         return;
     }
 
     const assignees = [...hrEmployees, ...managers];
 
-    // Создаем 30-40 заявок
     const requests = [];
-    
+
     const requestTitles = {
         [RequestTypeEnum.LEAVE_VACATION]: [
-            "Отпуск на 14 дней", "Летний отпуск", "Отпуск по семейным обстоятельствам", 
+            "Отпуск на 14 дней", "Летний отпуск", "Отпуск по семейным обстоятельствам",
             "Плановый отпуск", "Дополнительный отпуск"
         ],
         [RequestTypeEnum.LEAVE_SICK]: [
@@ -93,28 +86,24 @@ export async function seed(knex: Knex): Promise<void> {
         const requestType = Object.values(RequestTypeEnum)[Math.floor(Math.random() * Object.values(RequestTypeEnum).length)];
         const titles = requestTitles[requestType];
         const descriptions = requestDescriptions[requestType];
-        
+
         const title = titles[Math.floor(Math.random() * titles.length)];
         const description = descriptions[Math.floor(Math.random() * descriptions.length)];
-        
-        // Выбираем назначенного в зависимости от типа заявки
+
         let assignee;
         if ([RequestTypeEnum.DOCUMENT, RequestTypeEnum.CERTIFICATE].includes(requestType)) {
-            // Документы обрабатывает HR
             assignee = hrEmployees.length > 0 ? hrEmployees[Math.floor(Math.random() * hrEmployees.length)] : null;
         } else {
-            // Отпуска могут обрабатывать HR или менеджеры
             assignee = assignees.length > 0 ? assignees[Math.floor(Math.random() * assignees.length)] : null;
         }
 
-        // Определяем даты для отпусков и отгулов
         let startDate = null;
         let endDate = null;
         let duration = null;
 
         if ([RequestTypeEnum.LEAVE_VACATION, RequestTypeEnum.LEAVE_SICK, RequestTypeEnum.LEAVE_PERSONAL].includes(requestType)) {
             startDate = faker.date.future({ years: 0.5 });
-            
+
             if (requestType === RequestTypeEnum.LEAVE_VACATION) {
                 duration = Math.floor(Math.random() * 21) + 7; // 7-28 дней
             } else if (requestType === RequestTypeEnum.LEAVE_SICK) {
@@ -122,7 +111,7 @@ export async function seed(knex: Knex): Promise<void> {
             } else {
                 duration = Math.floor(Math.random() * 3) + 1; // 1-3 дня
             }
-            
+
             endDate = new Date(startDate);
             endDate.setDate(endDate.getDate() + duration - 1);
         }
@@ -144,7 +133,6 @@ export async function seed(knex: Knex): Promise<void> {
         });
     }
 
-    // Вставляем заявки
     await knex("requests").insert(requests);
 
 };

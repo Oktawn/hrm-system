@@ -46,6 +46,9 @@ export class EmployeesEntity {
   @ManyToOne(() => PositionsEntity, position => position.employees, { onDelete: "SET NULL" })
   position: PositionsEntity;
 
+  @ManyToOne(() => EmployeesEntity, { onDelete: "SET NULL" })
+  assignedManager: EmployeesEntity;
+
   @OneToMany(() => TasksEntity, task => task.creator)
   createdTasks: TasksEntity[];
 

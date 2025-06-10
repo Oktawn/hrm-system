@@ -44,9 +44,7 @@ export class ProfileService {
     }
 
     try {
-      // Обновляем email в таблице users
       if (profileData.email !== user.email) {
-        // Проверяем, что новый email не занят
         const existingUser = await userRepository.findOne({
           where: { email: profileData.email }
         });
@@ -59,7 +57,6 @@ export class ProfileService {
         await userRepository.save(user);
       }
 
-      // Обновляем данные сотрудника
       if (user.employee) {
         user.employee.firstName = profileData.firstName;
         user.employee.lastName = profileData.lastName;

@@ -1,0 +1,43 @@
+ВЫПИСКА
+из личного дела
+
+Сотрудник: {employeeFullName}
+Дата рождения: {employeeBirthDate}
+Табельный номер: {employeeNumber}
+
+ОСНОВНАЯ ИНФОРМАЦИЯ:
+
+Дата приема на работу: {hireDate}
+Должность: {positionName}
+Отдел/Подразделение: {departmentName}
+Образование: {education}
+Специальность: {specialty}
+
+ТРУДОВАЯ ДЕЯТЕЛЬНОСТЬ:
+
+{workHistory}
+
+ПООЩРЕНИЯ И ВЗЫСКАНИЯ:
+
+{incentivesAndPenalties}
+
+ПОВЫШЕНИЕ КВАЛИФИКАЦИИ:
+
+{trainingHistory}
+
+ДОПОЛНИТЕЛЬНЫЕ СВЕДЕНИЯ:
+
+{additionalPersonalInfo}
+
+{additionalInfo}
+
+Выписка составлена для предоставления {purpose}.
+
+{documentNumber}
+
+Дата составления: {issueDate}
+
+Руководитель отдела кадров: {hrManagerName}
+Подпись: _________________
+
+М.П.

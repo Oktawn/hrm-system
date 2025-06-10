@@ -1,0 +1,31 @@
+СПРАВКА
+о трудоустройстве
+
+Настоящая справка выдана {employeeFullName}, {employeeBirthDate} года рождения, в том, что {gender} трудоустроен{genderEnding} в {companyName}.
+
+ДАННЫЕ О ТРУДОУСТРОЙСТВЕ:
+
+Дата начала работы: {hireDate}
+Должность: {positionName}
+Отдел/Подразделение: {departmentName}
+Вид трудового договора: {contractType}
+Режим работы: {workSchedule}
+
+СТАТУС ТРУДОВЫХ ОТНОШЕНИЙ:
+
+{employmentStatus}
+
+{additionalEmploymentInfo}
+
+{additionalInfo}
+
+Справка выдана для предоставления {purpose}.
+
+{documentNumber}
+
+Дата выдачи: {issueDate}
+
+Руководитель отдела кадров: {hrManagerName}
+Подпись: _________________
+
+М.П.

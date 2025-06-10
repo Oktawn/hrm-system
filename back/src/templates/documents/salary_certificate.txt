@@ -1,0 +1,31 @@
+СПРАВКА
+о размере заработной платы
+
+Выдана {employeeFullName}, {employeeBirthDate} года рождения, работающему в {companyName} в должности {positionName}.
+
+Период работы: с {hireDate} по настоящее время
+Отдел: {departmentName}
+
+РАЗМЕР ЗАРАБОТНОЙ ПЛАТЫ:
+
+Оклад: {baseSalary} рублей
+Средняя заработная плата за последние 6 месяцев: {averageSalary} рублей
+Средняя заработная плата за последние 12 месяцев: {averageSalaryYear} рублей
+
+{paymentDetails}
+
+{additionalInfo}
+
+Справка выдана для предоставления {purpose}.
+
+{documentNumber}
+
+Дата выдачи: {issueDate}
+
+Главный бухгалтер: {accountantName}
+Подпись: _________________
+
+Руководитель отдела кадров: {hrManagerName}
+Подпись: _________________
+
+М.П.

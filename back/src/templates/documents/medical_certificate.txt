@@ -1,0 +1,33 @@
+МЕДИЦИНСКАЯ СПРАВКА
+
+Выдана {employeeFullName}, {employeeBirthDate} года рождения, работающему в {companyName} в должности {positionName}.
+
+МЕДИЦИНСКАЯ ИНФОРМАЦИЯ:
+
+{medicalInfo}
+
+Период нетрудоспособности: с {sickLeaveStartDate} по {sickLeaveEndDate}
+Количество дней: {sickLeaveDays}
+
+Диагноз: {diagnosis}
+Лечащий врач: {doctorName}
+Медицинское учреждение: {medicalInstitution}
+
+{additionalMedicalInfo}
+
+ТРУДОВЫЕ РЕКОМЕНДАЦИИ:
+
+{workRecommendations}
+
+{additionalInfo}
+
+Справка выдана для предоставления {purpose}.
+
+{documentNumber}
+
+Дата выдачи: {issueDate}
+
+Руководитель отдела кадров: {hrManagerName}
+Подпись: _________________
+
+М.П.

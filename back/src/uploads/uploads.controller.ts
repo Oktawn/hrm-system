@@ -5,7 +5,6 @@ import path from 'path';
 import fs from 'fs';
 
 export class UploadsController {
-  // Загрузка файлов
   async uploadFiles(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     uploadMultiple(req, res, (err) => {
       if (err) {
@@ -22,7 +21,6 @@ export class UploadsController {
         });
       }
 
-      // Создаем объекты attachment для каждого файла
       const attachments = (req.files as Express.Multer.File[]).map(createAttachment);
 
       res.status(200).json({
@@ -33,14 +31,17 @@ export class UploadsController {
     });
   }
 
-  // Скачивание файла
   async downloadFile(req: Request, res: Response, next: NextFunction) {
     try {
       const { filename } = req.params;
       const uploadsDir = path.join(__dirname, '../../uploads');
-      const filePath = path.join(uploadsDir, filename);
+      
+      let filePath = path.join(uploadsDir, filename);
+      
+      if (!fs.existsSync(filePath)) {
+        filePath = path.join(uploadsDir, 'documents', filename);
+      }
 
-      // Проверяем существование файла
       if (!fs.existsSync(filePath)) {
         return res.status(404).json({
           success: false,
@@ -48,21 +49,18 @@ export class UploadsController {
         });
       }
 
-      // Отправляем файл
       res.download(filePath);
     } catch (error) {
       next(error);
     }
   }
 
-  // Просмотр файла (для изображений)
   async viewFile(req: Request, res: Response, next: NextFunction) {
     try {
       const { filename } = req.params;
       const uploadsDir = path.join(__dirname, '../../uploads');
       const filePath = path.join(uploadsDir, filename);
 
-      // Проверяем существование файла
       if (!fs.existsSync(filePath)) {
         return res.status(404).json({
           success: false,
@@ -70,7 +68,6 @@ export class UploadsController {
         });
       }
 
-      // Отправляем файл для просмотра
       res.sendFile(filePath);
     } catch (error) {
       next(error);

@@ -30,10 +30,11 @@ export class EmployeesController {
   async createEmployee(req: Request, res: Response, next: NextFunction) {
     try {
       const employeeData = req.body as ICreateEmployee;
-      await employeeService.createEmployee(employeeData);
+      const newEmployee = await employeeService.createEmployee(employeeData);
       res.status(201).json({
+        success: true,
         message: "Employee created successfully",
-        data: employeeData,
+        data: newEmployee,
       });
     } catch (error) {
       next(error);
@@ -81,6 +82,18 @@ export class EmployeesController {
     try {
       const employee = await employeeService.getEmployeeById(req.user.userId);
       res.status(200).json(employee);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getAvailableManagers(req: Request, res: Response, next: NextFunction) {
+    try {
+      const managers = await employeeService.getAvailableManagers();
+      res.status(200).json({
+        success: true,
+        data: managers
+      });
     } catch (error) {
       next(error);
     }

@@ -10,6 +10,7 @@ import {
   TeamOutlined,
   ProjectOutlined,
   FileTextOutlined,
+  FolderOpenOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
@@ -85,6 +86,12 @@ export function AppLayout({ children }: AppLayoutProps) {
       icon: <FileTextOutlined />,
       label: 'Заявки',
       onClick: () => navigate('/requests'),
+    },
+    {
+      key: '/documents',
+      icon: <FolderOpenOutlined />,
+      label: 'Документы',
+      onClick: () => navigate('/documents'),
     },
   ];
 

@@ -3,28 +3,23 @@ import { TaskStatusEnum, TaskPriorityEnum } from "../commons/enums/enums";
 import { faker } from '@faker-js/faker';
 
 export async function seed(knex: Knex): Promise<void> {
-  // Очищаем связанные таблицы
+
   await knex("tasks_assignees_employees").del();
   await knex("tasks").del();
-  console.log("Creating tasks for employees...");
 
-  // Получаем всех сотрудников из базы данных
   const employees = await knex("employees").select("*");
 
   if (employees.length === 0) {
-    console.log("No employees found. Please run users seed first.");
     return;
   }
 
-  // Получаем менеджеров и админов для создания задач
   const managers = await knex("employees")
     .join("users", "employees.userId", "users.id")
     .where("users.role", "IN", ["admin", "manager"])
     .select("employees.*");
 
-  const creators = managers.length > 0 ? managers : employees.slice(0, 5); // Берем первых 5 если нет менеджеров
+  const creators = managers.length > 0 ? managers : employees.slice(0, 5); 
 
-  // Создаем 20-30 задач
   const tasks = [];
   const taskTitles = [
     "Разработка API для модуля сотрудников",
@@ -84,9 +79,6 @@ export async function seed(knex: Knex): Promise<void> {
       ]) : null
     });
   }
-
-  // Вставляем задачи
+  
   await knex("tasks").insert(tasks).returning('*');
-
-  console.log(`✅ Successfully created tasks`);
 };

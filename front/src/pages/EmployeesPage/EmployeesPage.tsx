@@ -3,6 +3,7 @@ import { Layout, Typography, Card, Row, Col, Button, Input, Select, Tag, Avatar,
 import { PlusOutlined, SearchOutlined, UserOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/auth.store';
 import employeesAPI, { type Employee } from '../../services/employees.service';
+import { CreateEmployeeModal } from '../../components/CreateEmployeeModal/CreateEmployeeModal';
 import { debounce } from 'lodash';
 import { getRoleColor, getRoleText } from '../../utils/status.utils';
 
@@ -23,6 +24,7 @@ export function EmployeesPage() {
   const [total, setTotal] = useState(0);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
   const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
 
   const fetchEmployees = useCallback(async (filters?: {
@@ -123,7 +125,11 @@ export function EmployeesPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <Title level={2}>Сотрудники</Title>
             {(user?.role === 'admin' || user?.role === 'hr') && (
-              <Button type="primary" icon={<PlusOutlined />}>
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />}
+                onClick={() => setCreateModalVisible(true)}
+              >
                 Добавить сотрудника
               </Button>
             )}
@@ -257,9 +263,15 @@ export function EmployeesPage() {
                           </div>
                         )}
                         {employee.department && (
-                          <div>
+                          <div style={{ marginBottom: '4px' }}>
                             <Text strong>Отдел: </Text>
                             <Text>{employee.department.name}</Text>
+                          </div>
+                        )}
+                        {employee.assignedManager && (
+                          <div>
+                            <Text strong>Менеджер: </Text>
+                            <Text>{employee.assignedManager.lastName} {employee.assignedManager.firstName}</Text>
                           </div>
                         )}
                       </div>
@@ -367,9 +379,14 @@ export function EmployeesPage() {
                     {new Date(selectedEmployee.hireDate).toLocaleDateString()}
                   </Descriptions.Item>
                 )}
-                {selectedEmployee.salary && (
-                  <Descriptions.Item label="Зарплата">
-                    {selectedEmployee.salary.toLocaleString()} руб.
+                {selectedEmployee.assignedManager && (
+                  <Descriptions.Item label="Ответственный менеджер">
+                    {selectedEmployee.assignedManager.lastName} {selectedEmployee.assignedManager.firstName}
+                    {selectedEmployee.assignedManager.role && (
+                      <Tag color="blue" style={{ marginLeft: 8 }}>
+                        {getRoleText(selectedEmployee.assignedManager.role)}
+                      </Tag>
+                    )}
                   </Descriptions.Item>
                 )}
                 <Descriptions.Item label="Дата создания">
@@ -382,6 +399,15 @@ export function EmployeesPage() {
             </div>
           )}
         </Modal>
+
+        <CreateEmployeeModal
+          visible={createModalVisible}
+          onClose={() => setCreateModalVisible(false)}
+          onEmployeeCreated={() => {
+            fetchEmployees();
+            setCreateModalVisible(false);
+          }}
+        />
       </Content>
     </Layout>
   );

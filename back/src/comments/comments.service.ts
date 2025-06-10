@@ -11,7 +11,6 @@ export class CommentsService {
       throw createError(404, "Employee not found");
     }
 
-    // Проверяем существование задачи или заявки
     if (commentData.type === 'task' && commentData.taskId) {
       const task = await taskRepository.findOneBy({ id: commentData.taskId });
       if (!task) {
@@ -69,7 +68,6 @@ export class CommentsService {
       throw createError(404, "Comment not found");
     }
 
-    // Проверяем, что пользователь является автором комментария
     if (comment.author.user.id !== user.userId) {
       throw createError(403, "You can only edit your own comments");
     }
@@ -88,7 +86,6 @@ export class CommentsService {
       throw createError(404, "Comment not found");
     }
 
-    // Проверяем, что пользователь является автором комментария или менеджером
     if (comment.author.user.id !== user.userId && user.role !== 'admin' && user.role !== 'hr' && user.role !== 'manager') {
       throw createError(403, "You can only delete your own comments or you must be a manager");
     }

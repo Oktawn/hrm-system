@@ -8,7 +8,6 @@ const requestsService = new RequestsService();
 
 export class RequestsController {
   async createRequest(req: AuthenticatedRequest, res: Response) {
-    // Используем middleware для обработки файлов
     uploadMultiple(req, res, async (err) => {
       if (err) {
         return res.status(400).json({
@@ -20,13 +19,11 @@ export class RequestsController {
       try {
         const requestData = req.body;
         
-        // Обрабатываем загруженные файлы
         let attachments = [];
         if (req.files && Array.isArray(req.files) && req.files.length > 0) {
           attachments = (req.files as Express.Multer.File[]).map(createAttachment);
         }
 
-        // Добавляем attachments к данным запроса
         const requestDataWithAttachments = {
           ...requestData,
           attachments: attachments.length > 0 ? attachments : undefined

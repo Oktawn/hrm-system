@@ -25,7 +25,6 @@ export async function seed(knex: Knex): Promise<void> {
         { id: 6, name: "Операционный отдел" }
     ]);
 
-    // Создаем должности
     await knex("positions").insert([
         { id: 1, name: "Руководитель IT отдела", baseSalary: 150000.00, grade: "Senior", departmentId: 1 },
         { id: 2, name: "Старший разработчик", baseSalary: 120000.00, grade: "Senior", departmentId: 1 },
@@ -44,12 +43,9 @@ export async function seed(knex: Knex): Promise<void> {
         { id: 15, name: "Операционный менеджер", baseSalary: 90000.00, departmentId: 6 }
     ]);
 
-
-    // Создаем массив пользователей
     const users = [];
     const employees = [];
 
-    // Один админ
     const adminId = faker.string.uuid();
     users.push({
         id: adminId,
@@ -70,7 +66,6 @@ export async function seed(knex: Knex): Promise<void> {
         positionId: 1 // Руководитель IT отдела
     });
 
-    // 3 HR сотрудника
     for (let i = 0; i < 3; i++) {
         const userId = faker.string.uuid();
         users.push({
@@ -94,7 +89,6 @@ export async function seed(knex: Knex): Promise<void> {
         });
     }
 
-    // 6 менеджеров
     for (let i = 0; i < 6; i++) {
         const userId = faker.string.uuid();
         users.push({
@@ -102,11 +96,10 @@ export async function seed(knex: Knex): Promise<void> {
             email: `manager${i + 1}@hrm.com`,
             password: bcrypt.hashSync("password123", 10),
             role: UserRoleEnum.MANAGER,
-            isActive: i < 5 // делаем одного менеджера неактивным
+            isActive: i < 5
         });
 
-        // Распределяем менеджеров по отделам
-        const departmentId = (i % 5) + 2; // отделы 2-6 (кроме IT)
+        const departmentId = (i % 5) + 2;
         let positionId;
         switch (departmentId) {
             case 2: positionId = 7; break; // HR менеджер
@@ -131,7 +124,6 @@ export async function seed(knex: Knex): Promise<void> {
         });
     }
 
-    // 30 обычных сотрудников
     for (let i = 0; i < 30; i++) {
         const userId = faker.string.uuid();
         users.push({
@@ -139,15 +131,14 @@ export async function seed(knex: Knex): Promise<void> {
             email: faker.internet.email().toLowerCase(),
             password: bcrypt.hashSync("password123", 10),
             role: UserRoleEnum.EMPLOYEE,
-            isActive: i < 26 // делаем 4 сотрудников неактивными
+            isActive: i < 26
         });
 
-        // Распределяем сотрудников по отделам
-        const departmentId = (i % 6) + 1; // отделы 1-6
+        const departmentId = (i % 6) + 1;
         let positionId;
         switch (departmentId) {
             case 1: // IT
-                positionId = [2, 3, 4, 5][i % 4]; // разные IT позиции
+                positionId = [2, 3, 4, 5][i % 4];
                 break;
             case 2: // HR
                 positionId = 8; // HR специалист
@@ -182,10 +173,26 @@ export async function seed(knex: Knex): Promise<void> {
         });
     }
 
-    // Вставляем пользователей
     await knex("users").insert(users).returning('*');
 
-    // Вставляем сотрудников
     await knex("employees").insert(employees).returning('*');
+
+    const hrAndManagers = employees.filter((emp, index) => {
+        const user = users[index];
+        return user.role === UserRoleEnum.HR || user.role === UserRoleEnum.MANAGER || user.role === UserRoleEnum.ADMIN;
+    });
+
+    for (let i = 0; i < employees.length; i++) {
+        const employee = employees[i];
+        const user = users[i];
+
+        if (user.role === UserRoleEnum.EMPLOYEE) {
+            const randomManager = hrAndManagers[Math.floor(Math.random() * hrAndManagers.length)];
+
+            await knex("employees")
+                .where({ id: employee.id })
+                .update({ assignedManagerId: randomManager.id });
+        }
+    }
 
 };
