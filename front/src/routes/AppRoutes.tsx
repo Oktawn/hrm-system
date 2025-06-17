@@ -3,6 +3,7 @@ import { LoginPage } from '../pages/LoginPage/LoginPage';
 import { HomePage } from '../pages/HomePage/HomePage';
 import { ProfilePage } from '../pages/ProfilePage/ProfilePage';
 import { TasksPage } from '../pages/TasksPage/TasksPage';
+import { TaskStatisticsPage } from '../pages/TaskStatisticsPage/TaskStatisticsPage';
 import { RequestsPage } from '../pages/RequestsPage/RequestsPage';
 import { DocumentsPage } from '../pages/DocumentsPage/DocumentsPage';
 import { EmployeesPage } from '../pages/EmployeesPage/EmployeesPage';
@@ -39,6 +40,16 @@ export function AppRoutes() {
           <ProtectedRoute>
             <AppLayout>
               <TasksPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/task-statistics"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <TaskStatisticsPage />
             </AppLayout>
           </ProtectedRoute>
         }

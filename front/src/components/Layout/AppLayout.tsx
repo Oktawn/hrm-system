@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState, type ReactNode } from 'react';
 import { Layout, Menu, Avatar, Dropdown, Space, Typography, Button, type MenuProps } from 'antd';
 import {
   UserOutlined,
@@ -11,6 +11,7 @@ import {
   ProjectOutlined,
   FileTextOutlined,
   FolderOpenOutlined,
+  BarChartOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
@@ -20,14 +21,14 @@ const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 
 interface AppLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
-  const [collapsed, setCollapsed] = React.useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -80,6 +81,12 @@ export function AppLayout({ children }: AppLayoutProps) {
       icon: <ProjectOutlined />,
       label: 'Задачи',
       onClick: () => navigate('/tasks'),
+    },
+    {
+      key: '/task-statistics',
+      icon: <BarChartOutlined />,
+      label: 'Статистика задач',
+      onClick: () => navigate('/task-statistics'),
     },
     {
       key: '/requests',

@@ -1,12 +1,16 @@
 import { Router } from "express";
 import { TasksController } from "./tasks.controller";
+import { TasksStatisticsController } from "./tasks-statistics.controller";
 import { authMiddleware } from "../auth/auth.middleware";
 
 const taskRouter = Router();
 const tasksController = new TasksController();
+const tasksStatisticsController = new TasksStatisticsController();
 
 taskRouter.get("/", authMiddleware(), tasksController.getAllTasks);
 taskRouter.get("/stats", authMiddleware(), tasksController.getTaskStats);
+taskRouter.get("/statistics", authMiddleware(), tasksStatisticsController.getStatistics);
+taskRouter.get("/statistics/export", authMiddleware(), tasksStatisticsController.exportToExcel);
 taskRouter.get("/recent", authMiddleware(), tasksController.getRecentTasks);
 taskRouter.get("/:id", authMiddleware(), tasksController.getTaskById);
 taskRouter.get("/assignee/:assigneeId", authMiddleware(), tasksController.getTasksByAssignee);
