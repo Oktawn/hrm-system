@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Drawer,
   Typography,
@@ -48,12 +48,7 @@ interface TaskDetailProps {
   onTaskUpdate?: () => void;
 }
 
-export const TaskDetail: React.FC<TaskDetailProps> = ({
-  taskId,
-  visible,
-  onClose,
-  onTaskUpdate
-}) => {
+export function TaskDetail({ taskId, visible, onClose, onTaskUpdate }: TaskDetailProps) {
   const { user } = useAuthStore();
   const [task, setTask] = useState<Task | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -82,7 +77,6 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
       setTask(response.data);
       setAttachments(response.data.attachments || []);
 
-      // Заполняем форму данными
       form.setFieldsValue({
         title: response.data.title,
         description: response.data.description,

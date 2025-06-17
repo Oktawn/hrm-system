@@ -12,7 +12,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const location = useLocation();
 
   useEffect(() => {
-    // Используем async/await внутри useEffect
     const initAuth = async () => {
       await checkAuth();
     };

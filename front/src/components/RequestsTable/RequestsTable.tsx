@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { Fragment, useState } from 'react';
 import requestsService, { type Request } from '../../services/requests.service';
 import Comments from '../Comments/Comments';
 import StatusSelector from '../StatusSelector/StatusSelector';
@@ -11,19 +11,19 @@ interface RequestsTableProps {
   onRequestUpdate: () => void;
 }
 
-const RequestsTable: React.FC<RequestsTableProps> = ({ requests, onRequestUpdate }) => {
+function RequestsTable({ requests, onRequestUpdate }: RequestsTableProps) {
   const [showComments, setShowComments] = useState<{ requestId: number; visible: boolean }>({ requestId: 0, visible: false });
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-  
+
   const { user: currentUser } = useAuthStore();
 
   const canChangeStatus = (request: Request) => {
     if (!currentUser) return false;
-    
+
     const isCreator = request.creator.id === currentUser.id;
     const isAssignee = request.assignee?.id === currentUser.id;
     const isManager = currentUser.role === 'admin' || currentUser.role === 'hr' || currentUser.role === 'manager';
-    
+
     return isCreator || isAssignee || isManager;
   };
 
@@ -77,12 +77,12 @@ const RequestsTable: React.FC<RequestsTableProps> = ({ requests, onRequestUpdate
           </thead>
           <tbody>
             {requests.map(request => (
-              <React.Fragment key={request.id}>
+              <Fragment key={request.id}>
                 <tr className="request-row">
                   <td>{request.id}</td>
                   <td>
                     <div className="request-title-cell">
-                      <button 
+                      <button
                         className="expand-button"
                         onClick={() => toggleRowExpansion(request.id)}
                       >
@@ -105,7 +105,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({ requests, onRequestUpdate
                     />
                   </td>
                   <td>
-                    <span 
+                    <span
                       className="priority-badge"
                       style={{ backgroundColor: getPriorityCSSColor(request.priority) }}
                     >
@@ -133,7 +133,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({ requests, onRequestUpdate
                   </td>
                   <td>
                     <div className="actions">
-                      <button 
+                      <button
                         className="action-button comment-button"
                         onClick={() => handleShowComments(request.id)}
                         title="Комментарии"
@@ -143,7 +143,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({ requests, onRequestUpdate
                     </div>
                   </td>
                 </tr>
-                
+
                 {expandedRows.has(request.id) && (
                   <tr className="expanded-row">
                     <td colSpan={9}>
@@ -152,7 +152,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({ requests, onRequestUpdate
                           <h4>Описание:</h4>
                           <p>{request.description || 'Описание отсутствует'}</p>
                         </div>
-                        
+
                         <div className="request-meta">
                           <div className="meta-item">
                             <strong>Создано:</strong> {formatDate(request.createdAt)}
@@ -185,18 +185,18 @@ const RequestsTable: React.FC<RequestsTableProps> = ({ requests, onRequestUpdate
                     </td>
                   </tr>
                 )}
-              </React.Fragment>
+              </Fragment>
             ))}
           </tbody>
         </table>
-        
+
         {requests.length === 0 && (
           <div className="empty-state">
             <p>Заявки не найдены</p>
           </div>
         )}
       </div>
-      
+
       <Comments
         type="request"
         itemId={showComments.requestId}

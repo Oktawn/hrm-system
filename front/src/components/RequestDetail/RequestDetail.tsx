@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Drawer,
   Typography,
@@ -47,12 +47,7 @@ interface RequestDetailProps {
   onRequestUpdate?: () => void;
 }
 
-export const RequestDetail: React.FC<RequestDetailProps> = ({
-  requestId,
-  visible,
-  onClose,
-  onRequestUpdate
-}) => {
+export function RequestDetail({ requestId, visible, onClose, onRequestUpdate }: RequestDetailProps) {
   const { user } = useAuthStore();
   const [request, setRequest] = useState<Request | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -338,9 +333,9 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({
                     <Text strong>Прикрепленные файлы:</Text>
                     <div style={{ marginTop: 8 }}>
                       {request.attachments.map((attachment: any, index: number) => (
-                        <div key={index} style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
+                        <div key={index} style={{
+                          display: 'flex',
+                          alignItems: 'center',
                           marginBottom: 4,
                           padding: '8px 12px',
                           backgroundColor: '#f0f0f0',

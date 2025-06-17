@@ -5,7 +5,7 @@ import { ProfilePage } from '../pages/ProfilePage/ProfilePage';
 import { TasksPage } from '../pages/TasksPage/TasksPage';
 import { RequestsPage } from '../pages/RequestsPage/RequestsPage';
 import { DocumentsPage } from '../pages/DocumentsPage/DocumentsPage';
-import { EmployeesPage } from '../pages/EmployeesPage';
+import { EmployeesPage } from '../pages/EmployeesPage/EmployeesPage';
 import { AppLayout } from '../components/Layout/AppLayout';
 import { ProtectedRoute } from '../components/ProtectedRoute/ProtectedRoute';
 

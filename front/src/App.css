@@ -1,9 +1,8 @@
-/* Глобальные стили для приложения */
 .ant-layout {
   min-height: 100vh;
 }
 
-/* Кастомные стили для компонентов Ant Design */
+
 .ant-btn-primary {
   background: #1890ff;
   border-color: #1890ff;

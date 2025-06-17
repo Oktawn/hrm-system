@@ -98,14 +98,12 @@ class RequestsService {
   async createWithFiles(requestData: CreateRequestData, files: File[]): Promise<{ success: boolean; data: Request; message?: string }> {
     const formData = new FormData();
     
-    // Добавляем данные заявки
     Object.entries(requestData).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         formData.append(key, value.toString());
       }
     });
     
-    // Добавляем файлы
     files.forEach((file) => {
       formData.append('attachments', file);
     });

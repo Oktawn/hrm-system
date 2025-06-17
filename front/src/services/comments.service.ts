@@ -35,15 +35,13 @@ class CommentsService {
 
   async createCommentWithFiles(commentData: ICreateComment, files: File[]): Promise<IComment> {
     const formData = new FormData();
-    
-    // Добавляем данные комментария
+
     Object.entries(commentData).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         formData.append(key, value.toString());
       }
     });
-    
-    // Добавляем файлы
+
     files.forEach((file) => {
       formData.append('attachments', file);
     });
@@ -53,7 +51,7 @@ class CommentsService {
         'Content-Type': 'multipart/form-data',
       },
     });
-    
+
     return response.data.success ? response.data.data : response.data;
   }
 

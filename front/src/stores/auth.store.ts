@@ -18,23 +18,18 @@ export const useAuthStore = create<AuthStore>()(
   devtools(
     persist(
       (set) => ({
-        // Начальное состояние
         user: null,
         isAuthenticated: false,
         isLoading: false,
         error: null,
 
-        // Действия
         login: async (credentials: LoginRequest) => {
           set({ isLoading: true, error: null });
 
           try {
-            const response = await authAPI.login(credentials);
-            // В новой системе токены автоматически сохраняются в httpOnly cookie
-            // Нам нужно только получить данные пользователя
-            
+            const response = await authAPI.login(credentials);            
             set({
-              user: response.data.user || null, // Если есть данные пользователя в ответе
+              user: response.data.user || null, 
               isAuthenticated: true,
               isLoading: false,
               error: null,
@@ -59,7 +54,6 @@ export const useAuthStore = create<AuthStore>()(
           } catch (error) {
             console.error('Ошибка при выходе:', error);
           } finally {
-            // Очищаем состояние - куки очистит сервер
             set({
               user: null,
               isAuthenticated: false,
@@ -89,8 +83,6 @@ export const useAuthStore = create<AuthStore>()(
               });
             }
           } catch (error: any) {
-            // Если проверка токена не удалась, пользователь не авторизован
-            // Не логируем ошибку как error, это нормальная ситуация для неавторизованного пользователя
             set({
               user: null,
               isAuthenticated: false,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { commentsService, type IComment, type ICreateComment } from '../../services/comments.service';
 import { useAuthStore } from '../../stores/auth.store';
 import SimpleFileUpload from '../SimpleFileUpload/SimpleFileUpload';
@@ -15,7 +15,7 @@ interface CommentsProps {
   onClose: () => void;
 }
 
-const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose }) => {
+function Comments({ type, itemId, isVisible, onClose }: CommentsProps) {
   const [comments, setComments] = useState<IComment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -34,7 +34,7 @@ const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose })
   const fetchComments = async () => {
     try {
       setLoading(true);
-      const data = type === 'task' 
+      const data = type === 'task'
         ? await commentsService.getCommentsByTask(itemId)
         : await commentsService.getCommentsByRequest(itemId);
       setComments(data);
@@ -75,7 +75,7 @@ const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose })
 
     try {
       const updatedComment = await commentsService.updateComment(commentId, { content: editText });
-      setComments(comments.map(comment => 
+      setComments(comments.map(comment =>
         comment.id === commentId ? updatedComment : comment
       ));
       setEditingComment(null);
@@ -107,10 +107,10 @@ const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose })
   };
 
   const canEditComment = (comment: IComment) => {
-    return comment.author.id === currentUser?.id || 
-           currentUser?.role === 'admin' || 
-           currentUser?.role === 'hr' || 
-           currentUser?.role === 'manager';
+    return comment.author.id === currentUser?.id ||
+      currentUser?.role === 'admin' ||
+      currentUser?.role === 'hr' ||
+      currentUser?.role === 'manager';
   };
 
   const handleDownload = (filename: string) => {
@@ -142,7 +142,7 @@ const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose })
           <h3>Комментарии</h3>
           <button onClick={onClose} className="close-button">×</button>
         </div>
-        
+
         <div className="comments-content">
           {loading ? (
             <div className="loading">Загрузка комментариев...</div>
@@ -161,7 +161,7 @@ const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose })
                         {new Date(comment.created_at).toLocaleString('ru-RU')}
                       </span>
                     </div>
-                    
+
                     {editingComment === comment.id ? (
                       <div className="comment-edit">
                         <textarea
@@ -170,13 +170,13 @@ const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose })
                           className="edit-textarea"
                         />
                         <div className="edit-actions">
-                          <button 
+                          <button
                             onClick={() => handleEditComment(comment.id)}
                             className="save-button"
                           >
                             Сохранить
                           </button>
-                          <button 
+                          <button
                             onClick={cancelEditing}
                             className="cancel-button"
                           >
@@ -187,7 +187,7 @@ const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose })
                     ) : (
                       <div className="comment-content-wrapper">
                         <div className="comment-text">{comment.content}</div>
-                        
+
                         {/* Отображение вложений */}
                         {comment.attachments && comment.attachments.length > 0 && (
                           <div className="comment-attachments">
@@ -196,9 +196,9 @@ const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose })
                             </Text>
                             <div style={{ marginTop: 8 }}>
                               {comment.attachments.map((attachment: any, index: number) => (
-                                <div key={index} className="attachment-item" style={{ 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
+                                <div key={index} className="attachment-item" style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
                                   marginBottom: 4,
                                   padding: '4px 8px',
                                   backgroundColor: '#f5f5f5',
@@ -231,16 +231,16 @@ const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose })
                             </div>
                           </div>
                         )}
-                        
+
                         {canEditComment(comment) && (
                           <div className="comment-actions">
-                            <button 
+                            <button
                               onClick={() => startEditing(comment)}
                               className="edit-button"
                             >
                               Редактировать
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleDeleteComment(comment.id)}
                               className="delete-button"
                             >
@@ -255,7 +255,7 @@ const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose })
               )}
             </div>
           )}
-          
+
           <div className="add-comment">
             <textarea
               value={newComment}
@@ -263,7 +263,7 @@ const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose })
               placeholder="Добавить комментарий..."
               className="comment-textarea"
             />
-            
+
             {/* Компонент загрузки файлов */}
             <div style={{ marginTop: 12, marginBottom: 12 }}>
               <SimpleFileUpload
@@ -274,8 +274,8 @@ const Comments: React.FC<CommentsProps> = ({ type, itemId, isVisible, onClose })
                 accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
               />
             </div>
-            
-            <button 
+
+            <button
               onClick={handleAddComment}
               className="add-comment-button"
               disabled={!newComment.trim()}

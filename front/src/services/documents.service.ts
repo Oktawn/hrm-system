@@ -152,18 +152,15 @@ class DocumentsService {
 
   async downloadDocument(fileUrl: string): Promise<void> {
     try {
-      // Извлекаем имя файла из URL
       const filename = fileUrl.split('/').pop();
       if (!filename) {
         throw new Error('Invalid file URL');
       }
 
-      // Делаем запрос на скачивание файла
       const response = await api.get(`/uploads/download/${filename}`, {
         responseType: 'blob',
       });
 
-      // Создаем blob URL и скачиваем файл
       const blob = new Blob([response.data]);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
