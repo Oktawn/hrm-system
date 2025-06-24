@@ -48,22 +48,51 @@ export class TasksStatisticsService {
   }
 
   private async getEmployeeTaskStatistics(employeeId: string, filter?: ITaskStatisticsFilter) {
-    const taskQueryBuilder = taskRepository.createQueryBuilder('task')
+    const assignedTasksQueryBuilder = taskRepository.createQueryBuilder('task')
       .leftJoin('task.assignees', 'assignee')
       .where('assignee.id = :employeeId', { employeeId });
 
+    const createdTasksQueryBuilder = taskRepository.createQueryBuilder('task')
+      .where('task.creator.id = :employeeId', { employeeId });
+
     if (filter?.dateFrom && filter?.dateTo) {
-      taskQueryBuilder.andWhere('task.createdAt BETWEEN :dateFrom AND :dateTo', {
+      assignedTasksQueryBuilder.andWhere('task.createdAt BETWEEN :dateFrom AND :dateTo', {
+        dateFrom: filter.dateFrom,
+        dateTo: filter.dateTo
+      });
+      createdTasksQueryBuilder.andWhere('task.createdAt BETWEEN :dateFrom AND :dateTo', {
         dateFrom: filter.dateFrom,
         dateTo: filter.dateTo
       });
     } else if (filter?.dateFrom) {
-      taskQueryBuilder.andWhere('task.createdAt >= :dateFrom', { dateFrom: filter.dateFrom });
+      assignedTasksQueryBuilder.andWhere('task.createdAt >= :dateFrom', { dateFrom: filter.dateFrom });
+      createdTasksQueryBuilder.andWhere('task.createdAt >= :dateFrom', { dateFrom: filter.dateFrom });
     } else if (filter?.dateTo) {
-      taskQueryBuilder.andWhere('task.createdAt <= :dateTo', { dateTo: filter.dateTo });
+      assignedTasksQueryBuilder.andWhere('task.createdAt <= :dateTo', { dateTo: filter.dateTo });
+      createdTasksQueryBuilder.andWhere('task.createdAt <= :dateTo', { dateTo: filter.dateTo });
     }
 
-    const tasks = await taskQueryBuilder.getMany();
+    const [assignedTasks, createdTasks] = await Promise.all([
+      assignedTasksQueryBuilder.getMany(),
+      createdTasksQueryBuilder.getMany()
+    ]);
+
+    const allTaskIds = new Set<number>();
+    const tasks = [];
+
+    assignedTasks.forEach(task => {
+      if (!allTaskIds.has(task.id)) {
+        allTaskIds.add(task.id);
+        tasks.push(task);
+      }
+    });
+
+    createdTasks.forEach(task => {
+      if (!allTaskIds.has(task.id)) {
+        allTaskIds.add(task.id);
+        tasks.push(task);
+      }
+    });
 
     const todoCount = tasks.filter(task => task.status === TaskStatusEnum.TODO).length;
     const inProgressCount = tasks.filter(task => task.status === TaskStatusEnum.IN_PROGRESS).length;
@@ -115,9 +144,13 @@ export class TasksStatisticsService {
         'Процент выполнения (%)'
       ];
 
+
+      worksheet.addRow(['Статистика задач по сотрудникам']);
+      worksheet.addRow([]); 
+
       worksheet.addRow(headers);
 
-      const headerRow = worksheet.getRow(1);
+      const headerRow = worksheet.getRow(4); 
       headerRow.font = { bold: true };
       headerRow.fill = {
         type: 'pattern',
@@ -155,7 +188,7 @@ export class TasksStatisticsService {
         { width: 20 }  // Процент
       ];
 
-      worksheet.eachRow((row, rowNumber) => {
+      worksheet.eachRow((row) => {
         row.eachCell(cell => {
           cell.border = {
             top: { style: 'thin' },
@@ -167,39 +200,20 @@ export class TasksStatisticsService {
       });
 
       if (statistics.length > 0) {
-        const totalRow = statistics.length + 2;
+        const totalRow = statistics.length + 5; 
         worksheet.getCell(`A${totalRow}`).value = 'ИТОГО:';
         worksheet.getCell(`A${totalRow}`).font = { bold: true };
 
-        const totals = statistics.reduce((acc, stat) => ({
-          todoCount: acc.todoCount + stat.todoCount,
-          inProgressCount: acc.inProgressCount + stat.inProgressCount,
-          reviewCount: acc.reviewCount + stat.reviewCount,
-          doneCount: acc.doneCount + stat.doneCount,
-          cancelledCount: acc.cancelledCount + stat.cancelledCount,
-          totalTasks: acc.totalTasks + stat.totalTasks,
-          overdueTasks: acc.overdueTasks + stat.overdueTasks,
-        }), {
-          todoCount: 0,
-          inProgressCount: 0,
-          reviewCount: 0,
-          doneCount: 0,
-          cancelledCount: 0,
-          totalTasks: 0,
-          overdueTasks: 0,
-        });
+        const totalStats = await this.getTotalStatistics(filter);
 
-        const avgCompletionRate = totals.totalTasks > 0 ?
-          Math.round((totals.doneCount / totals.totalTasks) * 100) : 0;
-
-        worksheet.getCell(`D${totalRow}`).value = totals.todoCount;
-        worksheet.getCell(`E${totalRow}`).value = totals.inProgressCount;
-        worksheet.getCell(`F${totalRow}`).value = totals.reviewCount;
-        worksheet.getCell(`G${totalRow}`).value = totals.doneCount;
-        worksheet.getCell(`H${totalRow}`).value = totals.cancelledCount;
-        worksheet.getCell(`I${totalRow}`).value = totals.totalTasks;
-        worksheet.getCell(`J${totalRow}`).value = totals.overdueTasks;
-        worksheet.getCell(`K${totalRow}`).value = avgCompletionRate;
+        worksheet.getCell(`D${totalRow}`).value = totalStats.todoCount;
+        worksheet.getCell(`E${totalRow}`).value = totalStats.inProgressCount;
+        worksheet.getCell(`F${totalRow}`).value = totalStats.reviewCount;
+        worksheet.getCell(`G${totalRow}`).value = totalStats.doneCount;
+        worksheet.getCell(`H${totalRow}`).value = totalStats.cancelledCount;
+        worksheet.getCell(`I${totalRow}`).value = totalStats.totalTasks;
+        worksheet.getCell(`J${totalRow}`).value = totalStats.overdueTasks;
+        worksheet.getCell(`K${totalRow}`).value = totalStats.completionRate;
 
         for (let col = 1; col <= 11; col++) {
           const cell = worksheet.getCell(totalRow, col);
@@ -217,6 +231,79 @@ export class TasksStatisticsService {
     } catch (error) {
       console.error('Error exporting to Excel:', error);
       throw createError(500, 'Ошибка при экспорте в Excel');
+    }
+  }
+
+  async getTotalStatistics(filter?: ITaskStatisticsFilter) {
+    try {
+      let queryBuilder = taskRepository.createQueryBuilder('task')
+        .leftJoinAndSelect('task.assignees', 'assignees')
+        .leftJoinAndSelect('task.creator', 'creator');
+
+      if (filter?.dateFrom && filter?.dateTo) {
+        queryBuilder.andWhere('task.createdAt BETWEEN :dateFrom AND :dateTo', {
+          dateFrom: filter.dateFrom,
+          dateTo: filter.dateTo
+        });
+      } else if (filter?.dateFrom) {
+        queryBuilder.andWhere('task.createdAt >= :dateFrom', { dateFrom: filter.dateFrom });
+      } else if (filter?.dateTo) {
+        queryBuilder.andWhere('task.createdAt <= :dateTo', { dateTo: filter.dateTo });
+      }
+
+      if (filter?.departmentId) {
+        queryBuilder.andWhere(
+          '(assignees.departmentId = :departmentId OR creator.departmentId = :departmentId)',
+          { departmentId: filter.departmentId }
+        );
+      }
+
+      if (filter?.positionId) {
+        queryBuilder.andWhere(
+          '(assignees.positionId = :positionId OR creator.positionId = :positionId)',
+          { positionId: filter.positionId }
+        );
+      }
+
+      if (filter?.employeeId) {
+        queryBuilder.andWhere(
+          '(assignees.id = :employeeId OR creator.id = :employeeId)',
+          { employeeId: filter.employeeId }
+        );
+      }
+
+      const tasks = await queryBuilder.getMany();
+
+      const todoCount = tasks.filter(task => task.status === TaskStatusEnum.TODO).length;
+      const inProgressCount = tasks.filter(task => task.status === TaskStatusEnum.IN_PROGRESS).length;
+      const reviewCount = tasks.filter(task => task.status === TaskStatusEnum.REVIEW).length;
+      const doneCount = tasks.filter(task => task.status === TaskStatusEnum.DONE).length;
+      const cancelledCount = tasks.filter(task => task.status === TaskStatusEnum.CANCELLED).length;
+      const totalTasks = tasks.length;
+
+      const now = new Date();
+      const overdueTasks = tasks.filter(task =>
+        task.deadline &&
+        new Date(task.deadline) < now &&
+        task.status !== TaskStatusEnum.DONE &&
+        task.status !== TaskStatusEnum.CANCELLED
+      ).length;
+
+      const completionRate = totalTasks > 0 ? Math.round((doneCount / totalTasks) * 100) : 0;
+
+      return {
+        todoCount,
+        inProgressCount,
+        reviewCount,
+        doneCount,
+        cancelledCount,
+        totalTasks,
+        overdueTasks,
+        completionRate
+      };
+    } catch (error) {
+      console.error('Error getting total statistics:', error);
+      throw createError(500, 'Ошибка при получении общей статистики задач');
     }
   }
 }

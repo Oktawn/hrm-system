@@ -4,6 +4,7 @@ import { Layout, Typography, Card, Table, Tag, Space, Button, Input, Select } fr
 import { PlusOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/auth.store';
 import tasksAPI, { type Task, type TaskFilter } from '../../services/tasks.service';
+import employeesAPI from '../../services/employees.service';
 import TaskDetail from '../../components/TaskDetail/TaskDetail';
 import CreateTaskModal from '../../components/CreateTaskModal/CreateTaskModal';
 import {
@@ -24,6 +25,7 @@ export function TasksPage() {
   const [filter, setFilter] = useState<TaskFilter>({});
   const [searchParams, setSearchParams] = useSearchParams();
   const [createTaskModalVisible, setCreateTaskModalVisible] = useState(false);
+  const [employees, setEmployees] = useState<Array<{id: string, firstName: string, lastName: string}>>([]);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -32,6 +34,7 @@ export function TasksPage() {
 
   const selectedTaskId = searchParams.get('task');
   const taskDetailVisible = Boolean(selectedTaskId);
+  const myTasksFilter = searchParams.get('myTasks') === 'true';
 
   const isEmployee = user?.role === 'employee';
   const isManager = user?.role === 'manager' || user?.role === 'hr' || user?.role === 'admin';
@@ -117,9 +120,32 @@ export function TasksPage() {
     }
   };
 
+  const fetchEmployees = async () => {
+    try {
+      const response = await employeesAPI.getAll();
+      if (response.data?.data) {
+        setEmployees(response.data.data.map((emp: any) => ({
+          id: emp.id,
+          firstName: emp.firstName || '',
+          lastName: emp.lastName || ''
+        })));
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки сотрудников:', error);
+    }
+  };
+
   useEffect(() => {
     fetchTasks(pagination.current, pagination.pageSize, filter);
+    fetchEmployees();
   }, [filter, user]);
+
+  useEffect(() => {
+    // Применяем фильтр "мои задачи" если он указан в URL
+    if (myTasksFilter && user?.employeeId && !filter.assigneesId) {
+      setFilter(prev => ({ ...prev, assigneesId: [user.employeeId!] }));
+    }
+  }, [myTasksFilter, user?.employeeId]);
 
   const handleTaskClick = (taskId: number) => {
     setSearchParams({ task: taskId.toString() });
@@ -129,6 +155,16 @@ export function TasksPage() {
     setSearchParams({});
   };
 
+  const clearMyTasksFilter = () => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.delete('myTasks');
+    setSearchParams(newSearchParams);
+    setFilter(prev => {
+      const { assigneesId, ...rest } = prev;
+      return rest;
+    });
+  };
+
   const handleTaskUpdate = () => {
     fetchTasks(pagination.current, pagination.pageSize, filter);
   };
@@ -136,26 +172,25 @@ export function TasksPage() {
   const handleTableChange = (pagination: any, _filters: any, sorter: any) => {
     let newSortField = '';
     let newSortOrder: 'ascend' | 'descend' | null = null;
-    
+
     if (sorter && sorter.field && sorter.order) {
       newSortField = sorter.field;
       newSortOrder = sorter.order;
     }
-    
+
     const newPagination = {
       current: pagination.current,
       pageSize: pagination.pageSize,
       total: pagination.total,
     };
     setPagination(newPagination);
-    
-    // Обновляем фильтр с параметрами сортировки
+
     const updatedFilter: TaskFilter = {
       ...filter,
       sortBy: newSortField || undefined,
       sortOrder: newSortOrder === 'ascend' ? 'ASC' : newSortOrder === 'descend' ? 'DESC' : undefined,
     };
-    
+
     setFilter(updatedFilter);
   };
 
@@ -257,9 +292,18 @@ export function TasksPage() {
       <Content style={{ padding: '24px' }}>
         <div style={{ marginBottom: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <Title level={2}>
-              {isEmployee ? 'Мои задачи' : 'Задачи'}
-            </Title>
+            <div>
+              <Title level={2}>
+                {isEmployee ? 'Мои задачи' : 'Задачи'}
+              </Title>
+              {myTasksFilter && !isEmployee && (
+                <div style={{ marginTop: '8px' }}>
+                  <Tag closable onClose={clearMyTasksFilter} color="blue">
+                    Фильтр: Мои задачи
+                  </Tag>
+                </div>
+              )}
+            </div>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateTaskModalVisible(true)}>
               Создать задачу
             </Button>
@@ -297,6 +341,22 @@ export function TasksPage() {
               <Option value="medium">Средний</Option>
               <Option value="low">Низкий</Option>
             </Select>
+            {!isEmployee && (
+              <Select
+                placeholder="Исполнитель"
+                style={{ width: 200 }}
+                allowClear
+                mode="multiple"
+                value={filter.assigneesId}
+                onChange={(value) => setFilter({ ...filter, assigneesId: value })}
+              >
+                {employees.map(emp => (
+                  <Option key={emp.id} value={emp.id}>
+                    {emp.firstName} {emp.lastName}
+                  </Option>
+                ))}
+              </Select>
+            )}
           </Space>
         </div>
 

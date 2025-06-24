@@ -49,7 +49,6 @@ export function HomePage() {
         setLoading(true);
         setError(null);
 
-        // Параллельно загружаем статистику
         const [
           employeesStatsData,
           tasksStatsData,
@@ -64,7 +63,6 @@ export function HomePage() {
         setTasksStats(tasksStatsData);
         setRecentTasks(recentTasksData);
 
-        // статистика по отделам
         try {
           const departmentsData = await departmentsAPI.getAll();
           if (departmentsData.data && Array.isArray(departmentsData.data)) {
@@ -321,7 +319,7 @@ export function HomePage() {
                     <Button 
                       type="link" 
                       icon={<EyeOutlined />}
-                      onClick={() => navigate('/tasks')}
+                      onClick={() => navigate('/tasks?myTasks=true')}
                     >
                       Все мои задачи
                     </Button>

@@ -31,6 +31,7 @@ const { RangePicker } = DatePicker;
 export function TaskStatisticsPage() {
   const { user } = useAuthStore();
   const [statistics, setStatistics] = useState<TaskStatistics[]>([]);
+  const [totalStats, setTotalStats] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [filter, setFilter] = useState<TaskStatisticsFilter>({});
@@ -42,8 +43,12 @@ export function TaskStatisticsPage() {
 
     try {
       setLoading(true);
-      const response = await statisticsService.getStatistics(filter);
-      setStatistics(response.data);
+      const [statsResponse, totalStatsResponse] = await Promise.all([
+        statisticsService.getStatistics(filter),
+        statisticsService.getTotalStatistics(filter)
+      ]);
+      setStatistics(statsResponse.data);
+      setTotalStats(totalStatsResponse.data);
     } catch (error) {
       console.error('Error fetching statistics:', error);
       message.error('Ошибка при загрузке статистики');
@@ -89,20 +94,8 @@ export function TaskStatisticsPage() {
     fetchStatistics();
   }, [filter, hasAccess]);
 
-  const totalStats = statistics.reduce((acc, stat) => ({
-    totalEmployees: acc.totalEmployees + 1,
-    totalTasks: acc.totalTasks + stat.totalTasks,
-    totalCompleted: acc.totalCompleted + stat.doneCount,
-    totalOverdue: acc.totalOverdue + stat.overdueTasks,
-  }), {
-    totalEmployees: 0,
-    totalTasks: 0,
-    totalCompleted: 0,
-    totalOverdue: 0,
-  });
-
-  const overallCompletionRate = totalStats.totalTasks > 0 
-    ? Math.round((totalStats.totalCompleted / totalStats.totalTasks) * 100) 
+  const overallCompletionRate = totalStats?.totalTasks > 0 
+    ? totalStats.completionRate 
     : 0;
 
   const columns: ColumnsType<TaskStatistics> = [
@@ -233,7 +226,7 @@ export function TaskStatisticsPage() {
               <Card>
                 <Statistic 
                   title="Всего сотрудников" 
-                  value={totalStats.totalEmployees} 
+                  value={statistics.length} 
                   valueStyle={{ color: '#1890ff' }}
                 />
               </Card>
@@ -242,7 +235,7 @@ export function TaskStatisticsPage() {
               <Card>
                 <Statistic 
                   title="Всего задач" 
-                  value={totalStats.totalTasks}
+                  value={totalStats?.totalTasks || 0}
                   valueStyle={{ color: '#722ed1' }}
                 />
               </Card>
@@ -251,7 +244,7 @@ export function TaskStatisticsPage() {
               <Card>
                 <Statistic 
                   title="Выполнено задач" 
-                  value={totalStats.totalCompleted}
+                  value={totalStats?.doneCount || 0}
                   valueStyle={{ color: '#52c41a' }}
                 />
               </Card>

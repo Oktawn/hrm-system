@@ -50,6 +50,22 @@ class TaskStatisticsService {
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   }
+
+  async getTotalStatistics(filter?: TaskStatisticsFilter): Promise<{ success: boolean; data: any }> {
+    const params = new URLSearchParams();
+
+    if (filter?.departmentId) params.append('departmentId', filter.departmentId);
+    if (filter?.positionId) params.append('positionId', filter.positionId);
+    if (filter?.employeeId) params.append('employeeId', filter.employeeId);
+    if (filter?.dateFrom) params.append('dateFrom', filter.dateFrom);
+    if (filter?.dateTo) params.append('dateTo', filter.dateTo);
+
+    const queryString = params.toString();
+    const endpoint = `/tasks/statistics/total${queryString ? `?${queryString}` : ''}`;
+
+    const response = await api.get(endpoint);
+    return response.data;
+  }
 }
 
 export const statisticsService = new TaskStatisticsService();

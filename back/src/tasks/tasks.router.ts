@@ -10,6 +10,7 @@ const tasksStatisticsController = new TasksStatisticsController();
 taskRouter.get("/", authMiddleware(), tasksController.getAllTasks);
 taskRouter.get("/stats", authMiddleware(), tasksController.getTaskStats);
 taskRouter.get("/statistics", authMiddleware(), tasksStatisticsController.getStatistics);
+taskRouter.get("/statistics/total", authMiddleware(), tasksStatisticsController.getTotalStatistics);
 taskRouter.get("/statistics/export", authMiddleware(), tasksStatisticsController.exportToExcel);
 taskRouter.get("/recent", authMiddleware(), tasksController.getRecentTasks);
 taskRouter.get("/:id", authMiddleware(), tasksController.getTaskById);
