@@ -2,7 +2,7 @@ import createError from "http-errors";
 import { ICreateTask, ITaskFilter, IUpdateTask } from "./tasks.interface";
 import { employeeRepository, taskRepository } from "../db/db-rep";
 import { In } from "typeorm";
-import { TaskPriorityEnum, TaskStatusEnum, UserRoleEnum } from "../commons/enums/enums";
+import { TaskPriorityEnum, TaskStatusEnum } from "../commons/enums/enums";
 
 export class TasksService {
 
@@ -45,7 +45,6 @@ export class TasksService {
     const { idTask, ...data } = taskData
     const exTask = await this.getTaskById(idTask);
 
-    // Проверяем права на редактирование
     const exUser = await employeeRepository.findOne({
       where: { user: { id: userId } },
       relations: ["user"]
@@ -63,17 +62,15 @@ export class TasksService {
       throw createError(403, "Forbidden: You don't have permission to edit this task");
     }
 
-    // Обрабатываем assigneesId отдельно
     if (data.assigneesId) {
       const exAssignees = await employeeRepository.findBy({ id: In(data.assigneesId) });
       if (exAssignees.length !== data.assigneesId.length) {
         throw createError(404, "One or more assignees not found");
       }
       exTask.assignees = exAssignees;
-      delete data.assigneesId; // Удаляем из data, так как уже обработали
+      delete data.assigneesId;
     }
 
-    // Обновляем остальные поля
     for (const key in data) {
       if (data[key] !== undefined) {
         if (key === 'deadline' && data[key]) {
@@ -86,7 +83,7 @@ export class TasksService {
 
     try {
       const savedTask = await taskRepository.save(exTask);
-      return await this.getTaskById(savedTask.id); // Возвращаем полную задачу с relations
+      return await this.getTaskById(savedTask.id);
     } catch (error) {
       throw createError(500, "Error updating task");
     }
@@ -120,19 +117,11 @@ export class TasksService {
   async getAllTasks(filter: ITaskFilter) {
     const data = { ...filter };
 
-    // Обеспечиваем, что page и limit являются числами
-    const pageNum = Number(data.page) || 1;
-    const limitNum = Number(data.limit) || 10;
+    const pageNum = data.page || 1;
+    const limitNum = data.limit || 10;
 
-    // Извлекаем параметры сортировки
     const sortBy = data.sortBy;
     const sortOrder = data.sortOrder || 'ASC';
-
-    // Удаляем page, limit и sort параметры из data для фильтрации
-    delete data.page;
-    delete data.limit;
-    delete data.sortBy;
-    delete data.sortOrder;
 
     const queryB = taskRepository.createQueryBuilder("task");
     queryB.leftJoinAndSelect("task.assignees", "assignees");

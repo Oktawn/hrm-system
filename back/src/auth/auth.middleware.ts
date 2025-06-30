@@ -1,8 +1,9 @@
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { UserRoleEnum } from '../commons/enums/enums';
 import { verify } from 'jsonwebtoken';
 import { jwtConfig } from '../config/jwt.config';
 import { AuthenticatedRequest, TokenPayload } from './auth.interface';
+import { userRepository } from '../db/db-rep';
 
 export function authMiddleware(requiredRoles?: UserRoleEnum[]) {
   return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -37,4 +38,26 @@ function verifyToken(token: string) {
 function checkRole(payload: TokenPayload, roles?: UserRoleEnum[]) {
   return roles && roles.length > 0 &&
     !roles.includes(payload.role as UserRoleEnum);
+}
+
+
+export function authMiddlewareBot() {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const telegramId = parseInt(req.body.telegram_id);
+    if (!telegramId) {
+      res.status(401).json({ message: "No telegram_id provided" });
+      return;
+    }
+
+    try {
+      const user = await userRepository.findOne({ where: { tgID: telegramId } });
+      if (!user) {
+        res.status(401).json({ message: "User not found" });
+        return;
+      }
+      next();
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  };
 }

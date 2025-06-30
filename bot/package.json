@@ -1,0 +1,43 @@
+{
+  "name": "bot",
+  "version": "1.0.0",
+  "license": "ISC",
+  "nodemonConfig": {
+    "watch": [
+      "src"
+    ],
+    "ext": "ts",
+    "ignore": [
+      "src/**/*.spec.ts"
+    ],
+    "exec": "ts-node ./src/main.ts"
+  },
+  "scripts": {
+    "dev": "nodemon",
+    "build": "tsc",
+    "start": "NODE_ENV=production node dist/main.js"
+  },
+  "dependencies": {
+    "@grammyjs/conversations": "^2.1.0",
+    "@grammyjs/hydrate": "^1.4.1",
+    "axios": "^1.10.0",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.13",
+    "dedent": "^1.6.0",
+    "dotenv": "^17.0.0",
+    "express": "^5.1.0",
+    "grammy": "^1.36.3",
+    "multer": "^2.0.1",
+    "pg": "^8.16.3",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.25"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.7",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

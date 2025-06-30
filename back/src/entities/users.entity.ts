@@ -12,6 +12,9 @@ export class UsersEntity {
   @Column({ unique: true })
   email: string;
 
+  @Column({ unique: true, nullable: true })
+  tgID: number;
+
   @Column()
   password: string;
 
