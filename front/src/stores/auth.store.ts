@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import type { AuthState, LoginRequest, User } from '../types/auth.types';
 import { authAPI } from '../services/auth.service';
+import { useNavigationStore } from './navigation.store';
 
 interface AuthActions {
   login: (credentials: LoginRequest) => Promise<void>;
@@ -13,7 +14,6 @@ interface AuthActions {
 }
 
 type AuthStore = AuthState & AuthActions;
-
 export const useAuthStore = create<AuthStore>()(
   devtools(
     persist(
@@ -27,9 +27,9 @@ export const useAuthStore = create<AuthStore>()(
           set({ isLoading: true, error: null });
 
           try {
-            const response = await authAPI.login(credentials);            
+            const response = await authAPI.login(credentials);
             set({
-              user: response.data.user || null, 
+              user: response.data.user || null,
               isAuthenticated: true,
               isLoading: false,
               error: null,
@@ -54,6 +54,7 @@ export const useAuthStore = create<AuthStore>()(
           } catch (error) {
             console.error('Ошибка при выходе:', error);
           } finally {
+            useNavigationStore.getState().clearLastVisitedPath();
             set({
               user: null,
               isAuthenticated: false,
@@ -64,14 +65,20 @@ export const useAuthStore = create<AuthStore>()(
         },
 
         checkAuth: async () => {
+          const currentState = useAuthStore.getState();
+
+          if (currentState.isLoading) {
+            return;
+          }
+
           set({ isLoading: true });
-          
+
           try {
             const response = await authAPI.checkToken();
-            
-            if (response.data.valid) {
+
+            if (response.data.valid && response.data.user) {
               set({
-                user: response.data.user || null,
+                user: response.data.user,
                 isAuthenticated: true,
                 isLoading: false,
               });
@@ -83,6 +90,7 @@ export const useAuthStore = create<AuthStore>()(
               });
             }
           } catch (error: any) {
+            console.error('Auth check failed:', error);
             set({
               user: null,
               isAuthenticated: false,
@@ -109,6 +117,7 @@ export const useAuthStore = create<AuthStore>()(
         name: 'auth-storage',
         partialize: (state) => ({
           user: state.user,
+          isAuthenticated: state.isAuthenticated,
         }),
       }
     ),

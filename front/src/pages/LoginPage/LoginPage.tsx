@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Form, Input, Button, Card, Alert, Typography, Space } from 'antd';
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
+import { useNavigation } from '../../stores/navigation.store';
 import { validateLoginForm } from '../../utils/validation';
 import './LoginPage.css';
 
@@ -15,7 +16,9 @@ interface LoginFormData {
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, isLoading, error, clearError, isAuthenticated } = useAuthStore();
+  const { getLastVisitedPath, clearLastVisitedPath } = useNavigation();
 
   const [form] = Form.useForm();
   const [formErrors, setFormErrors] = useState<{
@@ -23,14 +26,15 @@ export function LoginPage() {
     password?: string;
   }>({});
 
-  // Если уже авторизован, перенаправляем на главную
+  const from = (location.state as any)?.from?.pathname || getLastVisitedPath();
+
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      clearLastVisitedPath();
+      navigate(from, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, from, clearLastVisitedPath]);
 
-  // Очищаем ошибки при размонтировании компонента
   useEffect(() => {
     return () => {
       clearError();
@@ -40,7 +44,6 @@ export function LoginPage() {
   const handleSubmit = async (values: LoginFormData) => {
     const { email, password } = values;
 
-    // Валидация формы
     const validation = validateLoginForm(email, password);
 
     if (!validation.isValid) {
@@ -51,21 +54,17 @@ export function LoginPage() {
       return;
     }
 
-    // Очищаем ошибки валидации
     setFormErrors({});
     clearError();
 
     try {
       await login({ email, password });
-      // Перенаправление произойдет автоматически через useEffect
     } catch (err) {
-      // Ошибка уже обработана в store
       console.error('Ошибка входа:', err);
     }
   };
 
   const handleFieldChange = () => {
-    // Очищаем ошибки при изменении полей
     if (Object.keys(formErrors).length > 0) {
       setFormErrors({});
     }

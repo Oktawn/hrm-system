@@ -1,25 +1,29 @@
-import React, { useEffect } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Spin } from 'antd';
 import { useAuthStore } from '../../stores/auth.store';
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
   const location = useLocation();
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   useEffect(() => {
     const initAuth = async () => {
-      await checkAuth();
+      if (!initialCheckDone) {
+        await checkAuth();
+        setInitialCheckDone(true);
+      }
     };
-    
-    initAuth();
-  }, [checkAuth]);
 
-  if (isLoading) {
+    initAuth();
+  }, [checkAuth, initialCheckDone]);
+
+  if (!initialCheckDone || isLoading) {
     return (
       <div style={{
         display: 'flex',
