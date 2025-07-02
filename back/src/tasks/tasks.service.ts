@@ -117,8 +117,8 @@ export class TasksService {
   async getAllTasks(filter: ITaskFilter) {
     const data = { ...filter };
 
-    const pageNum = data.page || 1;
-    const limitNum = data.limit || 10;
+    const pageNum = Number(data.page) || 1;
+    const limitNum = Number(data.limit) || 10;
 
     const sortBy = data.sortBy;
     const sortOrder = data.sortOrder || 'ASC';

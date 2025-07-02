@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react';
-import { 
-  Layout, 
-  Typography, 
-  Card, 
-  Table, 
-  Space, 
-  Button, 
-  DatePicker, 
-  Row, 
-  Col, 
+import {
+  Layout,
+  Typography,
+  Card,
+  Table,
+  Space,
+  Button,
+  DatePicker,
+  Row,
+  Col,
   Statistic,
   message,
   Spin
 } from 'antd';
-import { 
-  DownloadOutlined, 
+import {
+  DownloadOutlined,
   ReloadOutlined,
   BarChartOutlined
 } from '@ant-design/icons';
@@ -43,12 +43,12 @@ export function TaskStatisticsPage() {
 
     try {
       setLoading(true);
-      const [statsResponse, totalStatsResponse] = await Promise.all([
+      const [statsResponse, totalStatsResponse] = await Promise.allSettled([
         statisticsService.getStatistics(filter),
         statisticsService.getTotalStatistics(filter)
       ]);
-      setStatistics(statsResponse.data);
-      setTotalStats(totalStatsResponse.data);
+      setStatistics(statsResponse.status === "fulfilled" ? statsResponse.value.data : []);
+      setTotalStats(totalStatsResponse.status === "fulfilled" ? totalStatsResponse.value.data : null);
     } catch (error) {
       console.error('Error fetching statistics:', error);
       message.error('Ошибка при загрузке статистики');
@@ -94,8 +94,8 @@ export function TaskStatisticsPage() {
     fetchStatistics();
   }, [filter, hasAccess]);
 
-  const overallCompletionRate = totalStats?.totalTasks > 0 
-    ? totalStats.completionRate 
+  const overallCompletionRate = totalStats?.totalTasks > 0
+    ? totalStats.completionRate
     : 0;
 
   const columns: ColumnsType<TaskStatistics> = [
@@ -191,7 +191,7 @@ export function TaskStatisticsPage() {
         let color = '#52c41a'; // зеленый
         if (value < 50) color = '#ff4d4f'; // красный
         else if (value < 80) color = '#faad14'; // желтый
-        
+
         return <strong style={{ color }}>{value}%</strong>;
       }
     },
@@ -219,22 +219,22 @@ export function TaskStatisticsPage() {
           <Title level={2}>
             <BarChartOutlined /> Статистика задач по сотрудникам
           </Title>
-          
+
           {/* Общая статистика */}
           <Row gutter={16} style={{ marginBottom: '24px' }}>
             <Col span={6}>
               <Card>
-                <Statistic 
-                  title="Всего сотрудников" 
-                  value={statistics.length} 
+                <Statistic
+                  title="Всего сотрудников"
+                  value={statistics.length}
                   valueStyle={{ color: '#1890ff' }}
                 />
               </Card>
             </Col>
             <Col span={6}>
               <Card>
-                <Statistic 
-                  title="Всего задач" 
+                <Statistic
+                  title="Всего задач"
                   value={totalStats?.totalTasks || 0}
                   valueStyle={{ color: '#722ed1' }}
                 />
@@ -242,8 +242,8 @@ export function TaskStatisticsPage() {
             </Col>
             <Col span={6}>
               <Card>
-                <Statistic 
-                  title="Выполнено задач" 
+                <Statistic
+                  title="Выполнено задач"
                   value={totalStats?.doneCount || 0}
                   valueStyle={{ color: '#52c41a' }}
                 />
@@ -251,8 +251,8 @@ export function TaskStatisticsPage() {
             </Col>
             <Col span={6}>
               <Card>
-                <Statistic 
-                  title="Общий % выполнения" 
+                <Statistic
+                  title="Общий % выполнения"
                   value={overallCompletionRate}
                   suffix="%"
                   valueStyle={{ color: overallCompletionRate >= 80 ? '#52c41a' : overallCompletionRate >= 50 ? '#faad14' : '#ff4d4f' }}
@@ -274,14 +274,14 @@ export function TaskStatisticsPage() {
               </Col>
               <Col span={8}>
                 <Space>
-                  <Button 
-                    icon={<ReloadOutlined />} 
+                  <Button
+                    icon={<ReloadOutlined />}
                     onClick={resetFilters}
                   >
                     Сбросить фильтры
                   </Button>
-                  <Button 
-                    type="primary" 
+                  <Button
+                    type="primary"
                     icon={<DownloadOutlined />}
                     onClick={handleExportToExcel}
                     loading={exporting}
@@ -304,7 +304,7 @@ export function TaskStatisticsPage() {
                   pageSize: 20,
                   showSizeChanger: true,
                   showQuickJumper: true,
-                  showTotal: (total, range) => 
+                  showTotal: (total, range) =>
                     `${range[0]}-${range[1]} из ${total} сотрудников`,
                 }}
                 scroll={{ x: 1400 }}
