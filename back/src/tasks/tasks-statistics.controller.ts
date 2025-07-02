@@ -48,7 +48,7 @@ export class TasksStatisticsController {
 
       const excelBuffer = await this.tasksStatisticsService.exportToExcel(filter);
       
-      // Формируем имя файла с датой
+      // имя файла с датой
       const date = new Date().toISOString().split('T')[0];
       const filename = `task-statistics-${date}.xlsx`;
 

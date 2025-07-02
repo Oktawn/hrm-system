@@ -1,64 +1,5 @@
+import type { CreateRequestData, RequestFilter, Request } from '../types/request.types';
 import { api } from './auth.service';
-
-export interface Request {
-  id: number;
-  type: 'document' | 'certificate' | 'leave_vacation' | 'leave_sick' | 'leave_personal';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  title: string;
-  description: string;
-  status: 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
-  startDate?: string;
-  endDate?: string;
-  duration?: number;
-  attachments?: Array<{
-    filename: string;
-    originalName: string;
-    mimetype?: string;
-    size: number;
-    uploadDate: string;
-  }>;
-  createdAt: string;
-  updatedAt: string;
-  creator: {
-    id: string;
-    firstName?: string;
-    lastName?: string;
-  };
-  assignee?: {
-    id: string;
-    firstName?: string;
-    lastName?: string;
-  };
-}
-
-export interface RequestFilter {
-  page?: number;
-  limit?: number;
-  type?: string;
-  status?: string;
-  priority?: string;
-  creatorId?: string;
-  assigneeId?: string;
-  description?: string;
-  title?: string;
-  startDateFrom?: string;
-  startDateTo?: string;
-  endDateFrom?: string;
-  endDateTo?: string;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
-}
-
-export interface CreateRequestData {
-  type: 'document' | 'certificate' | 'leave_vacation' | 'leave_sick' | 'leave_personal';
-  priority?: 'low' | 'medium' | 'high' | 'critical';
-  title: string;
-  description: string;
-  startDate?: string;
-  endDate?: string;
-  duration?: number;
-  userId: string;
-}
 
 class RequestsService {
   async getAll(filter?: RequestFilter): Promise<{ success: boolean; data: Request[]; meta?: any }> {
@@ -97,13 +38,13 @@ class RequestsService {
 
   async createWithFiles(requestData: CreateRequestData, files: File[]): Promise<{ success: boolean; data: Request; message?: string }> {
     const formData = new FormData();
-    
+
     Object.entries(requestData).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         formData.append(key, value.toString());
       }
     });
-    
+
     files.forEach((file) => {
       formData.append('attachments', file);
     });

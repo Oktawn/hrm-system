@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { TasksService } from "./tasks.service";
 import { ICreateTask, IUpdateTask } from './tasks.interface';
-import { AuthenticatedRequest } from '../auth/auth.interface';
+import { AuthenticatedRequest, AuthenticatedRequestBot } from '../auth/auth.interface';
 import { uploadMultiple, createAttachment } from '../middleware/upload.middleware';
 
 const tasksService = new TasksService();
@@ -15,6 +15,19 @@ export class TasksController {
       res.status(200).json({
         success: true,
         ...tasks
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getAllTasksForBot(req: AuthenticatedRequestBot, res: Response, next: NextFunction) {
+    const tgID = req.bot.tgID;
+    try {
+      const tasks = await tasksService.getAllTasksForBot(tgID);
+      res.status(200).json({
+        success: true,
+        data: tasks
       });
     } catch (error) {
       next(error);
@@ -101,7 +114,7 @@ export class TasksController {
             taskData.assigneesId = [taskData.assigneesId];
           }
         }
-        
+
         let attachments = [];
         if (req.files && Array.isArray(req.files) && req.files.length > 0) {
           attachments = (req.files as Express.Multer.File[]).map(createAttachment);

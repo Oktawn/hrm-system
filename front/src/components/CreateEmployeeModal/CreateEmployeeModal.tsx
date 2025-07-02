@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Modal, Form, Input, Select, DatePicker, Button, message } from 'antd';
 import dayjs from 'dayjs';
-import { employeesAPI, type CreateEmployeeData, type Manager } from '../../services/employees.service';
+import { employeesAPI } from '../../services/employees.service';
 import departmentsService from '../../services/departments.service';
 import positionsService from '../../services/positions.service';
+import type { CreateEmployeeData, Manager } from '../../types/employee.types';
 
 const { Option } = Select;
 

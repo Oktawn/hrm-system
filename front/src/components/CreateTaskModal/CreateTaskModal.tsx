@@ -11,9 +11,10 @@ import {
 } from 'antd';
 import { useAuthStore } from '../../stores/auth.store';
 import tasksAPI, { type CreateTaskData } from '../../services/tasks.service';
-import employeesAPI, { type Employee } from '../../services/employees.service';
+import employeesAPI from '../../services/employees.service';
 import SimpleFileUpload from '../SimpleFileUpload/SimpleFileUpload';
 import dayjs from 'dayjs';
+import type { Employee } from '../../types/employee.types';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -57,7 +58,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     try {
       setLoading(true);
       const values = await form.validateFields();
-      
+
       const taskData: CreateTaskData = {
         title: values.title,
         description: values.description,
@@ -72,7 +73,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       } else {
         await tasksAPI.create(taskData);
       }
-      
+
       message.success('Задача успешно создана');
       form.resetFields();
       setAttachments([]);
@@ -136,9 +137,9 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           name="description"
           label="Описание"
         >
-          <TextArea 
-            rows={4} 
-            placeholder="Введите описание задачи (необязательно)" 
+          <TextArea
+            rows={4}
+            placeholder="Введите описание задачи (необязательно)"
           />
         </Form.Item>
 
@@ -163,7 +164,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
               label="Дедлайн"
               style={{ flex: 1 }}
             >
-              <DatePicker 
+              <DatePicker
                 style={{ width: '100%' }}
                 placeholder="Выберите дату"
                 disabledDate={(current) => current && current < dayjs().startOf('day')}
@@ -185,8 +186,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
               }}
             >
               {employees.map(employee => (
-                <Option 
-                  key={employee.id} 
+                <Option
+                  key={employee.id}
                   value={employee.id}
                   label={`${employee.firstName} ${employee.lastName}`}
                 >
@@ -204,7 +205,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
               files={attachments}
               onFilesChange={setAttachments}
               maxFiles={5}
-              maxSize={10 * 1024 * 1024} // 10MB
+              maxSize={10 * 1024 * 1024}
               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
             />
           </div>

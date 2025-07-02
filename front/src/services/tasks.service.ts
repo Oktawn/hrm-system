@@ -1,11 +1,12 @@
+import type { TaskPriority, TaskStatus } from '../types/common.types';
 import { api } from './auth.service';
 
 export interface Task {
   id: number;
   title: string;
   description?: string;
-  status: 'todo' | 'in_progress' | 'review' | 'done' | 'cancelled';
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  status: TaskStatus;
+  priority: TaskPriority;
   deadline?: string;
   createdAt: string;
   updatedAt: string;
@@ -80,7 +81,7 @@ class TasksService {
         }
       });
     }
-    
+
     const response = await api.get(`/tasks?${params.toString()}`);
     return response.data;
   }
@@ -127,8 +128,7 @@ class TasksService {
 
   async createWithFiles(taskData: CreateTaskData, files: File[]): Promise<{ success: boolean; data: Task; message?: string }> {
     const formData = new FormData();
-    
-    // Добавляем данные задачи
+
     Object.entries(taskData).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         if (Array.isArray(value)) {
@@ -138,8 +138,7 @@ class TasksService {
         }
       }
     });
-    
-    // Добавляем файлы
+
     files.forEach((file) => {
       formData.append('attachments', file);
     });

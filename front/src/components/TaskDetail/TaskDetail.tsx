@@ -27,15 +27,17 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/auth.store';
 import tasksAPI, { type Task } from '../../services/tasks.service';
-import employeesAPI, { type Employee } from '../../services/employees.service';
+import employeesAPI from '../../services/employees.service';
 import { commentsService } from '../../services/comments.service';
 import { type IComment, type ICreateComment } from '../../services/comments.service';
+import { api } from '../../services/auth.service';
 import StatusSelector from '../StatusSelector/StatusSelector';
 import FileUpload from '../FileUpload/FileUpload';
 import SimpleFileUpload from '../SimpleFileUpload/SimpleFileUpload';
 import { getPriorityColor, getPriorityText } from '../../utils/status.utils';
 import dayjs from 'dayjs';
 import './TaskDetail.css';
+import type { Employee } from '../../types/employee.types';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -182,12 +184,40 @@ export function TaskDetail({ taskId, visible, onClose, onTaskUpdate }: TaskDetai
   };
 
   // Функции для работы с файлами комментариев
-  const handleDownload = (filename: string) => {
-    window.open(`/api/uploads/download/${filename}`, '_blank');
+  const handleDownload = async (filename: string) => {
+    try {
+      const response = await api.get(`/uploads/download/${filename}`, {
+        responseType: 'blob'
+      });
+
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Ошибка скачивания файла:', error);
+      message.error('Не удалось скачать файл');
+    }
   };
 
-  const handleView = (filename: string) => {
-    window.open(`/api/uploads/view/${filename}`, '_blank');
+  const handleView = async (filename: string) => {
+    try {
+      const response = await api.get(`/uploads/view/${filename}`, {
+        responseType: 'blob'
+      });
+
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Ошибка просмотра файла:', error);
+      message.error('Не удалось открыть файл');
+    }
   };
 
   const formatFileSize = (bytes: number) => {

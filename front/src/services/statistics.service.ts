@@ -40,7 +40,7 @@ class TaskStatisticsService {
     return response.data;
   }
 
-  downloadExcel(blob: Blob, filename?: string): void {
+  downloadExcel(blob: Blob, filename?: string) {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

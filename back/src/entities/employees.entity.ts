@@ -30,6 +30,9 @@ export class EmployeesEntity {
   @Column({ nullable: true })
   phone: string;
 
+  @Column({ unique: true, nullable: true })
+  tgID: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

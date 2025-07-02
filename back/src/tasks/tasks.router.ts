@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { TasksController } from "./tasks.controller";
 import { TasksStatisticsController } from "./tasks-statistics.controller";
-import { authMiddleware } from "../auth/auth.middleware";
+import { authMiddleware, authMiddlewareBot } from "../auth/auth.middleware";
 
 const taskRouter = Router();
 const tasksController = new TasksController();
@@ -9,9 +9,6 @@ const tasksStatisticsController = new TasksStatisticsController();
 
 taskRouter.get("/", authMiddleware(), tasksController.getAllTasks);
 taskRouter.get("/stats", authMiddleware(), tasksController.getTaskStats);
-taskRouter.get("/statistics", authMiddleware(), tasksStatisticsController.getStatistics);
-taskRouter.get("/statistics/total", authMiddleware(), tasksStatisticsController.getTotalStatistics);
-taskRouter.get("/statistics/export", authMiddleware(), tasksStatisticsController.exportToExcel);
 taskRouter.get("/recent", authMiddleware(), tasksController.getRecentTasks);
 taskRouter.get("/:id", authMiddleware(), tasksController.getTaskById);
 taskRouter.get("/assignee/:assigneeId", authMiddleware(), tasksController.getTasksByAssignee);
@@ -22,5 +19,14 @@ taskRouter.post("/create", authMiddleware(), tasksController.createTask);
 taskRouter.put("/update/:id", authMiddleware(), tasksController.updateTask);
 taskRouter.patch("/:id/status", authMiddleware(), tasksController.updateTaskStatus);
 taskRouter.delete("/:id", authMiddleware(), tasksController.deleteTask);
+//routes for statistics
+taskRouter.get("/statistics", authMiddleware(), tasksStatisticsController.getStatistics);
+taskRouter.get("/statistics/total", authMiddleware(), tasksStatisticsController.getTotalStatistics);
+taskRouter.get("/statistics/export", authMiddleware(), tasksStatisticsController.exportToExcel);
+//routes for bots
+taskRouter.get("/bots/", authMiddlewareBot(), tasksController.getAllTasksForBot);
+taskRouter.get("/bots/:id", authMiddlewareBot(), tasksController.getTaskById);
+taskRouter.get("/bots/status/:status", authMiddlewareBot(), tasksController.getTasksByStatus);
+taskRouter.get("/bots/priority/:priority", authMiddlewareBot(), tasksController.getTasksByPriority);
 
 export { taskRouter };

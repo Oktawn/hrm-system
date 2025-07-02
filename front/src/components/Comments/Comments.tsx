@@ -270,7 +270,7 @@ function Comments({ type, itemId, isVisible, onClose }: CommentsProps) {
                 files={attachments}
                 onFilesChange={setAttachments}
                 maxFiles={3}
-                maxSize={5 * 1024 * 1024} // 5MB
+                maxSize={5 * 1024 * 1024}
                 accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
               />
             </div>

@@ -3,24 +3,9 @@ import { Upload, Button, List, Typography, message } from 'antd';
 import { UploadOutlined, DeleteOutlined, DownloadOutlined, EyeOutlined } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd';
 import { api } from '../../services/auth.service';
+import type { FileUploadProps } from '../../types/document.types';
 
 const { Text } = Typography;
-
-interface FileAttachment {
-  filename: string;
-  originalName: string;
-  mimetype?: string;
-  size: number;
-  uploadDate: string;
-}
-
-interface FileUploadProps {
-  value?: FileAttachment[];
-  onChange?: (files: FileAttachment[]) => void;
-  maxFiles?: number;
-  disabled?: boolean;
-  showDownload?: boolean;
-}
 
 export const FileUpload: React.FC<FileUploadProps> = ({
   value = [],
@@ -37,7 +22,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     multiple: true,
     maxCount: maxFiles,
     fileList,
-    beforeUpload: () => false, // Предотвращаем автоматическую загрузку
+    beforeUpload: () => false,
     onChange: (info) => {
       setFileList(info.fileList);
     },
@@ -86,12 +71,40 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     onChange?.(newAttachments);
   };
 
-  const handleDownload = (filename: string) => {
-    window.open(`/api/uploads/download/${filename}`, '_blank');
+  const handleDownload = async (filename: string) => {
+    try {
+      const response = await api.get(`/uploads/download/${filename}`, {
+        responseType: 'blob'
+      });
+
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Ошибка скачивания файла:', error);
+      message.error('Не удалось скачать файл');
+    }
   };
 
-  const handleView = (filename: string) => {
-    window.open(`/api/uploads/view/${filename}`, '_blank');
+  const handleView = async (filename: string) => {
+    try {
+      const response = await api.get(`/uploads/view/${filename}`, {
+        responseType: 'blob'
+      });
+
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Ошибка просмотра файла:', error);
+      message.error('Не удалось открыть файл');
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -114,9 +127,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             <Button icon={<UploadOutlined />}>Выбрать файлы</Button>
           </Upload>
           {fileList.length > 0 && (
-            <Button 
-              type="primary" 
-              onClick={handleUpload} 
+            <Button
+              type="primary"
+              onClick={handleUpload}
               loading={uploading}
               style={{ marginTop: 8 }}
             >

@@ -17,7 +17,6 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Проверяем, что это ошибка 401, запрос еще не повторялся, и это НЕ запрос на refresh или login
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&

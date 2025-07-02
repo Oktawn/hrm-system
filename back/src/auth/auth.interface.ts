@@ -26,3 +26,9 @@ export interface ILogin {
 export interface AuthenticatedRequest extends Request {
   user?: TokenPayload;
 }
+export interface AuthenticatedRequestBot extends Request {
+  bot?: {
+    userId: string;
+    tgID: number;
+  };
+}

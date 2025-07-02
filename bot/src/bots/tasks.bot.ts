@@ -1,7 +1,9 @@
-import { Composer, Context, InlineKeyboard } from "grammy";
+import { Composer, InlineKeyboard } from "grammy";
 import { TaskComposerConversation, TaskContext, TaskConversation } from "../commons/context.types";
 import { TasksService } from "../services/tasks.service";
 import { createConversation } from "@grammyjs/conversations";
+import { DataTask } from "../commons/types";
+import dedent from "dedent";
 
 
 export const tasksComposer = new Composer<TaskComposerConversation>();
@@ -11,6 +13,7 @@ tasksComposer.use(async (ctx, next) => {
   if (!ctx.session.tasks) {
     ctx.session.tasks = {
       currentPage: 0,
+      totalPages: 0,
       tasks: []
     }
   }
@@ -18,22 +21,26 @@ tasksComposer.use(async (ctx, next) => {
 })
 
 const tasksInlineKeyboard = new InlineKeyboard()
-  .text("Список задач", "get_tasks").row()
-  .text("Просмотр задачи", "view_task").row()
-  .text("Добавить комментарий к задаче", "add_comment").row();
+  .text("Список активных задач", "get_tasks").row()
+  .text("Поиск по id", "search_by_id").row()
+  .text("Поиск по статусу", "search_by_status").row()
+  .text("Поиск по приоритету", "search_by_priority").row()
 
 async function getTasks(_: TaskConversation, ctx: TaskContext) {
   try {
-    ctx.session.tasks.tasks = await tasksService.getAllTasks(ctx.from.id);
     ctx.session.tasks.currentPage = 0;
+    const dateTask: DataTask = {
+      tgID: ctx.from.id
+    };
+    ctx.session.tasks.tasks = await tasksService.getActiveTasks(dateTask) || [];
+    ctx.session.tasks.totalPages = ctx.session.tasks.tasks.length;
     await ctx.reply("Ваши активные задачи:", {
       reply_markup: listTask(ctx),
     });
   } catch (error) {
     await ctx.reply("Произошла ошибка при получении задач.");
   }
-}
-
+};
 tasksComposer.use(createConversation(getTasks));
 
 function listTask(ctx: TaskContext) {
@@ -41,16 +48,12 @@ function listTask(ctx: TaskContext) {
   const { tasks } = ctx.session;
   const currentPage = tasks.currentPage || 0;
 
-  const activeTasks = tasks.tasks.filter(task => task.status !== 'completed');
-
-  // Вычисляем задачи для текущей страницы
   const startIndex = currentPage * tasksOnPage;
   const endIndex = startIndex + tasksOnPage;
-  const tasksForPage = activeTasks.slice(startIndex, endIndex);
+  const tasksForPage = tasks.tasks.slice(startIndex, endIndex);
 
   const taskKeyboard = new InlineKeyboard();
 
-  // Добавляем кнопки для задач на текущей странице
   tasksForPage.forEach((task, index) => {
     if (index % 2 === 0) {
       taskKeyboard.text(`${task.title}`, `view_task_${task.id}`).row();
@@ -59,9 +62,8 @@ function listTask(ctx: TaskContext) {
     }
   });
 
-  // Добавляем кнопки пагинации
   taskKeyboard.row();
-  const totalPages = Math.ceil(activeTasks.length / tasksOnPage);
+  const totalPages = ctx.session.tasks.totalPages;
 
   if (currentPage > 0) {
     taskKeyboard.text("⬅️ Назад", `tasks_prev_page`);
@@ -73,25 +75,48 @@ function listTask(ctx: TaskContext) {
   return taskKeyboard;
 }
 
+async function getTaskById(conv: TaskConversation, ctx: TaskContext) {
+  await ctx.reply("Введите ID задачи для просмотра:");
+  const taskId = (await conv.waitFor("message:text")).message.text.trim();
+
+  if (!taskId) {
+    await ctx.reply("Пожалуйста, укажите ID задачи.");
+    return;
+  }
+  try {
+    const dataTask: DataTask = {
+      tgID: ctx.from.id,
+      id: parseInt(taskId)
+    };
+    const task = await tasksService.getTaskById(dataTask);
+    if (task) {
+      let msg = dedent`
+      📝 Задача #${task.id}\n
+      Название: ${task.title || '-'}\n
+      Описание: ${task.description || '-'}\n
+      Статус: ${task.status || '-'}\n
+      Приоритет: ${task.priority || '-'}\n`;
+      const attachments = task.attachments || [];
+      await ctx.reply(msg, {
+        parse_mode: "MarkdownV2",
+      });
+      if (attachments.length > 0) {
+        await ctx.reply("📎 Вложения:");
+        for (const attachment of attachments) {
+          await ctx.replyWithDocument(attachment.path);
+        }
+      }
+    } else {
+      await ctx.reply("Задача не найдена.");
+    }
+  } catch (error) {
+    await ctx.reply("Произошла ошибка при получении задачи.");
+  }
+};
+tasksComposer.use(createConversation(getTaskById));
+
 tasksComposer.on("callback_query:data", async (ctx, next) => {
-  const tasksOnPage = 10;
   const data = ctx.callbackQuery.data;
-
-  if (data === "tasks_prev_page") {
-    ctx.session.tasks.currentPage = Math.max(0, ctx.session.tasks.currentPage - 1);
-    await ctx.editMessageReplyMarkup({ reply_markup: listTask(ctx) });
-    await next();
-    return;
-  }
-
-  if (data === "tasks_next_page") {
-    const activeTasks = ctx.session.tasks.tasks.filter(task => task.status !== 'completed');
-    const totalPages = Math.ceil(activeTasks.length / tasksOnPage);
-    ctx.session.tasks.currentPage = Math.min(totalPages - 1, ctx.session.tasks.currentPage + 1);
-    await ctx.editMessageReplyMarkup({ reply_markup: listTask(ctx) });
-    await next();
-    return;
-  }
 
   switch (data) {
     case "tasks_start":
@@ -100,17 +125,26 @@ tasksComposer.on("callback_query:data", async (ctx, next) => {
       });
       break;
     case "get_tasks":
-      ctx.session.tasks.currentPage = 0;
-      ctx.session.tasks.tasks = await tasksService.getAllTasks(ctx.from?.id);
-      await ctx.reply("Ваши активные задачи:", {
-        reply_markup: listTask(ctx),
-      });
+      await ctx.conversation.enter("getTasks");
       break;
     case "view_task":
       await ctx.reply("Функция просмотра задачи еще не реализована.");
       break;
-    case "add_comment":
-      await ctx.reply("Функция добавления комментария к задаче еще не реализована.");
+    case "tasks_prev_page":
+      if (ctx.session.tasks.currentPage > 0) {
+        ctx.session.tasks.currentPage--;
+      }
+      await ctx.editMessageReplyMarkup({
+        reply_markup: listTask(ctx)
+      });
+      break;
+    case "tasks_next_page":
+      if (ctx.session.tasks.currentPage < ctx.session.tasks.totalPages - 1) {
+        ctx.session.tasks.currentPage++;
+      }
+      await ctx.editMessageReplyMarkup({
+        reply_markup: listTask(ctx)
+      });
       break;
     default:
       if (data.startsWith("view_task_")) {
@@ -123,4 +157,4 @@ tasksComposer.on("callback_query:data", async (ctx, next) => {
   }
 
   await next();
-})
+});

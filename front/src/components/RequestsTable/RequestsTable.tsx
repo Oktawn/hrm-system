@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react';
-import requestsService, { type Request } from '../../services/requests.service';
+import requestsService from '../../services/requests.service';
+import type { Request } from '../../types/request.types';
 import Comments from '../Comments/Comments';
 import StatusSelector from '../StatusSelector/StatusSelector';
 import { useAuthStore } from '../../stores/auth.store';

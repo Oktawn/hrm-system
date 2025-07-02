@@ -1,4 +1,3 @@
-import React from 'react';
 import { Upload, Button, List, Typography, message } from 'antd';
 import { UploadOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
@@ -13,40 +12,37 @@ interface SimpleFileUploadProps {
   accept?: string;
 }
 
-export const SimpleFileUpload: React.FC<SimpleFileUploadProps> = ({
+export function SimpleFileUpload({
   files,
   onFilesChange,
   maxFiles = 5,
-  maxSize = 10 * 1024 * 1024, // 10MB по умолчанию
+  maxSize = 10 * 1024 * 1024,
   accept = '.pdf,.doc,.docx,.jpg,.jpeg,.png,.txt'
-}) => {
+}: SimpleFileUploadProps) {
   const uploadProps: UploadProps = {
     name: 'files',
     multiple: true,
     maxCount: maxFiles,
     accept,
     beforeUpload: (file: File) => {
-      // Проверяем размер файла
       if (file.size > maxSize) {
         const maxSizeMB = Math.round(maxSize / (1024 * 1024));
         message.error(`Файл "${file.name}" слишком большой. Максимальный размер: ${maxSizeMB}MB`);
         return false;
       }
 
-      // Проверяем, не превышено ли максимальное количество файлов
       if (files.length >= maxFiles) {
         message.error(`Максимальное количество файлов: ${maxFiles}`);
         return false;
       }
 
-      // Добавляем файл в список
       const newFiles = [...files, file];
       onFilesChange(newFiles);
 
-      return false; // Предотвращаем автоматическую загрузку
+      return false;
     },
-    fileList: [], // Используем пустой список, так как управляем файлами сами
-    showUploadList: false, // Отключаем стандартный список
+    fileList: [],
+    showUploadList: false,
   };
 
   const handleRemoveFile = (index: number) => {

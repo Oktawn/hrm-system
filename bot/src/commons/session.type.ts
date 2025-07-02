@@ -1,14 +1,9 @@
-
-type Task = {
-  id: number;
-  title: string;
-  description: string;
-  status: string;
-}
+import { Task } from "./types";
 
 type TasksSession = {
   tasks: {
     currentPage: number;
+    totalPages?: number;
     tasks: Task[];
   }
 }

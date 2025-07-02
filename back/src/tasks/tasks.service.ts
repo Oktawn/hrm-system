@@ -1,7 +1,7 @@
 import createError from "http-errors";
 import { ICreateTask, ITaskFilter, IUpdateTask } from "./tasks.interface";
 import { employeeRepository, taskRepository } from "../db/db-rep";
-import { In } from "typeorm";
+import { In, Not } from "typeorm";
 import { TaskPriorityEnum, TaskStatusEnum } from "../commons/enums/enums";
 
 export class TasksService {
@@ -161,7 +161,6 @@ export class TasksService {
       const sortField = allowedSortFields.includes(sortBy) ? `task.${sortBy}` : 'task.createdAt';
       queryB.orderBy(sortField, sortOrder);
     } else {
-      // Сортировка по умолчанию
       queryB.orderBy("task.createdAt", "DESC");
     }
 
@@ -176,6 +175,29 @@ export class TasksService {
         totalPages: Math.ceil(total / limitNum),
       },
     };
+  }
+
+  async getAllTasksForBot(id: number) {
+    const createdTasks = await taskRepository.find({
+      where: {
+        creator: { tgID: id },
+        status: Not(TaskStatusEnum.DONE),
+      },
+      relations: ["assignees", "creator"],
+    });
+
+    const assignedTasks = await taskRepository.find({
+      where: {
+        assignees: { tgID: id },
+        status: Not(TaskStatusEnum.DONE),
+      },
+      relations: ["assignees", "creator"],
+    });
+
+    const allTasks = [...createdTasks, ...assignedTasks];
+    const uniqueTasks = Array.from(new Map(allTasks.map(task => [task.id, task])).values());
+
+    return uniqueTasks;
   }
 
   async getTasksByAssignee(assigneeId: string) {

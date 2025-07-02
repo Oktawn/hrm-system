@@ -10,9 +10,10 @@ import {
   InputNumber,
 } from 'antd';
 import { useAuthStore } from '../../stores/auth.store';
-import requestsAPI, { type CreateRequestData } from '../../services/requests.service';
+import requestsAPI from '../../services/requests.service';
 import SimpleFileUpload from '../SimpleFileUpload/SimpleFileUpload';
 import dayjs from 'dayjs';
+import type { CreateRequestData } from '../../types/request.types';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -47,25 +48,22 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
     try {
       setLoading(true);
       const values = await form.validateFields();
-      
+
       if (!user?.employeeId) {
         message.error('Ошибка: не найден ID сотрудника');
         return;
       }
 
-      // Дополнительная валидация для отпусков
       if (isLeaveRequest && values.dateRange) {
         const [startDate, endDate] = values.dateRange;
         const duration = endDate.diff(startDate, 'day') + 1;
-        
-        // Проверяем, что отпуск не может подаваться раньше чем за 3 дня
+
         const threeDaysFromNow = dayjs().add(3, 'day').startOf('day');
         if (startDate.isBefore(threeDaysFromNow)) {
           message.error('Отпуск нельзя подавать раньше чем за 3 дня от текущей даты');
           return;
         }
-        
-        // Для оплачиваемого отпуска максимум 30 дней
+
         if (values.type === 'leave_vacation' && duration > 30) {
           message.error('Оплачиваемый отпуск не может быть больше 30 дней');
           return;
@@ -77,7 +75,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
         title: values.title,
         description: values.description || '',
         priority: values.priority || 'medium',
-        userId: user.employeeId, // Используем employeeId вместо id
+        userId: user.employeeId,
         ...(values.dateRange && {
           startDate: values.dateRange[0].format('YYYY-MM-DD'),
           endDate: values.dateRange[1].format('YYYY-MM-DD'),
@@ -90,7 +88,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
       } else {
         await requestsAPI.create(requestData);
       }
-      
+
       message.success('Заявка успешно создана');
       form.resetFields();
       setAttachments([]);
@@ -148,7 +146,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
           label="Тип заявки"
           rules={[{ required: true, message: 'Пожалуйста, выберите тип заявки' }]}
         >
-          <Select 
+          <Select
             placeholder="Выберите тип заявки"
             onChange={(value) => setRequestType(value)}
           >
@@ -176,9 +174,9 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
           label="Описание"
           rules={[{ required: true, message: 'Пожалуйста, введите описание заявки' }]}
         >
-          <TextArea 
-            rows={4} 
-            placeholder="Введите подробное описание заявки" 
+          <TextArea
+            rows={4}
+            placeholder="Введите подробное описание заявки"
           />
         </Form.Item>
 
@@ -206,18 +204,18 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
                 {
                   validator: (_, value) => {
                     if (!value) return Promise.resolve();
-                    
+
                     if (requestType === 'leave_vacation' && value > 30) {
                       return Promise.reject(new Error('Оплачиваемый отпуск не может быть больше 30 дней'));
                     }
-                    
+
                     return Promise.resolve();
                   }
                 }
               ]}
             >
-              <InputNumber 
-                min={1} 
+              <InputNumber
+                min={1}
                 max={requestType === 'leave_vacation' ? 30 : 365}
                 placeholder="Количество дней"
                 style={{ width: '100%' }}
@@ -237,31 +235,28 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
                   if (!value || !value[0] || !value[1]) {
                     return Promise.resolve();
                   }
-                  
+
                   const [startDate, endDate] = value;
                   const duration = endDate.diff(startDate, 'day') + 1;
                   const threeDaysFromNow = dayjs().add(3, 'day').startOf('day');
-                  
-                  // Проверяем минимальный срок подачи заявки
+
                   if (startDate.isBefore(threeDaysFromNow)) {
                     return Promise.reject(new Error('Отпуск нельзя подавать раньше чем за 3 дня от текущей даты'));
                   }
-                  
-                  // Для оплачиваемого отпуска максимум 30 дней
+
                   if (requestType === 'leave_vacation' && duration > 30) {
                     return Promise.reject(new Error('Оплачиваемый отпуск не может быть больше 30 дней'));
                   }
-                  
+
                   return Promise.resolve();
                 }
               }
             ]}
           >
-            <RangePicker 
+            <RangePicker
               style={{ width: '100%' }}
               placeholder={['Дата начала', 'Дата окончания']}
               disabledDate={(current) => {
-                // Отключаем даты раньше чем через 3 дня от сегодня
                 const threeDaysFromNow = dayjs().add(3, 'day').startOf('day');
                 return current && current < threeDaysFromNow;
               }}
@@ -280,7 +275,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
             files={attachments}
             onFilesChange={setAttachments}
             maxFiles={5}
-            maxSize={10 * 1024 * 1024} // 10MB
+            maxSize={10 * 1024 * 1024}
             accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
           />
         </Form.Item>

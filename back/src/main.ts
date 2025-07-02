@@ -18,10 +18,14 @@ import { documentsRouter } from './documents/documents.router';
 const app = express();
 const port = envConfig.get("API_PORT");
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'], // Разрешенные origins для фронтенда
-  credentials: true, // Разрешить отправку cookie
+  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-telegram-id',
+  ],
 }));
 app.use(helmet());
 app.use(cookieParser());

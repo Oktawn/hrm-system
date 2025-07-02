@@ -5,6 +5,7 @@ import path from 'path';
 import fs from 'fs';
 
 export class UploadsController {
+  private uploadsDir = "/app/uploads";
   async uploadFiles(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     uploadMultiple(req, res, (err) => {
       if (err) {
@@ -34,12 +35,12 @@ export class UploadsController {
   async downloadFile(req: Request, res: Response, next: NextFunction) {
     try {
       const { filename } = req.params;
-      const uploadsDir = path.join(__dirname, '../../uploads');
-      
-      let filePath = path.join(uploadsDir, filename);
-      
+
+      let filePath = path.join(this.uploadsDir, filename);
+
+      // Если не найден, ищем в подпапке documents
       if (!fs.existsSync(filePath)) {
-        filePath = path.join(uploadsDir, 'documents', filename);
+        filePath = path.join(this.uploadsDir, 'documents', filename);
       }
 
       if (!fs.existsSync(filePath)) {
@@ -51,6 +52,7 @@ export class UploadsController {
 
       res.download(filePath);
     } catch (error) {
+      console.error('Ошибка при скачивании файла:', error);
       next(error);
     }
   }
@@ -58,8 +60,13 @@ export class UploadsController {
   async viewFile(req: Request, res: Response, next: NextFunction) {
     try {
       const { filename } = req.params;
-      const uploadsDir = path.join(__dirname, '../../uploads');
-      const filePath = path.join(uploadsDir, filename);
+      
+      let filePath = path.join(this.uploadsDir, filename);
+
+      // Если не найден, ищем в подпапке documents
+      if (!fs.existsSync(filePath)) {
+        filePath = path.join(this.uploadsDir, 'documents', filename);
+      }
 
       if (!fs.existsSync(filePath)) {
         return res.status(404).json({
@@ -70,6 +77,7 @@ export class UploadsController {
 
       res.sendFile(filePath);
     } catch (error) {
+      console.error('Ошибка при просмотре файла:', error);
       next(error);
     }
   }
