@@ -57,7 +57,6 @@ export function authMiddlewareBot() {
         return;
       }
       req.bot = {
-        userId: user.user.id,
         tgID: user.tgID,
       };
       next();

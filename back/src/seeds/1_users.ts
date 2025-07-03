@@ -4,7 +4,6 @@ import * as bcrypt from "bcrypt";
 import { faker } from '@faker-js/faker';
 
 export async function seed(knex: Knex): Promise<void> {
-    // Очищаем таблицы в правильном порядке (учитывая зависимости)
     await knex("tasks_assignees_employees").del();
     await knex("requests").del();
     await knex("tasks").del();

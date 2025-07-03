@@ -4,46 +4,68 @@ import { api } from "./api";
 export class TasksService {
 
   async getTaskById(data: DataTask): Promise<Task> {
-    const res = await api.get(`/tasks/bot/${data.id}`,
-      {
-        headers: {
-          'X-telegram-id': data.tgID
+    try {
+      const res = await api.get(`/tasks/bots/${data.id}`,
+        {
+          headers: {
+            'x-telegram-id': data.tgID
+          }
         }
-      }
-    );
-    return res.data;
+      );
+      return res.data.data;
+    } catch (error) {
+      console.error('Ошибка при получении задачи:', error.response?.data || error.message);
+      throw error;
+    }
   }
 
-  async getActiveTasks(data: DataTask) {
-    const res = await api.get(`/tasks/bot/`,
-      {
-        headers: {
-          'X-telegram-id': data.tgID
+  async getActiveTasks(data: DataTask): Promise<Task[]> {
+    try {
+      const res = await api.get(`/tasks/bots/`,
+        {
+          headers: {
+            'x-telegram-id': data.tgID
+          }
         }
-      }
-    );
-    return res.data;
+      );
+      return res.data.data;
+    } catch (error) {
+      console.error('Ошибка при получении активных задач:', error.response?.data || error.message);
+      throw error;
+    }
   }
 
-  async getTasksByStatus(data: DataTask) {
-    const res = await api.get(`/tasks/bot/status/${data.status}`,
-      {
-        headers: {
-          'X-telegram-id': data.tgID
+  async getTasksByStatus(data: DataTask): Promise<Task[] | Task> {
+    try {
+      const res = await api.get(`/tasks/bots/status/${data.status}`,
+        {
+          headers: {
+            'x-telegram-id': data.tgID
+          }
         }
-      }
-    );
-    return res.data;
+      );
+      return res.data.data;
+    } catch (error) {
+      console.error('Ошибка при получении задач по статусу:', error.response?.data || error.message);
+      throw error;
+
+    }
   }
-  async getTasksByPriority(data: DataTask) {
-    const res = await api.get(`/tasks/bot/priority/${data.priority}`,
-      {
-        headers: {
-          'X-telegram-id': data.tgID
+  async getTasksByPriority(data: DataTask): Promise<Task[] | Task> {
+    try {
+      const res = await api.get(`/tasks/bots/priority/${data.priority}`,
+        {
+          headers: {
+            'x-telegram-id': data.tgID
+          }
         }
-      }
-    );
-    return res.data;
+      );
+      return res.data.data;
+    } catch (error) {
+      console.error('Ошибка при получении задач по приоритету:', error.response?.data || error.message);
+      throw error;
+
+    }
   }
 
 }

@@ -2,8 +2,11 @@ import { Composer, InlineKeyboard } from "grammy";
 import { TaskComposerConversation, TaskContext, TaskConversation } from "../commons/context.types";
 import { TasksService } from "../services/tasks.service";
 import { createConversation } from "@grammyjs/conversations";
-import { DataTask } from "../commons/types";
+import { DataTask, Task } from "../commons/types";
 import dedent from "dedent";
+import { TaskPriorityEnum, TaskStatusEnum } from "../commons/enums";
+import { getPriorityText, getTaskStatusText } from "../commons/status.util";
+import { envConfig } from "../config/config";
 
 
 export const tasksComposer = new Composer<TaskComposerConversation>();
@@ -29,6 +32,7 @@ const tasksInlineKeyboard = new InlineKeyboard()
 async function getTasks(_: TaskConversation, ctx: TaskContext) {
   try {
     ctx.session.tasks.currentPage = 0;
+    console.log("getTasks called");
     const dateTask: DataTask = {
       tgID: ctx.from.id
     };
@@ -63,7 +67,7 @@ function listTask(ctx: TaskContext) {
   });
 
   taskKeyboard.row();
-  const totalPages = ctx.session.tasks.totalPages;
+  const totalPages = Math.ceil(tasks.tasks.length / tasksOnPage);
 
   if (currentPage > 0) {
     taskKeyboard.text("⬅️ Назад", `tasks_prev_page`);
@@ -73,6 +77,17 @@ function listTask(ctx: TaskContext) {
   }
 
   return taskKeyboard;
+}
+
+function showTask(task: Task) {
+  const url = `${envConfig.get("ORIGIN_FRONTEND")}/tasks?task=${task.id}`;
+  const msg = `Задача: ${String(task.id)}\n` +
+    `Название: ${task.title || '-'}\n` +
+    `Описание: ${task.description || '-'}\n` +
+    `Статус: ${getTaskStatusText(task.status) || '-'}\n` +
+    `Приоритет: ${getPriorityText(task.priority) || '-'}\n` +
+    `URL: [внешняя ссылка](${url})\n`;
+  return msg;
 }
 
 async function getTaskById(conv: TaskConversation, ctx: TaskContext) {
@@ -90,30 +105,93 @@ async function getTaskById(conv: TaskConversation, ctx: TaskContext) {
     };
     const task = await tasksService.getTaskById(dataTask);
     if (task) {
-      let msg = dedent`
-      📝 Задача #${task.id}\n
-      Название: ${task.title || '-'}\n
-      Описание: ${task.description || '-'}\n
-      Статус: ${task.status || '-'}\n
-      Приоритет: ${task.priority || '-'}\n`;
-      const attachments = task.attachments || [];
+      let msg = showTask(task);
       await ctx.reply(msg, {
         parse_mode: "MarkdownV2",
       });
-      if (attachments.length > 0) {
-        await ctx.reply("📎 Вложения:");
-        for (const attachment of attachments) {
-          await ctx.replyWithDocument(attachment.path);
-        }
-      }
     } else {
       await ctx.reply("Задача не найдена.");
     }
   } catch (error) {
-    await ctx.reply("Произошла ошибка при получении задачи.");
+    ctx.reply(String(error));
   }
 };
 tasksComposer.use(createConversation(getTaskById));
+
+async function getTasksByStatus(conv: TaskConversation, ctx: TaskContext) {
+
+  const StatusKeyboard = new InlineKeyboard()
+    .text("К выполнению", "todo").row()
+    .text("В работе", "in_progress").row()
+    .text("На проверке", "review").row()
+    .text("Выполнено", "done").row()
+    .text("Отменено", "canceled").row();
+  await ctx.reply("Выберите статус задачи", {
+    reply_markup: StatusKeyboard
+  });
+  const ans = await conv.waitForCallbackQuery(Object.values(TaskStatusEnum) as string[]);
+  try {
+    const result = await tasksService.getTasksByStatus({
+      tgID: ctx.from.id,
+      status: ans.callbackQuery.data
+    });
+
+    ctx.session.tasks.currentPage = 0;
+    ctx.session.tasks.tasks = Array.isArray(result) ? result : [result];
+
+    if (ctx.session.tasks.tasks.length === 0) {
+      await ctx.reply("Задач с таким статусом не найдено.");
+    } else {
+      await ctx.reply(`Задачи со статусом "${ans.callbackQuery.data}": `, {
+        reply_markup: listTask(ctx),
+      });
+    }
+  } catch (error) {
+    await ctx.reply("Произошла ошибка при получении задач.");
+  }
+};
+tasksComposer.use(createConversation(getTasksByStatus));
+
+async function getTasksByPriority(conv: TaskConversation, ctx: TaskContext) {
+
+  const PriorityKeyboard = new InlineKeyboard()
+    .text("Критический", "critical").row()
+    .text("Высокий", "high").row()
+    .text("Средний", "medium").row()
+    .text("Низкий", "low").row();
+
+  await ctx.reply("Выберите приоритет задачи", {
+    reply_markup: PriorityKeyboard
+  });
+  const ans = await conv.waitForCallbackQuery(Object.values(TaskPriorityEnum) as string[]);
+  try {
+    const result = await tasksService.getTasksByPriority({
+      tgID: ctx.from.id,
+      priority: ans.callbackQuery.data
+    });
+
+    ctx.session.tasks.currentPage = 0;
+    ctx.session.tasks.tasks = Array.isArray(result) ? result : [result];
+
+    if (ctx.session.tasks.tasks.length === 0) {
+      await ctx.reply("Задач с таким приоритетом не найдено.");
+    } else {
+      await ctx.reply(`Задачи с приоритетом "${ans.callbackQuery.data}": `, {
+        reply_markup: listTask(ctx),
+      });
+    }
+  } catch (error) {
+    await ctx.reply("Произошла ошибка при получении задач.");
+  }
+}
+tasksComposer.use(createConversation(getTasksByPriority));
+
+tasksComposer.command("start", async (ctx, next) => {
+  await ctx.reply("Добро пожаловать в управление задачами!", {
+    reply_markup: tasksInlineKeyboard,
+  });
+  await next();
+})
 
 tasksComposer.on("callback_query:data", async (ctx, next) => {
   const data = ctx.callbackQuery.data;
@@ -127,8 +205,17 @@ tasksComposer.on("callback_query:data", async (ctx, next) => {
     case "get_tasks":
       await ctx.conversation.enter("getTasks");
       break;
+    case "search_by_id":
+      await ctx.conversation.enter("getTaskById");
+      break;
     case "view_task":
       await ctx.reply("Функция просмотра задачи еще не реализована.");
+      break;
+    case "search_by_status":
+      await ctx.conversation.enter("getTasksByStatus");
+      break;
+    case "search_by_priority":
+      await ctx.conversation.enter("getTasksByPriority");
       break;
     case "tasks_prev_page":
       if (ctx.session.tasks.currentPage > 0) {

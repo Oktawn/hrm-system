@@ -18,13 +18,16 @@ import { documentsRouter } from './documents/documents.router';
 const app = express();
 const port = envConfig.get("API_PORT");
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: [
+    envConfig.get("ORIGIN_FRONTEND"),
+    envConfig.get("ORIGIN_BOT")
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: [
     'Content-Type',
     'Authorization',
-    'X-telegram-id',
+    'x-telegram-id',
   ],
 }));
 app.use(helmet());

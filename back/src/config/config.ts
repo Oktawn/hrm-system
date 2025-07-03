@@ -9,6 +9,8 @@ interface IEnvConfig {
   DB_DATABASE: string;
   DB_EXTERNAL_PORT: number;
   DB_PORT: number;
+  ORIGIN_FRONTEND: string;
+  ORIGIN_BOT: string;
 }
 
 class EnvConfig {

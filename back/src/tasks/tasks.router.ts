@@ -18,9 +18,9 @@ taskRouter.get("/statistics/export", authMiddleware(), tasksStatisticsController
 
 //routes for bots
 taskRouter.get("/bots/", authMiddlewareBot(), tasksController.getAllTasksForBot);
-taskRouter.get("/bots/:id", authMiddlewareBot(), tasksController.getTaskById);
 taskRouter.get("/bots/status/:status", authMiddlewareBot(), tasksController.getTasksByStatus);
 taskRouter.get("/bots/priority/:priority", authMiddlewareBot(), tasksController.getTasksByPriority);
+taskRouter.get("/bots/:id", authMiddlewareBot(), tasksController.getTaskById);
 
 taskRouter.get("/assignee/:assigneeId", authMiddleware(), tasksController.getTasksByAssignee);
 taskRouter.get("/creator/:creatorId", authMiddleware(), tasksController.getTasksByCreator);

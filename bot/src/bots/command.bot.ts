@@ -1,3 +1,4 @@
+import { Composer } from "grammy";
 
 interface ICommand {
   command: string;

@@ -28,7 +28,6 @@ export interface AuthenticatedRequest extends Request {
 }
 export interface AuthenticatedRequestBot extends Request {
   bot?: {
-    userId: string;
     tgID: number;
   };
 }
