@@ -4,13 +4,8 @@ import { config } from "dotenv";
 interface IEnvConfig {
   BOT_TOKEN: string;
   BOT_ID: string;
-  DB_HOST: string;
-  DB_USERNAME: string;
-  DB_PASSWORD: string;
-  DB_DATABASE: string;
-  DB_EXTERNAL_PORT: number;
-  DB_PORT: number;
   ORIGIN_FRONTEND: string;
+  API_HOST_URL: string;
 }
 
 

@@ -39,5 +39,18 @@ services:
     ports:
       - "5173:5173"
 
+  bot:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+    container_name: hrm-bot
+    env_file:
+      - .env
+    restart: always
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
 volumes:
   postgres_data:

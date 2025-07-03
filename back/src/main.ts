@@ -20,7 +20,8 @@ const port = envConfig.get("API_PORT");
 app.use(cors({
   origin: [
     envConfig.get("ORIGIN_FRONTEND"),
-    envConfig.get("ORIGIN_BOT")
+    envConfig.get("ORIGIN_BOT"),
+    envConfig.get("ORIGIN_HOST_URL_BOT"),
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

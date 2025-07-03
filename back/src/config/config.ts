@@ -11,6 +11,7 @@ interface IEnvConfig {
   DB_PORT: number;
   ORIGIN_FRONTEND: string;
   ORIGIN_BOT: string;
+  ORIGIN_HOST_URL_BOT: string;
 }
 
 class EnvConfig {

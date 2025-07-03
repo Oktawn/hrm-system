@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { AxiosResponse } from 'axios';
 import type { LoginRequest, LoginResponse } from '../types/auth.types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_HOST_URL;
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
