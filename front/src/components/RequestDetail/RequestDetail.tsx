@@ -179,7 +179,6 @@ export function RequestDetail({ requestId, visible, onClose, onRequestUpdate }: 
     return isCreator || isAssignee || isManager;
   };
 
-  // Функции для работы с файлами комментариев
   const handleDownload = async (filename: string) => {
     try {
       const response = await api.get(`/uploads/download/${filename}`, {
@@ -489,7 +488,7 @@ export function RequestDetail({ requestId, visible, onClose, onRequestUpdate }: 
                     files={commentAttachments}
                     onFilesChange={setCommentAttachments}
                     maxFiles={3}
-                    maxSize={5 * 1024 * 1024} // 5MB
+                    maxSize={10 * 1024 * 1024}
                     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
                   />
                 </div>

@@ -25,7 +25,7 @@ export function TasksPage() {
   const [filter, setFilter] = useState<TaskFilter>({});
   const [searchParams, setSearchParams] = useSearchParams();
   const [createTaskModalVisible, setCreateTaskModalVisible] = useState(false);
-  const [employees, setEmployees] = useState<Array<{id: string, firstName: string, lastName: string}>>([]);
+  const [employees, setEmployees] = useState<Array<{ id: string, firstName: string, lastName: string }>>([]);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -63,7 +63,6 @@ export function TasksPage() {
           }
         });
 
-        // Применяем клиентскую сортировку для сотрудников
         let sortedTasks = [...allTasks];
         if (currentFilter.sortBy && currentFilter.sortOrder) {
           const allowedSortFields = ['id', 'title', 'deadline', 'createdAt'];
@@ -73,13 +72,11 @@ export function TasksPage() {
               let aValue: any = a[field as keyof Task];
               let bValue: any = b[field as keyof Task];
 
-              // Обрабатываем даты
               if (field === 'deadline' || field === 'createdAt') {
                 aValue = aValue ? new Date(aValue).getTime() : 0;
                 bValue = bValue ? new Date(bValue).getTime() : 0;
               }
 
-              // Обрабатываем строки
               if (field === 'title' && typeof aValue === 'string' && typeof bValue === 'string') {
                 aValue = aValue.toLowerCase();
                 bValue = bValue.toLowerCase();
@@ -141,7 +138,6 @@ export function TasksPage() {
   }, [filter, user]);
 
   useEffect(() => {
-    // Применяем фильтр "мои задачи" если он указан в URL
     if (myTasksFilter && user?.employeeId && !filter.assigneesId) {
       setFilter(prev => ({ ...prev, assigneesId: [user.employeeId!] }));
     }

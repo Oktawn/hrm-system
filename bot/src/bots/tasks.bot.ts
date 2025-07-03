@@ -7,6 +7,7 @@ import dedent from "dedent";
 import { TaskPriorityEnum, TaskStatusEnum } from "../commons/enums";
 import { getPriorityText, getTaskStatusText } from "../commons/status.util";
 import { envConfig } from "../config/config";
+import { TaskDataSession } from "../commons/session.type";
 
 
 export const tasksComposer = new Composer<TaskComposerConversation>();
@@ -29,27 +30,28 @@ const tasksInlineKeyboard = new InlineKeyboard()
   .text("Поиск по статусу", "search_by_status").row()
   .text("Поиск по приоритету", "search_by_priority").row()
 
-async function getTasks(_: TaskConversation, ctx: TaskContext) {
+async function getTasks(ctx: TaskContext) {
   try {
-    ctx.session.tasks.currentPage = 0;
-    console.log("getTasks called");
     const dateTask: DataTask = {
       tgID: ctx.from.id
     };
-    ctx.session.tasks.tasks = await tasksService.getActiveTasks(dateTask) || [];
-    ctx.session.tasks.totalPages = ctx.session.tasks.tasks.length;
+    const dataTask: TaskDataSession = {
+      currentPage: 0,
+      totalPages: Math.ceil((await tasksService.getActiveTasks(dateTask) || []).length / 10),
+      tasks: await tasksService.getActiveTasks(dateTask) || []
+    }
+    ctx.session.tasks = dataTask;
     await ctx.reply("Ваши активные задачи:", {
-      reply_markup: listTask(ctx),
+      reply_markup: listTask(dataTask),
     });
   } catch (error) {
-    await ctx.reply("Произошла ошибка при получении задач.");
+    ctx.reply(String(error));
   }
+  return;
 };
-tasksComposer.use(createConversation(getTasks));
 
-function listTask(ctx: TaskContext) {
+function listTask(tasks: TaskDataSession) {
   const tasksOnPage = 10;
-  const { tasks } = ctx.session;
   const currentPage = tasks.currentPage || 0;
 
   const startIndex = currentPage * tasksOnPage;
@@ -81,12 +83,13 @@ function listTask(ctx: TaskContext) {
 
 function showTask(task: Task) {
   const url = `${envConfig.get("ORIGIN_FRONTEND")}/tasks?task=${task.id}`;
-  const msg = `Задача: ${String(task.id)}\n` +
-    `Название: ${task.title || '-'}\n` +
-    `Описание: ${task.description || '-'}\n` +
-    `Статус: ${getTaskStatusText(task.status) || '-'}\n` +
-    `Приоритет: ${getPriorityText(task.priority) || '-'}\n` +
-    `URL: [внешняя ссылка](${url})\n`;
+  const msg = dedent`
+    Задача: ${String(task.id)}
+    Название: ${task.title || '-'}
+    Описание: ${task.description || '-'}
+    Статус: ${getTaskStatusText(task.status) || '-'}
+    Приоритет: ${getPriorityText(task.priority) || '-'}
+    URL: [внешняя ссылка](${url})`;
   return msg;
 }
 
@@ -113,13 +116,13 @@ async function getTaskById(conv: TaskConversation, ctx: TaskContext) {
       await ctx.reply("Задача не найдена.");
     }
   } catch (error) {
-    ctx.reply(String(error));
+    ctx.reply("Произошла ошибка при получении задачи.");
   }
+  return;
 };
 tasksComposer.use(createConversation(getTaskById));
 
 async function getTasksByStatus(conv: TaskConversation, ctx: TaskContext) {
-
   const StatusKeyboard = new InlineKeyboard()
     .text("К выполнению", "todo").row()
     .text("В работе", "in_progress").row()
@@ -135,25 +138,29 @@ async function getTasksByStatus(conv: TaskConversation, ctx: TaskContext) {
       tgID: ctx.from.id,
       status: ans.callbackQuery.data
     });
-
-    ctx.session.tasks.currentPage = 0;
-    ctx.session.tasks.tasks = Array.isArray(result) ? result : [result];
-
-    if (ctx.session.tasks.tasks.length === 0) {
+    const dataTask: TaskDataSession = {
+      currentPage: 0,
+      totalPages: Math.ceil((Array.isArray(result) ? result.length : 1) / 10),
+      tasks: Array.isArray(result) ? result : [result]
+    }
+    await conv.external((ctx) => {
+      ctx.session.tasks = dataTask;
+    });
+    if (dataTask.tasks.length === 0) {
       await ctx.reply("Задач с таким статусом не найдено.");
     } else {
-      await ctx.reply(`Задачи со статусом "${ans.callbackQuery.data}": `, {
-        reply_markup: listTask(ctx),
+      await ctx.reply(`Задачи со статусом "${getTaskStatusText(ans.callbackQuery.data)}": `, {
+        reply_markup: listTask(dataTask),
       });
     }
   } catch (error) {
-    await ctx.reply("Произошла ошибка при получении задач.");
+    ctx.reply("Произошла ошибка при получении задач.");
   }
+  return;
 };
 tasksComposer.use(createConversation(getTasksByStatus));
 
 async function getTasksByPriority(conv: TaskConversation, ctx: TaskContext) {
-
   const PriorityKeyboard = new InlineKeyboard()
     .text("Критический", "critical").row()
     .text("Высокий", "high").row()
@@ -170,19 +177,25 @@ async function getTasksByPriority(conv: TaskConversation, ctx: TaskContext) {
       priority: ans.callbackQuery.data
     });
 
-    ctx.session.tasks.currentPage = 0;
-    ctx.session.tasks.tasks = Array.isArray(result) ? result : [result];
-
-    if (ctx.session.tasks.tasks.length === 0) {
+    const dataTask: TaskDataSession = {
+      currentPage: 0,
+      totalPages: Math.ceil((Array.isArray(result) ? result.length : 1) / 10),
+      tasks: Array.isArray(result) ? result : [result]
+    };
+    await conv.external((ctx) => {
+      ctx.session.tasks = dataTask;
+    });
+    if (dataTask.tasks.length === 0) {
       await ctx.reply("Задач с таким приоритетом не найдено.");
     } else {
-      await ctx.reply(`Задачи с приоритетом "${ans.callbackQuery.data}": `, {
-        reply_markup: listTask(ctx),
+      await ctx.reply(`Задачи с приоритетом "${getPriorityText(ans.callbackQuery.data)}": `, {
+        reply_markup: listTask(dataTask),
       });
     }
   } catch (error) {
     await ctx.reply("Произошла ошибка при получении задач.");
   }
+  return;
 }
 tasksComposer.use(createConversation(getTasksByPriority));
 
@@ -203,7 +216,7 @@ tasksComposer.on("callback_query:data", async (ctx, next) => {
       });
       break;
     case "get_tasks":
-      await ctx.conversation.enter("getTasks");
+      await getTasks(ctx);
       break;
     case "search_by_id":
       await ctx.conversation.enter("getTaskById");
@@ -222,7 +235,7 @@ tasksComposer.on("callback_query:data", async (ctx, next) => {
         ctx.session.tasks.currentPage--;
       }
       await ctx.editMessageReplyMarkup({
-        reply_markup: listTask(ctx)
+        reply_markup: listTask(ctx.session.tasks)
       });
       break;
     case "tasks_next_page":
@@ -230,13 +243,18 @@ tasksComposer.on("callback_query:data", async (ctx, next) => {
         ctx.session.tasks.currentPage++;
       }
       await ctx.editMessageReplyMarkup({
-        reply_markup: listTask(ctx)
+        reply_markup: listTask(ctx.session.tasks)
       });
       break;
     default:
       if (data.startsWith("view_task_")) {
         const taskId = data.replace("view_task_", "");
-        await ctx.reply(`Просмотр задачи #${taskId} еще не реализован.`);
+        await ctx.reply(showTask(await tasksService.getTaskById({
+          tgID: ctx.from.id,
+          id: parseInt(taskId)
+        })), {
+          parse_mode: "MarkdownV2",
+        });
       } else {
         await ctx.reply("Неизвестная команда.");
       }

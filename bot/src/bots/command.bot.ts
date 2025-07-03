@@ -1,4 +1,5 @@
-import { Composer } from "grammy";
+import { ConversationFlavor } from "@grammyjs/conversations";
+import { Composer, Context } from "grammy";
 
 interface ICommand {
   command: string;
@@ -15,3 +16,11 @@ export const commands: ICommand[] = [
     description: "Reset the bot"
   }
 ]
+
+export const commandComposer = new Composer<ConversationFlavor<Context>>();
+
+
+commandComposer.command("reset", async (ctx) => {
+  await ctx.reply("Все действия сброшены. Вы можете начать заново.");
+  ctx.conversation.exitAll();
+});

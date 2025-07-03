@@ -1,13 +1,16 @@
 import { Task } from "./types";
 
+type TaskDataSession = {
+  currentPage: number;
+  totalPages?: number;
+  tasks: Task[];
+}
+
 type TasksSession = {
-  tasks: {
-    currentPage: number;
-    totalPages?: number;
-    tasks: Task[];
-  }
+  tasks: TaskDataSession;
 }
 
 export {
+  TaskDataSession,
   TasksSession,
 }

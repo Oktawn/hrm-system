@@ -1,29 +1,30 @@
 import { useState, useEffect } from 'react';
-import { 
-  Table, 
-  Card, 
-  Button, 
-  Tag, 
-  Space, 
-  Input, 
-  Select, 
-  message, 
-  Modal, 
+import {
+  Table,
+  Card,
+  Button,
+  Tag,
+  Space,
+  Input,
+  Select,
+  message,
+  Modal,
   Typography,
   Tooltip
 } from 'antd';
-import { 
-  EyeOutlined, 
-  DownloadOutlined, 
+import {
+  EyeOutlined,
+  DownloadOutlined,
   FileTextOutlined,
   SearchOutlined,
   CheckOutlined,
   CloseOutlined
 } from '@ant-design/icons';
-import documentsAPI, { type Document, type DocumentFilter } from '../../services/documents.service';
+import documentsAPI from '../../services/documents.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { getDocumentStatusColor, getDocumentStatusText, getDocumentTypeText, getDocumentTypeColor } from '../../utils/status.utils';
 import './DocumentsPage.css';
+import type { DocumentFilter, Document } from '../../types/document.types';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -52,12 +53,10 @@ export function DocumentsPage() {
       let response;
 
       if (isEmployee && user?.employeeId) {
-        // Для сотрудников показываем только их документы
         response = await documentsAPI.getByEmployee(user.employeeId);
-        
-        // Применяем клиентскую фильтрацию и сортировку для сотрудников
+
         let filteredDocuments = [...(response.data || [])];
-        
+
         if (currentFilter.status) {
           filteredDocuments = filteredDocuments.filter(doc => doc.status === currentFilter.status);
         }
@@ -65,12 +64,11 @@ export function DocumentsPage() {
           filteredDocuments = filteredDocuments.filter(doc => doc.type === currentFilter.type);
         }
         if (currentFilter.title) {
-          filteredDocuments = filteredDocuments.filter(doc => 
+          filteredDocuments = filteredDocuments.filter(doc =>
             doc.title.toLowerCase().includes(currentFilter.title!.toLowerCase())
           );
         }
 
-        // Применяем сортировку
         if (currentFilter.sortBy && currentFilter.sortOrder) {
           filteredDocuments.sort((a, b) => {
             const field = currentFilter.sortBy!;
@@ -96,7 +94,6 @@ export function DocumentsPage() {
           pageSize: filteredDocuments.length || 10,
         }));
       } else {
-        // Для менеджеров показываем все документы с серверной пагинацией
         const filterWithPagination = {
           ...currentFilter,
           page,
@@ -121,25 +118,25 @@ export function DocumentsPage() {
   const handleTableChange = (paginationInfo: any, _filters: any, sorter: any) => {
     let newSortField = '';
     let newSortOrder: 'ascend' | 'descend' | null = null;
-    
+
     if (sorter && sorter.field && sorter.order) {
       newSortField = sorter.field;
       newSortOrder = sorter.order;
     }
-    
+
     const newPagination = {
       current: paginationInfo.current,
       pageSize: paginationInfo.pageSize,
       total: paginationInfo.total,
     };
     setPagination(newPagination);
-    
+
     const updatedFilter: DocumentFilter = {
       ...filter,
       sortBy: newSortField || undefined,
       sortOrder: newSortOrder === 'ascend' ? 'ASC' : newSortOrder === 'descend' ? 'DESC' : undefined,
     };
-    
+
     setFilter(updatedFilter);
   };
 
@@ -153,7 +150,7 @@ export function DocumentsPage() {
           Modal.confirm({
             title: 'Отклонение документа',
             content: (
-              <Input.TextArea 
+              <Input.TextArea
                 placeholder="Укажите причину отклонения..."
                 onChange={(e) => resolve(e.target.value)}
               />
@@ -162,7 +159,7 @@ export function DocumentsPage() {
             onCancel: () => resolve(''),
           });
         });
-        
+
         if (reason) {
           await documentsAPI.reject(documentId, reason);
           message.success('Документ отклонен');
@@ -172,7 +169,7 @@ export function DocumentsPage() {
         await documentsAPI.updateStatus(documentId, newStatus);
         message.success('Статус документа изменен');
       }
-      
+
       fetchDocuments(pagination.current, pagination.pageSize, filter);
     } catch (error) {
       console.error('Ошибка изменения статуса:', error);
@@ -219,10 +216,10 @@ export function DocumentsPage() {
 
   const canChangeStatus = (document: Document) => {
     if (!user) return false;
-    
+
     const isCreator = document.createdBy?.id === user.employeeId;
     const isDocumentManager = ['admin', 'hr', 'manager'].includes(user.role);
-    
+
     return isCreator || isDocumentManager;
   };
 
@@ -353,7 +350,7 @@ export function DocumentsPage() {
             {isEmployee ? 'Мои документы' : 'Документы'}
           </Title>
         </div>
-        
+
         <div className="header-filters">
           <Space wrap>
             {!isEmployee && (

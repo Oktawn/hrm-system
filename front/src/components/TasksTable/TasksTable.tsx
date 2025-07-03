@@ -11,7 +11,7 @@ interface TasksTableProps {
   onTaskUpdate: () => void;
 }
 
-const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) => {
+function TasksTable({ tasks, onTaskUpdate }: TasksTableProps) {
   const [showComments, setShowComments] = useState<{ taskId: number; visible: boolean }>({ taskId: 0, visible: false });
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
