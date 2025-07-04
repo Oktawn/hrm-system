@@ -7,13 +7,19 @@ type Attachment = {
   uploadDate: Date;
 }
 
+type Assignee = {
+  firstName: string;
+  lastName: string;
+}
+
 type Task = {
   id: number;
   title: string;
   description: string;
   status: string;
   priority: string;
-  attachments?: Attachment[];
+  creator: Assignee;
+  assignees: Assignee[];
 }
 
 type DataTask = {
@@ -25,5 +31,6 @@ type DataTask = {
 
 export {
   Task,
-  DataTask
+  DataTask,
+  Assignee
 }

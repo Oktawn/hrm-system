@@ -1,4 +1,3 @@
-import { TaskPriorityEnum, TaskStatusEnum } from "../commons/enums";
 import { DataTask, Task } from "../commons/types";
 import { api } from "./api";
 
@@ -54,7 +53,6 @@ export class TasksService {
   }
   async getTasksByPriority(data: DataTask): Promise<Task[] | Task> {
     try {
-      console.log('Получение задач по приоритету:', data.priority);
       const res = await api.get(`/tasks/bots/priority/${data.priority.toUpperCase()}`,
         {
           headers: {

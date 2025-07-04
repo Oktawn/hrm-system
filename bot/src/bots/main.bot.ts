@@ -1,6 +1,6 @@
 import { Bot, GrammyError, HttpError, session } from "grammy";
 import { envConfig } from "../config/config";
-import { commandComposer, commands } from "./command.bot";
+import { checkBot, commandComposer, commands } from "./command.bot";
 import { tasksComposer } from "./tasks.bot";
 import { conversations } from "@grammyjs/conversations";
 
@@ -11,9 +11,9 @@ bot.api.setMyCommands(commands, {
     type: "all_private_chats"
   }
 });
-bot.use(session({ initial: () => ({}) }));
+bot.use(session({ initial: () => ({}) }), checkBot);
 bot.use(conversations());
-bot.use(commandComposer);
+bot.use(commandComposer, checkBot);
 bot.use(tasksComposer);
 
 bot.catch((err) => {

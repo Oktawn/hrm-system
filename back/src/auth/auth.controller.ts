@@ -3,10 +3,10 @@ import { AuthService } from "./auth.service";
 import { ILogin, IRegister, TokenPayload } from './auth.interface';
 import { jwtConfig } from '../config/jwt.config';
 import jwt from 'jsonwebtoken';
+import { employeeRepository } from '../db/db-rep';
 
 
 const authService = new AuthService();
-
 export class AuthController {
 
   async register(req: Request, res: Response, next: NextFunction) {
@@ -34,7 +34,7 @@ export class AuthController {
     try {
       const logingData: ILogin = req.body;
       const result = await authService.login(logingData);
-      
+
       res.cookie('access_token', result.accessToken, {
         httpOnly: true,
         maxAge: jwtConfig.getExpiration("JWT_EXPIRES_IN"),
@@ -47,7 +47,7 @@ export class AuthController {
         secure: process.env.NODE_ENV === 'production',
         sameSite: "strict"
       })
-      
+
       res.status(200).json({
         message: 'Login successful',
         user: result.data
@@ -66,7 +66,7 @@ export class AuthController {
           await authService.logout(payload.userId);
         }
       }
-      
+
       res.clearCookie('access_token');
       res.clearCookie('refresh_token');
       res.status(200).json({
@@ -116,7 +116,7 @@ export class AuthController {
   async checkToken(req: Request, res: Response, next: NextFunction) {
     try {
       const accessToken = req.cookies.access_token;
-      
+
       if (!accessToken) {
         res.status(401).json({ message: "No access token provided", valid: false });
         return;
@@ -124,14 +124,31 @@ export class AuthController {
 
       const payload = await authService.verifyAccessToken(accessToken);
       const userData = await authService.getUserData(payload.userId);
-      
-      res.status(200).json({ 
-        message: "Token is valid", 
+
+      res.status(200).json({
+        message: "Token is valid",
         valid: true,
         user: userData
       });
     } catch (error) {
       res.status(401).json({ message: "Invalid or expired token", valid: false });
+    }
+  }
+
+  async checkBot(req: Request, res: Response, next: NextFunction) {
+    try {
+      const tgID = req.headers['x-telegram-id'] as string;
+      if (!tgID) {
+        res.status(400).json({ message: "Telegram ID is required" });
+        return;
+      }
+
+      const isValid = await employeeRepository.findOne({
+        where: { tgID: parseInt(tgID) }
+      });
+      res.status(200).json({ valid: !!isValid });
+    } catch (error) {
+      next(error);
     }
   }
 }

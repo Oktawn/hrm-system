@@ -2,7 +2,7 @@ import { Composer, InlineKeyboard } from "grammy";
 import { TaskComposerConversation, TaskContext, TaskConversation } from "../commons/context.types";
 import { TasksService } from "../services/tasks.service";
 import { createConversation } from "@grammyjs/conversations";
-import { DataTask, Task } from "../commons/types";
+import { Assignee, DataTask, Task } from "../commons/types";
 import dedent from "dedent";
 import { TaskPriorityEnum, TaskStatusEnum } from "../commons/enums";
 import { getPriorityText, getTaskStatusText } from "../commons/status.util";
@@ -81,12 +81,18 @@ function listTask(tasks: TaskDataSession) {
   return taskKeyboard;
 }
 
+function showEmployee(employee: Assignee) {
+  return `${employee.firstName} ${employee.lastName}`;
+}
+
 function showTask(task: Task) {
   const url = `${envConfig.get("ORIGIN_FRONTEND")}/tasks?task=${task.id}`;
   const msg = dedent`
     Задача: ${String(task.id)}
     Название: ${task.title || '-'}
     Описание: ${task.description || '-'}
+    Создатель: ${showEmployee(task.creator) || '-'}
+    Исполнители: ${task.assignees && task.assignees.length > 0 ? task.assignees.map(showEmployee).join(", ") : '-'}
     Статус: ${getTaskStatusText(task.status) || '-'}
     Приоритет: ${getPriorityText(task.priority) || '-'}
     URL: [внешняя ссылка](${url})`;
@@ -198,13 +204,6 @@ async function getTasksByPriority(conv: TaskConversation, ctx: TaskContext) {
   return;
 }
 tasksComposer.use(createConversation(getTasksByPriority));
-
-tasksComposer.command("start", async (ctx, next) => {
-  await ctx.reply("Добро пожаловать в управление задачами!", {
-    reply_markup: tasksInlineKeyboard,
-  });
-  await next();
-})
 
 tasksComposer.on("callback_query:data", async (ctx, next) => {
   const data = ctx.callbackQuery.data;
