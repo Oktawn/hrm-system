@@ -153,7 +153,7 @@ export class TasksService {
     }
     if (data.assigneesId) {
       queryB.andWhere("assignees.id IN (:...assigneesId)",
-        { assigneesId: data.assigneesId });
+        { assigneesId: Array.isArray(data.assigneesId) ? data.assigneesId : [data.assigneesId] });
     }
 
     if (sortBy) {
