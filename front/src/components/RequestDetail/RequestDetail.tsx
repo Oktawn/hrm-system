@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Drawer,
   Typography,
@@ -37,7 +37,8 @@ import {
 } from '../../utils/status.utils';
 import './RequestDetail.css';
 import type { Employee } from '../../types/employee.types';
-import type { Request } from '../../types/request.types';
+import type { Request, RequestStatus } from '../../types/request.types';
+import type { FileAttachment } from '../../types/document.types';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -61,15 +62,9 @@ export function RequestDetail({ requestId, visible, onClose, onRequestUpdate }: 
   const [commentAttachments, setCommentAttachments] = useState<File[]>([]);
   const [form] = Form.useForm();
 
-  useEffect(() => {
-    if (visible && requestId) {
-      fetchRequestDetails();
-      fetchEmployees();
-      fetchComments();
-    }
-  }, [visible, requestId]);
 
-  const fetchRequestDetails = async () => {
+
+  const fetchRequestDetails = useCallback(async () => {
     if (!requestId) return;
 
     try {
@@ -89,18 +84,18 @@ export function RequestDetail({ requestId, visible, onClose, onRequestUpdate }: 
     } finally {
       setLoading(false);
     }
-  };
+  }, [requestId, form]);
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     try {
       const response = await employeesAPI.getAll();
       setEmployees(response.data.data);
     } catch (error) {
       console.error('Ошибка загрузки сотрудников:', error);
     }
-  };
+  }, []);
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     if (!requestId) return;
 
     try {
@@ -109,14 +104,22 @@ export function RequestDetail({ requestId, visible, onClose, onRequestUpdate }: 
     } catch (error) {
       console.error('Ошибка загрузки комментариев:', error);
     }
-  };
+  }, [requestId]);
+
+  useEffect(() => {
+    if (visible && requestId) {
+      fetchRequestDetails();
+      fetchEmployees();
+      fetchComments();
+    }
+  }, [visible, requestId, fetchComments, fetchRequestDetails]);
 
   const handleStatusChange = async (newStatus: string) => {
     if (!request) return;
 
     try {
       await requestsAPI.updateStatus(request.id, newStatus);
-      setRequest({ ...request, status: newStatus as any });
+      setRequest({ ...request, status: newStatus as RequestStatus });
       onRequestUpdate?.();
       message.success('Статус заявки изменен');
     } catch (error) {
@@ -362,7 +365,7 @@ export function RequestDetail({ requestId, visible, onClose, onRequestUpdate }: 
                   <div>
                     <Text strong>Прикрепленные файлы:</Text>
                     <div style={{ marginTop: 8 }}>
-                      {request.attachments.map((attachment: any, index: number) => (
+                      {request.attachments.map((attachment: FileAttachment, index: number) => (
                         <div key={index} style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -430,7 +433,7 @@ export function RequestDetail({ requestId, visible, onClose, onRequestUpdate }: 
                                 Вложения:
                               </Text>
                               <div style={{ marginTop: 4 }}>
-                                {comment.attachments.map((attachment: any, index: number) => (
+                                {comment.attachments.map((attachment: FileAttachment, index: number) => (
                                   <div key={index} style={{
                                     display: 'flex',
                                     alignItems: 'center',

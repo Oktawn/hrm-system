@@ -1,17 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Layout, Typography, Card, Table, Tag, Space, Button, Input, Select } from 'antd';
 import { PlusOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/auth.store';
-import requestsAPI, { type Request, type RequestFilter } from '../../services/requests.service';
+import requestsAPI from '../../services/requests.service';
+import type { Request, RequestFilter } from '../../types/request.types';
 import RequestDetail from '../../components/RequestDetail/RequestDetail';
 import CreateRequestModal from '../../components/CreateRequestModal/CreateRequestModal';
-import { 
-  getRequestStatusColor, 
-  getRequestStatusText, 
-  getPriorityColor, 
-  getPriorityText, 
-  getRequestTypeText 
+import {
+  getRequestStatusColor,
+  getRequestStatusText,
+  getPriorityColor,
+  getPriorityText,
+  getRequestTypeText
 } from '../../utils/status.utils';
 
 const { Content } = Layout;
@@ -37,22 +38,22 @@ export function RequestsPage() {
   const isEmployee = user?.role === 'employee';
   const isManager = user?.role === 'manager' || user?.role === 'hr' || user?.role === 'admin';
 
-  const fetchRequests = async (page = 1, pageSize = 10, currentFilter = filter) => {
+  const fetchRequests = useCallback(async (page = 1, pageSize = 10, currentFilter = filter) => {
     if (!user) return;
-    
+
     try {
       setLoading(true);
       let response;
-      
+
       if (isEmployee) {
         if (!user.employeeId) {
           console.error('EmployeeId отсутствует для сотрудника');
           return;
         }
         response = await requestsAPI.getByEmployee(user.employeeId);
-        
-        // Применяем клиентскую сортировку для сотрудников
-        let sortedRequests = [...(response.data || [])];
+
+
+        const sortedRequests = [...(response.data || [])];
         if (currentFilter.sortBy && currentFilter.sortOrder) {
           const allowedSortFields = ['id', 'title', 'createdAt'];
           if (allowedSortFields.includes(currentFilter.sortBy)) {
@@ -61,13 +62,11 @@ export function RequestsPage() {
               let aValue: any = a[field as keyof Request];
               let bValue: any = b[field as keyof Request];
 
-              // Обрабатываем даты
               if (field === 'createdAt') {
                 aValue = new Date(aValue).getTime();
                 bValue = new Date(bValue).getTime();
               }
 
-              // Обрабатываем строки
               if (field === 'title' && typeof aValue === 'string' && typeof bValue === 'string') {
                 aValue = aValue.toLowerCase();
                 bValue = bValue.toLowerCase();
@@ -79,7 +78,7 @@ export function RequestsPage() {
             });
           }
         }
-        
+
         setRequests(sortedRequests);
         setPagination(prev => ({
           ...prev,
@@ -106,11 +105,11 @@ export function RequestsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, isEmployee, user]);
 
   useEffect(() => {
     fetchRequests(pagination.current, pagination.pageSize, filter);
-  }, [filter, user]);
+  }, [fetchRequests, filter, pagination, user]);
 
   const handleRequestClick = (requestId: number) => {
     setSearchParams({ request: requestId.toString() });
@@ -121,32 +120,31 @@ export function RequestsPage() {
   };
 
   const handleRequestUpdate = () => {
-    fetchRequests(pagination.current, pagination.pageSize, filter); 
+    fetchRequests(pagination.current, pagination.pageSize, filter);
   };
 
   const handleTableChange = (paginationInfo: any, _filters: any, sorter: any) => {
     let newSortField = '';
     let newSortOrder: 'ascend' | 'descend' | null = null;
-    
+
     if (sorter && sorter.field && sorter.order) {
       newSortField = sorter.field;
       newSortOrder = sorter.order;
     }
-    
+
     const newPagination = {
       current: paginationInfo.current,
       pageSize: paginationInfo.pageSize,
       total: paginationInfo.total,
     };
     setPagination(newPagination);
-    
-    // Обновляем фильтр с параметрами сортировки
+
     const updatedFilter: RequestFilter = {
       ...filter,
       sortBy: newSortField || undefined,
       sortOrder: newSortOrder === 'ascend' ? 'ASC' : newSortOrder === 'descend' ? 'DESC' : undefined,
     };
-    
+
     setFilter(updatedFilter);
   };
 
@@ -184,7 +182,7 @@ export function RequestsPage() {
       dataIndex: 'creator',
       key: 'creator',
       width: '15%',
-      render: (creator: any) => creator ? `${creator.firstName} ${creator.lastName}` : '—',
+      render: (creator) => creator ? `${creator.firstName} ${creator.lastName}` : '—',
     }] : []),
     {
       title: 'Статус',
@@ -241,8 +239,8 @@ export function RequestsPage() {
             <Title level={2}>
               {isEmployee ? 'Мои заявки' : 'Заявки'}
             </Title>
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               icon={<PlusOutlined />}
               onClick={() => setCreateRequestModalVisible(true)}
             >

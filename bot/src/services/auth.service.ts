@@ -1,7 +1,8 @@
+import { UserSession } from "../commons/session.type";
 import { api } from "./api";
 
 export class AuthService {
-  async checkBot(tgID: number): Promise<boolean> {
+  async checkBot(tgID: number): Promise<UserSession> {
     try {
       const res = await api.get(`/auth/check/bot`, {
         headers: {

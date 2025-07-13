@@ -1,6 +1,6 @@
-import { ConversationFlavor } from "@grammyjs/conversations";
-import { Composer, Context, InlineKeyboard, NextFunction } from "grammy";
+import { Composer, InlineKeyboard } from "grammy";
 import { AuthService } from "../services/auth.service";
+import { UserComposerConversation } from "../commons/context.types";
 
 interface ICommand {
   command: string;
@@ -18,19 +18,30 @@ export const commands: ICommand[] = [
   }
 ]
 
-export const commandComposer = new Composer<ConversationFlavor<Context>>();
+export const commandComposer = new Composer<UserComposerConversation>();
 const authService = new AuthService();
-export async function checkBot(ctx: Context, next: NextFunction) {
-  try {
-    const tgID = ctx.from.id;
-    const isValid = await authService.checkBot(tgID);
-    if (!isValid) {
+
+commandComposer.use(async (ctx, next) => {
+  if (!ctx.session.user) {
+    try {
+      const result = await checkBot(ctx.from.id);
+      ctx.session.user = result.user;
+    } catch (error) {
+      ctx.reply("Вы не зарегистрированы в системе. Пожалуйста, обратитесь к администратору.");
       return;
     }
+  }
+  await next();
+})
+
+async function checkBot(tgID: number) {
+  try {
+    const isValid = await authService.checkBot(tgID);
+    return isValid;
   } catch (error) {
     console.error("Ошибка при проверке бота:", error);
   }
-  await next();
+  return;
 }
 
 const commandKeyboard = new InlineKeyboard()

@@ -30,6 +30,13 @@ const tasksInlineKeyboard = new InlineKeyboard()
   .text("Поиск по статусу", "search_by_status").row()
   .text("Поиск по приоритету", "search_by_priority").row()
 
+export const PriorityKeyboard = new InlineKeyboard()
+  .text("Критический", "critical").row()
+  .text("Высокий", "high").row()
+  .text("Средний", "medium").row()
+  .text("Низкий", "low").row();
+
+
 async function getTasks(ctx: TaskContext) {
   try {
     const dateTask: DataTask = {
@@ -81,14 +88,14 @@ function listTask(tasks: TaskDataSession) {
   return taskKeyboard;
 }
 
-function showEmployee(employee: Assignee) {
+export function showEmployee(employee: Assignee) {
   return `${employee.firstName} ${employee.lastName}`;
 }
 
 function showTask(task: Task) {
   const url = `${envConfig.get("ORIGIN_FRONTEND")}/tasks?task=${task.id}`;
   const msg = dedent`
-    Задача: ${String(task.id)}
+    Задача: ${task.id}
     Название: ${task.title || '-'}
     Описание: ${task.description || '-'}
     Создатель: ${showEmployee(task.creator) || '-'}
@@ -167,11 +174,7 @@ async function getTasksByStatus(conv: TaskConversation, ctx: TaskContext) {
 tasksComposer.use(createConversation(getTasksByStatus));
 
 async function getTasksByPriority(conv: TaskConversation, ctx: TaskContext) {
-  const PriorityKeyboard = new InlineKeyboard()
-    .text("Критический", "critical").row()
-    .text("Высокий", "high").row()
-    .text("Средний", "medium").row()
-    .text("Низкий", "low").row();
+
 
   await ctx.reply("Выберите приоритет задачи", {
     reply_markup: PriorityKeyboard
@@ -219,9 +222,6 @@ tasksComposer.on("callback_query:data", async (ctx, next) => {
       break;
     case "search_by_id":
       await ctx.conversation.enter("getTaskById");
-      break;
-    case "view_task":
-      await ctx.reply("Функция просмотра задачи еще не реализована.");
       break;
     case "search_by_status":
       await ctx.conversation.enter("getTasksByStatus");

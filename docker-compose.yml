@@ -1,6 +1,6 @@
 services:
-  postgres:
-    image: postgres
+  hrm-postgres:
+    image: postgres:17.4-alpine
     container_name: hrm-postgres
     env_file:
       - .env
@@ -23,7 +23,7 @@ services:
       - .env
     restart: always
     depends_on:
-      - postgres
+      - hrm-postgres
     ports:
       - "${API_PORT}:8000"
   frontend:

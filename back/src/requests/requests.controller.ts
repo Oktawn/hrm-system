@@ -8,7 +8,7 @@ const requestsService = new RequestsService();
 
 export class RequestsController {
   async createRequest(req: AuthenticatedRequest, res: Response) {
-    uploadMultiple(req, res, async (err) => {
+    uploadMultiple(req, res, async (err: any) => {
       if (err) {
         return res.status(400).json({
           success: false,
@@ -18,7 +18,7 @@ export class RequestsController {
 
       try {
         const requestData = req.body;
-        
+
         let attachments = [];
         if (req.files && Array.isArray(req.files) && req.files.length > 0) {
           attachments = (req.files as Express.Multer.File[]).map(createAttachment);
@@ -36,9 +36,9 @@ export class RequestsController {
           message: 'Заявка успешно создана'
         });
       } catch (error) {
-        res.status(500).json({ 
+        res.status(500).json({
           success: false,
-          error: error.message 
+          error: error.message
         });
       }
     });

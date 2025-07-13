@@ -146,7 +146,12 @@ export class AuthController {
       const isValid = await employeeRepository.findOne({
         where: { tgID: parseInt(tgID) }
       });
-      res.status(200).json({ valid: !!isValid });
+      res.status(200).json({
+        user: {
+          role: isValid ? isValid.user.role : null,
+          tgID: isValid ? isValid.tgID : null,
+        }
+      });
     } catch (error) {
       next(error);
     }

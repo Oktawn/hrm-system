@@ -20,3 +20,10 @@ export enum RequestStatusEnum {
   COMPLETED = "completed",
   CANCELLED = "cancelled",
 }
+
+export enum UserRoleEnum {
+  ADMIN = "admin",
+  HR = "hr",
+  MANAGER = "manager",
+  EMPLOYEE = "employee"
+}
