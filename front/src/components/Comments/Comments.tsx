@@ -120,10 +120,8 @@ function Comments({ type, itemId, isVisible, onClose }: CommentsProps) {
         responseType: 'blob'
       });
 
-      // Получаем MIME-тип из заголовков ответа
       const contentType = response.headers['content-type'] || 'application/octet-stream';
-      
-      // Создаем blob с правильным MIME-типом
+
       const blob = new Blob([response.data], { type: contentType });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -145,15 +143,12 @@ function Comments({ type, itemId, isVisible, onClose }: CommentsProps) {
         responseType: 'blob'
       });
 
-      // Получаем MIME-тип из заголовков ответа
       const contentType = response.headers['content-type'] || 'application/octet-stream';
-      
-      // Создаем blob с правильным MIME-типом
+
       const blob = new Blob([response.data], { type: contentType });
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');
-      
-      // Очищаем URL через некоторое время
+
       setTimeout(() => {
         window.URL.revokeObjectURL(url);
       }, 1000);
@@ -248,7 +243,7 @@ function Comments({ type, itemId, isVisible, onClose }: CommentsProps) {
                                   fontSize: '12px'
                                 }}>
                                   <span style={{ flex: 1, marginRight: 8 }}>
-                                    {attachment.originalName} ({formatFileSize(attachment.size)})
+                                    {attachment.originalName.toLocaleLowerCase("ru")} ({formatFileSize(attachment.size)})
                                   </span>
                                   <div style={{ display: 'flex', gap: 4 }}>
                                     {isImage(attachment.mimetype) && (

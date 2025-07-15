@@ -7,6 +7,10 @@ RUN npm run build
 
 FROM node:22-alpine
 WORKDIR /app
+
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src/templates ./src/templates
 COPY package*.json ./

@@ -14,12 +14,12 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
-    const name = path.basename(file.originalname, ext);
-    cb(null, `${name}-${uniqueSuffix}${ext}`);
+
+    cb(null, `file-${uniqueSuffix}${ext}`);
   }
 });
 
-const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (_: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const allowedMimes = [
     'image/jpeg',
     'image/jpg',
@@ -54,9 +54,24 @@ export const uploadMultiple = upload.array('attachments', 5);
 export const uploadSingle = upload.single('file');
 
 export const createAttachment = (file: Express.Multer.File) => {
+  let originalName = file.originalname;
+  try {
+    if (Buffer.isBuffer(file.originalname)) {
+      originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    } else if (typeof file.originalname === 'string') {
+      const testBytes = Buffer.from(file.originalname, 'latin1');
+      const decoded = testBytes.toString('utf8');
+      if (!/[\uFFFD\u0000-\u001F]/.test(decoded)) {
+        originalName = decoded;
+      }
+    }
+  } catch (error) {
+    console.warn('Ошибка при обработке имени файла:', error);
+  }
+
   return {
     filename: file.filename,
-    originalName: file.originalname,
+    originalName: originalName,
     mimetype: file.mimetype,
     size: file.size,
     path: file.path,

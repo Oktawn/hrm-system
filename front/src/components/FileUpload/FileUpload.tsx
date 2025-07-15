@@ -77,10 +77,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         responseType: 'blob'
       });
 
-      // Получаем MIME-тип из заголовков ответа
       const contentType = response.headers['content-type'] || 'application/octet-stream';
 
-      // Создаем blob с правильным MIME-типом
       const blob = new Blob([response.data], { type: contentType });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
