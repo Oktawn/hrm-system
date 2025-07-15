@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { commentsService, type IComment, type ICreateComment } from '../../services/comments.service';
 import { useAuthStore } from '../../stores/auth.store';
 import SimpleFileUpload from '../SimpleFileUpload/SimpleFileUpload';
@@ -25,14 +25,7 @@ function Comments({ type, itemId, isVisible, onClose }: CommentsProps) {
   const [editText, setEditText] = useState('');
 
   const { user: currentUser } = useAuthStore();
-
-  useEffect(() => {
-    if (isVisible) {
-      fetchComments();
-    }
-  }, [isVisible, itemId, type]);
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       setLoading(true);
       const data = type === 'task'
@@ -44,7 +37,13 @@ function Comments({ type, itemId, isVisible, onClose }: CommentsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [itemId, type]);
+
+  useEffect(() => {
+    if (isVisible) {
+      fetchComments();
+    }
+  }, [fetchComments, isVisible, itemId, type]);
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
@@ -271,7 +270,7 @@ function Comments({ type, itemId, isVisible, onClose }: CommentsProps) {
                 files={attachments}
                 onFilesChange={setAttachments}
                 maxFiles={3}
-                maxSize={5 * 1024 * 1024}
+                maxSize={10 * 1024 * 1024}
                 accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
               />
             </div>

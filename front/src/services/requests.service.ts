@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { CreateRequestData, RequestFilter, Request } from '../types/request.types';
 import { api } from './auth.service';
 

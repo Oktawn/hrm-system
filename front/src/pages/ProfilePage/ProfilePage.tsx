@@ -28,14 +28,13 @@ import './ProfilePage.css';
 
 const { Title, Text } = Typography;
 
-export const ProfilePage: React.FC = () => {
+export function ProfilePage() {
   const { user, updateUser } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profileForm] = Form.useForm();
   const [passwordForm] = Form.useForm();
 
-  // Загрузка данных профиля при монтировании
   useEffect(() => {
     const loadProfile = async () => {
       setLoading(true);
@@ -43,7 +42,6 @@ export const ProfilePage: React.FC = () => {
         const response = await profileAPI.getProfile();
         const profile = response.data.user;
         updateUser(profile);
-        // Заполняем поля формы
         profileForm.setFieldsValue({
           firstName: profile.firstName || '',
           lastName: profile.lastName || '',
@@ -298,8 +296,8 @@ export const ProfilePage: React.FC = () => {
         <Title level={2}>Профиль пользователя</Title>
       </div>
 
-      <Tabs 
-        defaultActiveKey="profile" 
+      <Tabs
+        defaultActiveKey="profile"
         className="profile-tabs"
         items={tabItems}
       />

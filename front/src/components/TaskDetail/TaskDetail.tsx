@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Drawer,
   Typography,
@@ -62,15 +62,8 @@ export function TaskDetail({ taskId, visible, onClose, onTaskUpdate }: TaskDetai
   const [attachments, setAttachments] = useState<any[]>([]);
   const [form] = Form.useForm();
 
-  useEffect(() => {
-    if (visible && taskId) {
-      fetchTaskDetails();
-      fetchEmployees();
-      fetchComments();
-    }
-  }, [visible, taskId]);
 
-  const fetchTaskDetails = async () => {
+  const fetchTaskDetails = useCallback(async () => {
     if (!taskId) return;
 
     try {
@@ -86,12 +79,12 @@ export function TaskDetail({ taskId, visible, onClose, onTaskUpdate }: TaskDetai
         deadline: response.data.deadline ? dayjs(response.data.deadline) : null,
         assignees: response.data.assignees.map(a => a.id)
       });
-    } catch (error) {
+    } catch {
       message.error('Не удалось загрузить задачу');
     } finally {
       setLoading(false);
     }
-  };
+  }, [taskId, form]);
 
   const fetchEmployees = async () => {
     try {
@@ -102,7 +95,7 @@ export function TaskDetail({ taskId, visible, onClose, onTaskUpdate }: TaskDetai
     }
   };
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     if (!taskId) return;
 
     try {
@@ -111,7 +104,15 @@ export function TaskDetail({ taskId, visible, onClose, onTaskUpdate }: TaskDetai
     } catch (error) {
       console.error('Ошибка загрузки комментариев:', error);
     }
-  };
+  }, [taskId]);
+
+  useEffect(() => {
+    if (visible && taskId) {
+      fetchTaskDetails();
+      fetchEmployees();
+      fetchComments();
+    }
+  }, [visible, taskId, fetchTaskDetails, fetchComments]);
 
   const handleStatusChange = async (newStatus: string) => {
     if (!task) return;
@@ -481,7 +482,7 @@ export function TaskDetail({ taskId, visible, onClose, onTaskUpdate }: TaskDetai
                     files={commentAttachments}
                     onFilesChange={setCommentAttachments}
                     maxFiles={3}
-                    maxSize={10 * 1024 * 1024} 
+                    maxSize={10 * 1024 * 1024}
                     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
                   />
                 </div>

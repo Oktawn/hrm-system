@@ -112,7 +112,7 @@ export function RequestDetail({ requestId, visible, onClose, onRequestUpdate }: 
       fetchEmployees();
       fetchComments();
     }
-  }, [visible, requestId, fetchComments, fetchRequestDetails]);
+  }, [visible, requestId, fetchComments, fetchRequestDetails, fetchEmployees]);
 
   const handleStatusChange = async (newStatus: string) => {
     if (!request) return;

@@ -14,6 +14,7 @@ import {
   getPriorityText,
   getRequestTypeText
 } from '../../utils/status.utils';
+import type { Employee } from '../../types/employee.types';
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -182,7 +183,7 @@ export function RequestsPage() {
       dataIndex: 'creator',
       key: 'creator',
       width: '15%',
-      render: (creator) => creator ? `${creator.firstName} ${creator.lastName}` : '—',
+      render: (creator: Employee) => creator ? `${creator.firstName} ${creator.lastName}` : '—',
     }] : []),
     {
       title: 'Статус',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Modal,
   Form,
@@ -25,11 +25,7 @@ interface CreateTaskModalProps {
   onTaskCreated?: () => void;
 }
 
-export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
-  visible,
-  onClose,
-  onTaskCreated
-}) => {
+export function CreateTaskModal({ visible, onClose, onTaskCreated }: CreateTaskModalProps) {
   const { user } = useAuthStore();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);

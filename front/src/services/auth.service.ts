@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from 'axios';
 import type { AxiosResponse } from 'axios';
 import type { LoginRequest, LoginResponse } from '../types/auth.types';
@@ -67,16 +68,9 @@ export const checkAuthStatus = async (): Promise<boolean> => {
   try {
     const response = await authAPI.checkToken();
     return response.data.valid;
-  } catch (error) {
+  } catch  {
     return false;
   }
 };
 
-export const safeApiCall = async <T>(apiCall: () => Promise<AxiosResponse<T>>): Promise<T> => {
-  try {
-    const response = await apiCall();
-    return response.data;
-  } catch (error: any) {
-    throw error;
-  }
-};
+

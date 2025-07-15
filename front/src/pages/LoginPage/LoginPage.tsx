@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { Form, Input, Button, Card, Alert, Typography, Space } from 'antd';
 import { LockOutlined, MailOutlined } from '@ant-design/icons';

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Layout,
   Typography,
@@ -38,7 +38,7 @@ export function TaskStatisticsPage() {
 
   const hasAccess = user?.role === 'admin' || user?.role === 'hr' || user?.role === 'manager';
 
-  const fetchStatistics = async () => {
+  const fetchStatistics = useCallback(async () => {
     if (!hasAccess) return;
 
     try {
@@ -55,7 +55,7 @@ export function TaskStatisticsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, hasAccess]);
 
   const handleExportToExcel = async () => {
     try {
@@ -80,7 +80,7 @@ export function TaskStatisticsPage() {
       }));
     } else {
       setFilter(prev => {
-        const { dateFrom, dateTo, ...rest } = prev;
+        const { ...rest } = prev;
         return rest;
       });
     }
@@ -92,7 +92,7 @@ export function TaskStatisticsPage() {
 
   useEffect(() => {
     fetchStatistics();
-  }, [filter, hasAccess]);
+  }, [fetchStatistics, filter, hasAccess]);
 
   const overallCompletionRate = totalStats?.totalTasks > 0
     ? totalStats.completionRate

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { TaskStatistics, TaskStatisticsFilter } from '../types/statistics.types';
 import { api } from './auth.service';
 

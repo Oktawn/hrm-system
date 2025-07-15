@@ -1,3 +1,4 @@
+import type { Employee } from '../types/employee.types';
 import { api } from './auth.service';
 
 export interface Position {
@@ -12,7 +13,7 @@ export interface Position {
     id: number;
     name: string;
   };
-  employees?: any[];
+  employees?: Employee[];
 }
 
 export interface CreatePositionData {

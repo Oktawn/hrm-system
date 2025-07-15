@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Layout, Typography, Card, Table, Tag, Space, Button, Input, Select } from 'antd';
 import { PlusOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons';
@@ -39,7 +39,7 @@ export function TasksPage() {
   const isEmployee = user?.role === 'employee';
   const isManager = user?.role === 'manager' || user?.role === 'hr' || user?.role === 'admin';
 
-  const fetchTasks = async (page = 1, pageSize = 10, currentFilter = filter) => {
+  const fetchTasks = useCallback(async (page = 1, pageSize = 10, currentFilter = filter) => {
     if (!user) return;
 
     try {
@@ -63,7 +63,7 @@ export function TasksPage() {
           }
         });
 
-        let sortedTasks = [...allTasks];
+        const sortedTasks = [...allTasks];
         if (currentFilter.sortBy && currentFilter.sortOrder) {
           const allowedSortFields = ['id', 'title', 'deadline', 'createdAt'];
           if (allowedSortFields.includes(currentFilter.sortBy)) {
@@ -115,7 +115,7 @@ export function TasksPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, isEmployee, user]);
 
   const fetchEmployees = async () => {
     try {
@@ -135,13 +135,13 @@ export function TasksPage() {
   useEffect(() => {
     fetchTasks(pagination.current, pagination.pageSize, filter);
     fetchEmployees();
-  }, [filter, user]);
+  }, [fetchTasks, filter, pagination, user]);
 
   useEffect(() => {
     if (myTasksFilter && user?.employeeId && !filter.assigneesId) {
       setFilter(prev => ({ ...prev, assigneesId: [user.employeeId!] }));
     }
-  }, [myTasksFilter, user?.employeeId]);
+  }, [filter.assigneesId, myTasksFilter, user?.employeeId]);
 
   const handleTaskClick = (taskId: number) => {
     setSearchParams({ task: taskId.toString() });
@@ -156,7 +156,7 @@ export function TasksPage() {
     newSearchParams.delete('myTasks');
     setSearchParams(newSearchParams);
     setFilter(prev => {
-      const { assigneesId, ...rest } = prev;
+      const { ...rest } = prev;
       return rest;
     });
   };

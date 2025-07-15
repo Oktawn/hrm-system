@@ -28,12 +28,6 @@ export type DocumentStatus = 'under_review'
   | 'expired'
   | 'draft';
 
-
-
-
-
-
-
 export interface Document {
   id: number;
   type: DocumentType;
@@ -44,7 +38,7 @@ export interface Document {
   templatePath?: string;
   filePath?: string;
   fileUrl?: string;
-  templateData?: Record<string, any>;
+  templateData?: Record<string, unknown>;
   sourceRequest: {
     id: number;
     title: string;
@@ -67,7 +61,7 @@ export interface Document {
   };
   signedAt?: string;
   rejectionReason?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -97,8 +91,8 @@ export interface CreateDocumentData {
   content?: string;
   sourceRequestId: number;
   requestedById: string;
-  templateData?: Record<string, any>;
-  metadata?: any;
+  templateData?: Record<string, unknown>;
+  metadata?: unknown;
 }
 
 export interface UpdateDocumentData {
@@ -107,6 +101,6 @@ export interface UpdateDocumentData {
   content?: string;
   status?: string;
   rejectionReason?: string;
-  templateData?: Record<string, any>;
-  metadata?: any;
+  templateData?: Record<string, unknown>;
+  metadata?: unknown;
 }

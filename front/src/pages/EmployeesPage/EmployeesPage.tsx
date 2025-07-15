@@ -1,11 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useCallback } from 'react';
 import { Layout, Typography, Card, Row, Col, Button, Input, Select, Tag, Avatar, Space, Modal, Descriptions, Spin, message, Pagination } from 'antd';
 import { PlusOutlined, SearchOutlined, UserOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/auth.store';
-import employeesAPI, { type Employee } from '../../services/employees.service';
+import employeesAPI from '../../services/employees.service';
 import { CreateEmployeeModal } from '../../components/CreateEmployeeModal/CreateEmployeeModal';
 import { debounce } from 'lodash';
 import { getRoleColor, getRoleText } from '../../utils/status.utils';
+import type { Employee } from '../../types/employee.types';
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
@@ -61,6 +63,7 @@ export function EmployeesPage() {
   }, [currentPage, pageSize]);
 
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSearch = useCallback(
     debounce((searchValue: string, deptId?: string, posId?: string, isActive?: boolean) => {
       const filters: any = {};
@@ -97,7 +100,7 @@ export function EmployeesPage() {
     if (currentPage > 1 || pageSize !== 25) {
       debouncedSearch(searchText, departmentFilter, positionFilter, activeFilter);
     }
-  }, [currentPage, pageSize]);
+  }, [activeFilter, currentPage, debouncedSearch, departmentFilter, pageSize, positionFilter, searchText]);
 
   useEffect(() => {
     debouncedSearch(searchText, departmentFilter, positionFilter, activeFilter);

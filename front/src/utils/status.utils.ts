@@ -1,5 +1,3 @@
-// Утилиты для работы со статусами и приоритетами задач и заявок
-
 /**
  * Статусы задач
  */
@@ -51,7 +49,7 @@ export const getRequestStatusText = (status: string): string => {
 };
 
 /**
- * Приоритеты (используются для задач и заявок)
+ * Приоритеты 
  */
 export const getPriorityColor = (priority: string): string => {
   switch (priority) {
@@ -74,7 +72,7 @@ export const getPriorityText = (priority: string): string => {
 };
 
 /**
- * Цвета приоритетов для CSS (для компонентов, которые используют background-color)
+ * Цвета приоритетов
  */
 export const getPriorityCSSColor = (priority: string): string => {
   switch (priority) {

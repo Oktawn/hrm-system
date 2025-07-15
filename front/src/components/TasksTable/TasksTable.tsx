@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, Fragment } from 'react';
 import tasksService, { type Task } from '../../services/tasks.service';
 import Comments from '../Comments/Comments';
 import StatusSelector from '../StatusSelector/StatusSelector';
@@ -76,7 +76,7 @@ function TasksTable({ tasks, onTaskUpdate }: TasksTableProps) {
           </thead>
           <tbody>
             {tasks.map(task => (
-              <React.Fragment key={task.id}>
+              <Fragment key={task.id}>
                 <tr className="task-row">
                   <td>{task.id}</td>
                   <td>
@@ -185,7 +185,7 @@ function TasksTable({ tasks, onTaskUpdate }: TasksTableProps) {
                     </td>
                   </tr>
                 )}
-              </React.Fragment>
+              </Fragment>
             ))}
           </tbody>
         </table>

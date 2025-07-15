@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Modal,
   Form,
@@ -25,11 +25,7 @@ interface CreateRequestModalProps {
   onRequestCreated?: () => void;
 }
 
-export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
-  visible,
-  onClose,
-  onRequestCreated
-}) => {
+export function CreateRequestModal({ visible, onClose, onRequestCreated }: CreateRequestModalProps) {
   const { user } = useAuthStore();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);

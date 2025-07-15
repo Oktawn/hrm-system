@@ -1,4 +1,5 @@
 import type { TaskPriority, TaskStatus } from '../types/common.types';
+import type { FileAttachment } from '../types/document.types';
 import { api } from './auth.service';
 
 export interface Task {
@@ -20,7 +21,7 @@ export interface Task {
     firstName?: string;
     lastName?: string;
   }>;
-  attachments?: any[];
+  attachments?: FileAttachment[];
 }
 
 export interface TaskStats {
@@ -64,7 +65,7 @@ export interface CreateTaskData {
   deadline?: string;
   assigneesId?: string[];
   creatorId: string;
-  attachments?: any[];
+  attachments?: FileAttachment[];
 }
 
 class TasksService {

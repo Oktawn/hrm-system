@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect, useCallback } from 'react';
 import {
   Table,
   Card,
@@ -43,11 +44,9 @@ export function DocumentsPage() {
   const isManager = user?.role && ['admin', 'hr', 'manager'].includes(user.role);
   const isEmployee = user?.role === 'employee';
 
-  useEffect(() => {
-    fetchDocuments(pagination.current, pagination.pageSize, filter);
-  }, [filter]);
 
-  const fetchDocuments = async (page: number = 1, pageSize: number = 10, currentFilter: DocumentFilter = {}) => {
+
+  const fetchDocuments = useCallback(async (page: number = 1, pageSize: number = 10, currentFilter: DocumentFilter = {}) => {
     try {
       setLoading(true);
       let response;
@@ -113,7 +112,11 @@ export function DocumentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isEmployee, user]);
+
+  useEffect(() => {
+    fetchDocuments(pagination.current, pagination.pageSize, filter);
+  }, [fetchDocuments, filter, pagination]);
 
   const handleTableChange = (paginationInfo: any, _filters: any, sorter: any) => {
     let newSortField = '';

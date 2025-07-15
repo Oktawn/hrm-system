@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import { Layout, Typography, Card, Row, Col, Statistic, Space, Spin, List, Tag, Alert, Button } from 'antd';
 import {
@@ -19,10 +20,12 @@ import {
 } from '../../utils/status.utils';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
-import employeesAPI, { type EmployeeStats } from '../../services/employees.service';
+import employeesAPI from '../../services/employees.service';
 import tasksAPI, { type TaskStats, type Task } from '../../services/tasks.service';
-import requestsAPI, { type Request } from '../../services/requests.service';
+import requestsAPI from '../../services/requests.service';
 import departmentsAPI, { type DepartmentStats } from '../../services/departments.service';
+import type { EmployeeStats } from '../../types/employee.types';
+import type { Request } from '../../types/request.types';
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
