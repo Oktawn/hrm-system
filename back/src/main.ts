@@ -31,7 +31,10 @@ app.use(cors({
     'x-telegram-id',
   ],
 }));
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
 app.use(cookieParser());
 app.use(express.json({ limit: "50mb" }));
 

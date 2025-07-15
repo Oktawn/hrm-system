@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { uploadMultiple, createAttachment } from '../middleware/upload.middleware';
 import { AuthenticatedRequest } from '../auth/auth.interface';
+import mime from 'mime-types';
 import path from 'path';
 import fs from 'fs';
 
@@ -38,7 +39,6 @@ export class UploadsController {
 
       let filePath = path.join(this.uploadsDir, filename);
 
-      // Если не найден, ищем в подпапке documents
       if (!fs.existsSync(filePath)) {
         filePath = path.join(this.uploadsDir, 'documents', filename);
       }
@@ -60,22 +60,40 @@ export class UploadsController {
   async viewFile(req: Request, res: Response, next: NextFunction) {
     try {
       const { filename } = req.params;
+      console.log('Попытка просмотра файла:', filename);
       
       let filePath = path.join(this.uploadsDir, filename);
 
-      // Если не найден, ищем в подпапке documents
       if (!fs.existsSync(filePath)) {
         filePath = path.join(this.uploadsDir, 'documents', filename);
       }
 
       if (!fs.existsSync(filePath)) {
+        console.log('Файл не найден:', filePath);
         return res.status(404).json({
           success: false,
           message: 'Файл не найден'
         });
       }
 
-      res.sendFile(filePath);
+      console.log('Файл найден:', filePath);
+      
+      const mimeType = mime.lookup(filePath);
+      console.log('MIME-тип файла:', mimeType);
+      
+      if (mimeType) {
+        res.setHeader('Content-Type', mimeType);
+        res.setHeader('Content-Disposition', 'inline');
+      }
+
+      if (mimeType && mimeType.startsWith('image/')) {
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        console.log('Установлены заголовки для изображения');
+      }
+
+      const absolutePath = path.resolve(filePath);
+      console.log('Отправка файла:', absolutePath);
+      res.sendFile(absolutePath);
     } catch (error) {
       console.error('Ошибка при просмотре файла:', error);
       next(error);

@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { commentsService, type IComment, type ICreateComment } from '../../services/comments.service';
 import { useAuthStore } from '../../stores/auth.store';
 import SimpleFileUpload from '../SimpleFileUpload/SimpleFileUpload';
-import { Button, Typography } from 'antd';
+import { Button, Typography, message } from 'antd';
 import { DownloadOutlined, EyeOutlined } from '@ant-design/icons';
 import './Comments.css';
 import type { FileAttachment } from '../../types/document.types';
+import { api } from '../../services/auth.service';
 
 const { Text } = Typography;
 
@@ -113,12 +114,53 @@ function Comments({ type, itemId, isVisible, onClose }: CommentsProps) {
       currentUser?.role === 'manager';
   };
 
-  const handleDownload = (filename: string) => {
-    window.open(`/api/uploads/download/${filename}`, '_blank');
+  const handleDownload = async (filename: string) => {
+    try {
+      const response = await api.get(`/uploads/download/${filename}`, {
+        responseType: 'blob'
+      });
+
+      // Получаем MIME-тип из заголовков ответа
+      const contentType = response.headers['content-type'] || 'application/octet-stream';
+      
+      // Создаем blob с правильным MIME-типом
+      const blob = new Blob([response.data], { type: contentType });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Ошибка скачивания файла:', error);
+      message.error('Не удалось скачать файл');
+    }
   };
 
-  const handleView = (filename: string) => {
-    window.open(`/api/uploads/view/${filename}`, '_blank');
+  const handleView = async (filename: string) => {
+    try {
+      const response = await api.get(`/uploads/view/${filename}`, {
+        responseType: 'blob'
+      });
+
+      // Получаем MIME-тип из заголовков ответа
+      const contentType = response.headers['content-type'] || 'application/octet-stream';
+      
+      // Создаем blob с правильным MIME-типом
+      const blob = new Blob([response.data], { type: contentType });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      
+      // Очищаем URL через некоторое время
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (error) {
+      console.error('Ошибка просмотра файла:', error);
+      message.error('Не удалось открыть файл');
+    }
   };
 
   const formatFileSize = (bytes: number) => {

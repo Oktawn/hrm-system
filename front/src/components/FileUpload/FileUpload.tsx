@@ -77,7 +77,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         responseType: 'blob'
       });
 
-      const blob = new Blob([response.data]);
+      // Получаем MIME-тип из заголовков ответа
+      const contentType = response.headers['content-type'] || 'application/octet-stream';
+
+      // Создаем blob с правильным MIME-типом
+      const blob = new Blob([response.data], { type: contentType });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -98,9 +102,15 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         responseType: 'blob'
       });
 
-      const blob = new Blob([response.data]);
+      const contentType = response.headers['content-type'] || 'application/octet-stream';
+
+      const blob = new Blob([response.data], { type: contentType });
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');
+
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 1000);
     } catch (error) {
       console.error('Ошибка просмотра файла:', error);
       message.error('Не удалось открыть файл');
