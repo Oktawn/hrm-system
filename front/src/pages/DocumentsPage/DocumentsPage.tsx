@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from 'react';
 import {
   Table,
@@ -116,7 +115,8 @@ export function DocumentsPage() {
 
   useEffect(() => {
     fetchDocuments(pagination.current, pagination.pageSize, filter);
-  }, [fetchDocuments, filter, pagination]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchDocuments, filter, pagination.current, pagination.pageSize]);
 
   const handleTableChange = (paginationInfo: any, _filters: any, sorter: any) => {
     let newSortField = '';

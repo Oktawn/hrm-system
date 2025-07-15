@@ -135,7 +135,8 @@ export function TasksPage() {
   useEffect(() => {
     fetchTasks(pagination.current, pagination.pageSize, filter);
     fetchEmployees();
-  }, [fetchTasks, filter, pagination, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchTasks, filter, pagination.current, pagination.pageSize, user]);
 
   useEffect(() => {
     if (myTasksFilter && user?.employeeId && !filter.assigneesId) {

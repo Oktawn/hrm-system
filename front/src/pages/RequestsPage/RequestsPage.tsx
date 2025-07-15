@@ -110,7 +110,8 @@ export function RequestsPage() {
 
   useEffect(() => {
     fetchRequests(pagination.current, pagination.pageSize, filter);
-  }, [fetchRequests, filter, pagination, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination.current, pagination.pageSize, filter, user]);
 
   const handleRequestClick = (requestId: number) => {
     setSearchParams({ request: requestId.toString() });
@@ -316,11 +317,9 @@ export function RequestsPage() {
               showTotal: (total) => `Всего: ${total} заявок`,
               onChange: (page, pageSize) => {
                 setPagination(prev => ({ ...prev, current: page, pageSize }));
-                fetchRequests(page, pageSize, filter);
               },
               onShowSizeChange: (_, size) => {
                 setPagination(prev => ({ ...prev, current: 1, pageSize: size }));
-                fetchRequests(1, size, filter);
               },
             }}
           />

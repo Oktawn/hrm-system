@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useCallback } from 'react';
 import { Layout, Typography, Card, Row, Col, Button, Input, Select, Tag, Avatar, Space, Modal, Descriptions, Spin, message, Pagination } from 'antd';
 import { PlusOutlined, SearchOutlined, UserOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons';
@@ -86,25 +85,19 @@ export function EmployeesPage() {
       if (posId) filters.positionId = posId;
       if (isActive !== undefined) filters.isActive = isActive;
 
-      setCurrentPage(1); 
+      setCurrentPage(1);
       fetchEmployees(Object.keys(filters).length > 0 ? filters : undefined);
     }, 500),
     [fetchEmployees]
   );
 
   useEffect(() => {
-    fetchEmployees();
-  }, [fetchEmployees]);
-
-  useEffect(() => {
-    if (currentPage > 1 || pageSize !== 25) {
+    if (!searchText && !departmentFilter && !positionFilter && activeFilter === undefined) {
+      fetchEmployees();
+    } else {
       debouncedSearch(searchText, departmentFilter, positionFilter, activeFilter);
     }
-  }, [activeFilter, currentPage, debouncedSearch, departmentFilter, pageSize, positionFilter, searchText]);
-
-  useEffect(() => {
-    debouncedSearch(searchText, departmentFilter, positionFilter, activeFilter);
-  }, [searchText, departmentFilter, positionFilter, activeFilter, debouncedSearch]);
+  }, [searchText, departmentFilter, positionFilter, activeFilter, currentPage, pageSize, fetchEmployees, debouncedSearch]);
 
   const filteredEmployees = employees;
 
@@ -128,8 +121,8 @@ export function EmployeesPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <Title level={2}>Сотрудники</Title>
             {(user?.role === 'admin' || user?.role === 'hr') && (
-              <Button 
-                type="primary" 
+              <Button
+                type="primary"
                 icon={<PlusOutlined />}
                 onClick={() => setCreateModalVisible(true)}
               >
