@@ -5,6 +5,7 @@ import SimpleFileUpload from '../SimpleFileUpload/SimpleFileUpload';
 import { Button, Typography } from 'antd';
 import { DownloadOutlined, EyeOutlined } from '@ant-design/icons';
 import './Comments.css';
+import type { FileAttachment } from '../../types/document.types';
 
 const { Text } = Typography;
 
@@ -195,7 +196,7 @@ function Comments({ type, itemId, isVisible, onClose }: CommentsProps) {
                               Вложения:
                             </Text>
                             <div style={{ marginTop: 8 }}>
-                              {comment.attachments.map((attachment: any, index: number) => (
+                              {comment.attachments.map((attachment: FileAttachment, index: number) => (
                                 <div key={index} className="attachment-item" style={{
                                   display: 'flex',
                                   alignItems: 'center',

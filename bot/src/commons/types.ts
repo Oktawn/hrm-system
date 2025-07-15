@@ -41,7 +41,6 @@ type CreateRequestType = {
   type: string;
   title: string;
   description: string;
-  status: string;
   priority: string;
   startDate?: Date;
   endDate?: Date;

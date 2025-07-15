@@ -99,7 +99,6 @@ export const getRequestTypeText = (type: string): string => {
     case 'sick_leave': return 'Больничный';
     case 'leave_personal': return 'Неоплачиваемый отпуск';
     case 'business_trip': return 'Командировка';
-    case 'remote_work': return 'Удаленная работа';
     case 'equipment': return 'Оборудование';
     case 'other': return 'Другое';
     default: return type;

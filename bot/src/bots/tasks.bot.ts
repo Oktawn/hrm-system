@@ -8,6 +8,7 @@ import { TaskPriorityEnum, TaskStatusEnum } from "../commons/enums";
 import { getPriorityText, getTaskStatusText } from "../commons/status.util";
 import { envConfig } from "../config/config";
 import { TaskDataSession } from "../commons/session.type";
+import { priorityKeyboard, statusTaskKeyboard, tasksInlineKeyboard } from "./keyboards.bot";
 
 
 export const tasksComposer = new Composer<TaskComposerConversation>();
@@ -23,19 +24,6 @@ tasksComposer.use(async (ctx, next) => {
   }
   await next();
 })
-
-const tasksInlineKeyboard = new InlineKeyboard()
-  .text("Список активных задач", "get_tasks").row()
-  .text("Поиск по id", "search_by_id").row()
-  .text("Поиск по статусу", "search_by_status").row()
-  .text("Поиск по приоритету", "search_by_priority").row()
-
-export const PriorityKeyboard = new InlineKeyboard()
-  .text("Критический", "critical").row()
-  .text("Высокий", "high").row()
-  .text("Средний", "medium").row()
-  .text("Низкий", "low").row();
-
 
 async function getTasks(ctx: TaskContext) {
   try {
@@ -133,17 +121,11 @@ async function getTaskById(conv: TaskConversation, ctx: TaskContext) {
   }
   return;
 };
-tasksComposer.use(createConversation(getTaskById));
 
 async function getTasksByStatus(conv: TaskConversation, ctx: TaskContext) {
-  const StatusKeyboard = new InlineKeyboard()
-    .text("К выполнению", "todo").row()
-    .text("В работе", "in_progress").row()
-    .text("На проверке", "review").row()
-    .text("Выполнено", "done").row()
-    .text("Отменено", "canceled").row();
+
   await ctx.reply("Выберите статус задачи", {
-    reply_markup: StatusKeyboard
+    reply_markup: statusTaskKeyboard
   });
   const ans = await conv.waitForCallbackQuery(Object.values(TaskStatusEnum) as string[]);
   try {
@@ -171,13 +153,12 @@ async function getTasksByStatus(conv: TaskConversation, ctx: TaskContext) {
   }
   return;
 };
-tasksComposer.use(createConversation(getTasksByStatus));
 
 async function getTasksByPriority(conv: TaskConversation, ctx: TaskContext) {
 
 
   await ctx.reply("Выберите приоритет задачи", {
-    reply_markup: PriorityKeyboard
+    reply_markup: priorityKeyboard
   });
   const ans = await conv.waitForCallbackQuery(Object.values(TaskPriorityEnum) as string[]);
   try {
@@ -206,6 +187,10 @@ async function getTasksByPriority(conv: TaskConversation, ctx: TaskContext) {
   }
   return;
 }
+
+
+tasksComposer.use(createConversation(getTaskById));
+tasksComposer.use(createConversation(getTasksByStatus));
 tasksComposer.use(createConversation(getTasksByPriority));
 
 tasksComposer.on("callback_query:data", async (ctx, next) => {
