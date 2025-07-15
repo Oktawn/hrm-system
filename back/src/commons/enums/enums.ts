@@ -19,7 +19,10 @@ export enum RequestTypeEnum {
   LEAVE_VACATION = "leave_vacation", // Отпуск
   LEAVE_SICK = "leave_sick",   // Больничный
   LEAVE_PERSONAL = "leave_personal", // Отгул
-  // другие типы заявок
+  BUSINESS_TRIP = "business_trip", // Командировка
+  REMOTE_WORK = "remote_work", // Удаленная работа
+  EQUIPMENT = "equipment",    // Оборудование
+  OTHER = "other"             // Другое
 }
 
 export enum DocumentStatusEnum {
