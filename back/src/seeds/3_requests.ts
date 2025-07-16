@@ -86,7 +86,9 @@ export async function seed(knex: Knex): Promise<void> {
         const requestType = Object.values(RequestTypeEnum)[Math.floor(Math.random() * Object.values(RequestTypeEnum).length)];
         const titles = requestTitles[requestType];
         const descriptions = requestDescriptions[requestType];
-
+        if (!titles || !descriptions) {
+            continue;
+        }
         const title = titles[Math.floor(Math.random() * titles.length)];
         const description = descriptions[Math.floor(Math.random() * descriptions.length)];
 

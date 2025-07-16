@@ -1,5 +1,5 @@
 import { createConversation } from "@grammyjs/conversations";
-import { Composer, InlineKeyboard } from "grammy";
+import { Composer, InlineKeyboard, Keyboard } from "grammy";
 import { RequestComposerConversation, RequestContext, RequestConversation } from "../commons/context.types";
 import { RequestTypeEnum, TaskPriorityEnum, UserRoleEnum } from "../commons/enums";
 import { RequestsService } from "../services/requests.service";
@@ -10,9 +10,12 @@ import { getPriorityText, getRequestStatusText, getRequestTypeText } from "../co
 import dedent from "dedent";
 import { priorityKeyboard, requestHRKeyboard, requestKeyboard, requestTypeKeyboard } from "./keyboards.bot";
 import dayjs from "dayjs";
+import { NextFunction } from "express";
+import { TasksService } from "../services/tasks.service";
 
 export const requestsComposer = new Composer<RequestComposerConversation>();
 const requestsService = new RequestsService();
+const taskservice = new TasksService();
 
 requestsComposer.use(async (ctx, next) => {
   if (!ctx.session.requests) {
@@ -93,33 +96,11 @@ async function getRequests(conv: RequestConversation, ctx: RequestContext) {
 }
 
 
-async function createRequest(conv: RequestConversation, ctx: RequestContext) {
+async function createRequest(conv: RequestConversation, ctx: RequestContext, next: NextFunction) {
   await ctx.reply(`Выберите тип заявки, которую хотите создать:`, {
     reply_markup: requestTypeKeyboard
   });
-
-  const typeCallback = await conv.waitForCallbackQuery(Object.values(RequestTypeEnum));
-
-  const selectedType = typeCallback.callbackQuery.data;
-
-  switch (selectedType) {
-    case "leave_vacation":
-    case "leave_personal":
-      await createLeaveRequest(conv, ctx);
-      break;
-    case "leave_sick":
-      await createSickRequest(conv, ctx);
-      break;
-    case "document":
-    case "certificate":
-    case "business_trip":
-      await ctx.reply("Функция создания данного типа заявок будет добавлена в следующих обновлениях.");
-      break;
-    default:
-      await ctx.reply("Неизвестный тип заявки.");
-  }
-
-  return;
+  next();
 }
 
 async function createLeaveRequest(conv: RequestConversation, ctx: RequestContext) {
@@ -133,14 +114,20 @@ async function createLeaveRequest(conv: RequestConversation, ctx: RequestContext
 
   await ctx.reply(dedent`
     Создание заявки на отпуск.
+    Важно помнить:
+    > Отпуск согласуется не раньше чем за месяц до его начала.
+    > Отпуск может быть предоставлен на срок не более 30 дней.
+    > Неоплачиваемый отпуск согласуется не раньше чем за 3 дня до его начала.
+    > Неоплачиваемый отпуск может быть предоставлен на срок не более 14 дней.
+
     Для ее создания выполним несколько шагов.`
   );
 
   newRequest.title = getRequestTypeText(newRequest.type);
 
-  if (newRequest.type === RequestTypeEnum.LEAVE_VACATION) {
+  if (newRequest.type === RequestTypeEnum.LEAVE_PERSONAL) {
     await ctx.reply(dedent`
-      Укажите описание заявки на отпуск:`
+      Укажите причину заявки на отпуск:`
     );
     newRequest.description = (await conv.waitFor("message:text")).message.text.trim();
   }
@@ -222,45 +209,58 @@ async function createSickRequest(conv: RequestConversation, ctx: RequestContext)
   }
 }
 
-async function createDraftRequest(conv: RequestConversation, ctx: RequestContext) {
-  let newRequest: CreateRequestType = {
-    type: ctx.callbackQuery.data,
-    title: "",
-    description: "",
-    priority: ""
-  }
-  let msgsId = [];
-
+async function addComment(conv: RequestConversation, ctx: RequestContext) {
   await ctx.reply(dedent`
-    Создание черновика заявки.
-    Для ее создания выполним несколько шагов.`
-  );
-  newRequest.title = getRequestTypeText(newRequest.type);
-
-  await ctx.reply(dedent`
-    Укажите описание черновика заявки:`
-  );
-  newRequest.description = (await conv.waitFor("message:text")).message.text.trim();
-
-  msgsId.push((await ctx.reply("Выберите приоритет заявки:", {
-    reply_markup: priorityKeyboard
-  })).message_id);
-  newRequest.priority = (await conv.waitForCallbackQuery(
-    Object.values(TaskPriorityEnum)
-  )).callbackQuery.data;
+    Вы перешли в раздел добавления комментария.
+    Также можете прикрепить файл, если это необходимо.
+    Для начала укажите добавить комментарий к задаче или заявке, введите его ID, к которой хотите добавить комментарий:
+    Например, Задача 123.
+    `)
+  const [type, requestId] = (await conv.waitFor("message:text"))
+    .message.text.trim().split(" ");
 
   try {
-    await requestsService.createRequest({
+    const check = type === "Задача" ? await taskservice.getTaskById({
+      id: parseInt(requestId),
+      tgID: ctx.from.id
+    }) : await requestsService.getRequestsById({
       tgID: ctx.from.id,
-      request: newRequest
+      id: parseInt(requestId)
     });
-    await ctx.reply("Черновик заявки успешно создан!");
-    await Promise.all(msgsId.map((id) =>
-      ctx.api.editMessageReplyMarkup(ctx.chatId, id, {
-        reply_markup: new InlineKeyboard()
-      })));
+    if (!check) {
+      await ctx.reply(`${type} с ID ${requestId} не найдена.`);
+      return;
+    }
+    await ctx.reply(`Введите текст комментария и прикрепите файл, если это необходимо, к ${type.toLowerCase()} ID ${requestId}:`);
+    const comment = await conv.waitFor("message");
+    let file = {
+      fileUrl: undefined,
+      fileName: undefined,
+      fileMime: undefined
+    };
+    if (comment.message.document) {
+      file.fileUrl = (await ctx.api.getFile(comment.message.document.file_id)).file_path;
+      file.fileName = comment.message.document.file_name;
+      file.fileMime = comment.message.document.mime_type;
+    }
+    if (comment.message.photo) {
+      const photo = comment.message.photo[0];
+      file.fileUrl = (await ctx.api.getFile(photo.file_id)).file_path;
+      file.fileName = `photo.png`;
+      file.fileMime = 'image/png';
+    }
+    await requestsService.addComment({
+      content: comment.message?.text ? comment.message.text.trim() : comment.message.caption?.trim(),
+      tgID: ctx.from.id,
+      type: type === "Заявка" ? "request" : "task",
+      requestId: parseInt(requestId),
+      fileUrl: file.fileUrl ? file.fileUrl : undefined,
+      fileName: file.fileName ? file.fileName : undefined,
+      fileMime: file.fileMime ? file.fileMime : undefined
+    })
+    await ctx.reply("Комментарий успешно добавлен.");
   } catch (error) {
-    await ctx.reply(`Ошибка при создании черновика заявки: ${error.message}`);
+    await ctx.reply(`Ошибка при добавлении комментария: ${error.message}`);
   }
   return;
 }
@@ -325,6 +325,7 @@ async function getRequestsByPriority(conv: RequestConversation, ctx: RequestCont
   return;
 }
 
+requestsComposer.use(createConversation(addComment));
 requestsComposer.use(createConversation(getRequests));
 requestsComposer.use(createConversation(createRequest));
 requestsComposer.use(createConversation(createLeaveRequest));
@@ -337,7 +338,7 @@ requestsComposer.on("callback_query:data", async (ctx, next) => {
 
   switch (data) {
     case "requests_start":
-      if (ctx.session.user.Role === UserRoleEnum.EMPLOYEE) {
+      if (ctx.session.user.role === UserRoleEnum.EMPLOYEE) {
         await ctx.reply("Выберите действие:", {
           reply_markup: requestKeyboard,
         });
@@ -357,10 +358,13 @@ requestsComposer.on("callback_query:data", async (ctx, next) => {
     case "leave_sick":
       await ctx.conversation.enter("createSickRequest");
       break;
-    case "findEmployeeRequests":
+    case "add_comment":
+      await ctx.conversation.enter("addComment");
+      break;
+    case "requests_find_employee":
       await ctx.conversation.enter("findEmployeeRequests");
       break;
-    case "getRequestsByPriority":
+    case "requests_find_priority":
       await ctx.conversation.enter("getRequestsByPriority");
       break;
     case "requests_prev":
@@ -414,8 +418,15 @@ function validateLeaveDates(startInput: string, endInput: string, type?: string)
   if (startDate === endDate) {
     return { msg: "Дата начала и окончания отпуска не может быть одной и той же.", valid: false };
   }
-  if (type === "vacation" && startDate.diff(endDate, 'day') > 30) {
+
+  if (type === "leave_vacation" && startDate.diff(endDate, 'day') > 30) {
     return { msg: "Максимальная продолжительность отпуска - 30 дней.", valid: false };
+  }
+  if (type === "leave_vacation" && startDate.diff(dayjs(), 'day') < 30) {
+    return { msg: "Отпуск должен быть запланирован не менее чем за 30 дней.", valid: false };
+  }
+  if (type === "leave_personal" && startDate.diff(dayjs(), 'day') < 3) {
+    return { msg: "Неоплачиваемый отпуск должен быть запланирован не менее чем за 3 дня.", valid: false };
   }
   if (type === "leave_personal" && startDate.diff(endDate, 'day') > 14) {
     return { msg: "Максимальная продолжительность отгула - 14 дней.", valid: false };

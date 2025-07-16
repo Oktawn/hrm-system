@@ -23,7 +23,6 @@ export class RequestsService {
         throw createHttpError(400, "Отпуск нельзя подавать раньше чем за 3 дня от текущей даты");
       }
 
-      // Для оплачиваемого отпуска максимум 30 дней
       if (request.type === 'leave_vacation') {
         const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;

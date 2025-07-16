@@ -1,8 +1,10 @@
+import { UserRoleEnum } from "./enums";
 import { RequestType, Task } from "./types";
 
 type UserSession = {
   user: {
-    Role: string;
+    role: UserRoleEnum;
+    userId: string;
     tgID: number;
   }
 }

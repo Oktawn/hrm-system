@@ -211,15 +211,12 @@ export function TaskDetail({ taskId, visible, onClose, onTaskUpdate }: TaskDetai
         responseType: 'blob'
       });
 
-      // Получаем MIME-тип из заголовков ответа
       const contentType = response.headers['content-type'] || 'application/octet-stream';
       
-      // Создаем blob с правильным MIME-типом
       const blob = new Blob([response.data], { type: contentType });
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');
       
-      // Очищаем URL через некоторое время
       setTimeout(() => {
         window.URL.revokeObjectURL(url);
       }, 1000);

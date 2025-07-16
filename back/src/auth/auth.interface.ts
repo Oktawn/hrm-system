@@ -4,6 +4,12 @@ export interface TokenPayload {
   role: string;
 }
 
+export interface BotPayload {
+  userId: string;
+  role: string;
+  tgID: number;
+}
+
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
@@ -27,7 +33,6 @@ export interface AuthenticatedRequest extends Request {
   user?: TokenPayload;
 }
 export interface AuthenticatedRequestBot extends Request {
-  bot?: {
-    tgID: number;
-  };
+  [x: string]: {};
+  bot?: BotPayload;
 }

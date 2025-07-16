@@ -144,15 +144,19 @@ export class AuthController {
       }
 
       const isValid = await employeeRepository.findOne({
-        where: { tgID: parseInt(tgID) }
+        where: { tgID: parseInt(tgID) },
+        relations: ['user']
       });
       res.status(200).json({
         user: {
           role: isValid ? isValid.user.role : null,
           tgID: isValid ? isValid.tgID : null,
+          userId: isValid ? isValid.user.id : null
         }
       });
     } catch (error) {
+      console.error("Error checking bot:", error);
+      res.status(500).json({ message: "Internal server error" });
       next(error);
     }
   }

@@ -1,4 +1,4 @@
-import { AuthenticatedRequest } from "../auth/auth.interface";
+import { AuthenticatedRequest, AuthenticatedRequestBot } from "../auth/auth.interface";
 import { IUpdateRequest } from "./requests.interface";
 import { RequestsService } from "./requests.service";
 import { Request, Response } from "express";
@@ -7,7 +7,7 @@ import { uploadMultiple, createAttachment } from '../middleware/upload.middlewar
 const requestsService = new RequestsService();
 
 export class RequestsController {
-  async createRequest(req: AuthenticatedRequest, res: Response) {
+  async createRequest(req: AuthenticatedRequest & AuthenticatedRequestBot, res: Response) {
     uploadMultiple(req, res, async (err: any) => {
       if (err) {
         return res.status(400).json({
@@ -44,21 +44,23 @@ export class RequestsController {
     });
   }
 
-  async updateRequest(req: AuthenticatedRequest, res: Response) {
+  async updateRequest(req: AuthenticatedRequest & AuthenticatedRequestBot, res: Response) {
     try {
       const requestData = req.body as IUpdateRequest;
       requestData.id = parseInt(req.params.id);
-      await requestsService.updateRequest(requestData, req.user.userId);
+      const creatorId = req.user.userId ? req.user.userId : req.bot?.userId;
+      await requestsService.updateRequest(requestData, creatorId);
       res.status(200).json({ message: "Request updated successfully" });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   }
 
-  async deleteRequest(req: AuthenticatedRequest, res: Response) {
+  async deleteRequest(req: AuthenticatedRequest & AuthenticatedRequestBot, res: Response) {
     try {
       const { id } = req.params;
-      await requestsService.deleteRequest(parseInt(id), req.user.userId);
+      const creatorId = req.user.userId ? req.user.userId : req.bot?.userId;
+      await requestsService.deleteRequest(parseInt(id), creatorId);
       res.status(200).json({ message: "Request deleted successfully" });
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -113,11 +115,12 @@ export class RequestsController {
     }
   }
 
-  async updateRequestStatus(req: AuthenticatedRequest, res: Response) {
+  async updateRequestStatus(req: AuthenticatedRequest & AuthenticatedRequestBot, res: Response) {
     try {
       const requestId = parseInt(req.params.id);
       const { status } = req.body;
-      const request = await requestsService.updateRequestStatus(requestId, status, req.user.userId);
+      const userId = req.user.userId ? req.user.userId : req.bot?.userId;
+      const request = await requestsService.updateRequestStatus(requestId, status, userId);
       res.status(200).json({
         success: true,
         message: "Request status updated successfully",

@@ -9,7 +9,7 @@ export class AuthService {
           'x-telegram-id': tgID
         }
       });
-      return res.data.valid;
+      return res.data as UserSession;
     } catch (error) {
       console.error('Ошибка при проверке бота:', error.response?.data || error.message);
       throw error;

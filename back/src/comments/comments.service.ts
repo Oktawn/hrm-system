@@ -1,11 +1,11 @@
 import createError from "http-errors";
 import { commentRepository, employeeRepository, taskRepository, requestRepository } from "../db/db-rep";
 import { ICreateComment, IUpdateComment } from "./comments.interface";
-import { TokenPayload } from "../auth/auth.interface";
+import { BotPayload, TokenPayload } from "../auth/auth.interface";
 
 export class CommentsService {
-  
-  async createComment(commentData: ICreateComment, user: TokenPayload) {
+
+  async createComment(commentData: ICreateComment, user: TokenPayload | BotPayload) {
     const employee = await employeeRepository.findOneBy({ user: { id: user.userId } });
     if (!employee) {
       throw createError(404, "Employee not found");
@@ -35,12 +35,13 @@ export class CommentsService {
     });
 
     const savedComment = await commentRepository.save(comment);
-    
+
     return await commentRepository.findOne({
       where: { id: savedComment.id },
       relations: ['author']
     });
   }
+
 
   async getCommentsByTask(taskId: number) {
     return await commentRepository.find({

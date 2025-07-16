@@ -5,8 +5,7 @@ export const requestKeyboard = new InlineKeyboard()
   .text("Просмореть заявки", "requests_view").row()
   .text("Найти заявки по ID", "requests_find").row()
   .text("Найти заявки по статусу", "requests_find_status").row()
-  .text("Найти заявки по приоритету", "requests_find_priority").row()
-  .text("Добавить комментарий", "requests_add_comment").row();
+  .text("Найти заявки по приоритету", "requests_find_priority").row();
 
 export const requestHRKeyboard = requestKeyboard.clone()
   .text("Заявки сотрудника", "requests_find_employee").row()
@@ -45,5 +44,4 @@ export const requestTypeKeyboard = new InlineKeyboard()
   .text("Запрос справки", "certificate").row()
   .text("Отпуск", "leave_vacation").row()
   .text("Больничный", "leave_sick").row()
-  .text("Отгул", "leave_personal").row()
   .text("Командировка", "business_trip").row();

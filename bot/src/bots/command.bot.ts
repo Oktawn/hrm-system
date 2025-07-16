@@ -1,6 +1,7 @@
 import { Composer, InlineKeyboard } from "grammy";
 import { AuthService } from "../services/auth.service";
 import { UserComposerConversation } from "../commons/context.types";
+import dedent from "dedent";
 
 interface ICommand {
   command: string;
@@ -15,6 +16,10 @@ export const commands: ICommand[] = [
   {
     command: "reset",
     description: "Reset the bot"
+  },
+  {
+    command: "keyboard",
+    description: "Show the command keyboard"
   }
 ]
 
@@ -46,11 +51,12 @@ async function checkBot(tgID: number) {
 
 const commandKeyboard = new InlineKeyboard()
   .text("Задачи", "tasks_start").row()
-  .text("Заявки", "applications_start").row()
-  .text("Документы", "documents_start").row();
+  .text("Заявки", "requests_start").row()
+  .text("Документы", "documents_start").row()
+  .text("Добавить комментарий", "add_comment").row();
 
 commandComposer.command("start", async (ctx) => {
-  await ctx.reply("Добро пожаловать! Выберите действие:", {
+  await ctx.reply(helloMessage, {
     reply_markup: commandKeyboard
   });
 });
@@ -59,3 +65,17 @@ commandComposer.command("reset", async (ctx) => {
   await ctx.reply("Все действия сброшены. Вы можете начать заново.");
   ctx.conversation.exitAll();
 });
+
+commandComposer.command("keyboard", async (ctx) => {
+  await ctx.reply("Добро пожаловать! Выберите действие:", {
+    reply_markup: commandKeyboard
+  });
+});
+
+const helloMessage = dedent`
+  Привет! Я бот, который поможет вам управлять задачами, заявками и документами.
+  Используйте команды для навигации:
+  - /start: Начать работу с ботом
+  - /reset: Сбросить все действия
+  - /keyboard: Показать команды
+`;

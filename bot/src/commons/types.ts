@@ -34,7 +34,6 @@ type RequestType = {
   startDate?: Date;
   endDate?: Date;
   duration?: number;
-
 }
 
 type CreateRequestType = {
@@ -46,6 +45,19 @@ type CreateRequestType = {
   endDate?: Date;
   duration?: number;
 }
+
+type CreateCommentType = {
+  content: string;
+  tgID: number;
+  type: 'task' | 'request';
+  taskId?: number;
+  requestId?: number;
+  attachments?: any[];
+  fileUrl?: string;
+  fileName?: string;
+  fileMime?: string;
+}
+
 
 type DataRequest = {
   tgID: number;
@@ -70,6 +82,7 @@ export {
   Task,
   RequestType,
   CreateRequestType,
+  CreateCommentType,
   Attachment,
   DataRequest,
   DataTask,

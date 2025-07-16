@@ -51,14 +51,16 @@ export function authMiddlewareBot() {
     }
 
     try {
-      const user = await employeeRepository.findOne({ where: { tgID: telegramId } });
+      const user = await employeeRepository.findOne({ where: { tgID: telegramId }, relations: ['user'] });
       if (!user) {
         res.status(401).json({ message: "User not found" });
         return;
       }
       req.bot = {
         tgID: user.tgID,
-      };
+        role: user.user.role,
+        userId: user.user.id
+      }
       next();
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });

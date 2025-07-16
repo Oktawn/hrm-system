@@ -1,11 +1,12 @@
-import { DataRequest, RequestType } from "../commons/types";
+import { CreateCommentType, DataRequest, RequestType } from "../commons/types";
+import { envConfig } from "../config/config";
 import { api } from "./api";
 
 export class RequestsService {
 
   async createRequest(body: DataRequest): Promise<void> {
     try {
-      await api.post("/requests", body.request, {
+      await api.post("/requests/bot/", body.request, {
         headers: {
           'x-telegram-id': body.tgID
         }
@@ -19,7 +20,7 @@ export class RequestsService {
 
   async getRequests(body: DataRequest): Promise<RequestType[]> {
     try {
-      const response = await api.get("/requests", {
+      const response = await api.get("/requests/bot/", {
         headers: {
           'x-telegram-id': body.tgID
         }
@@ -33,7 +34,7 @@ export class RequestsService {
 
   async getRequestsById(body: DataRequest): Promise<RequestType> {
     try {
-      const response = await api.get(`/requests/${body.id}`, {
+      const response = await api.get(`/requests/bot/${body.id}`, {
         headers: {
           'x-telegram-id': body.tgID
         }
@@ -47,7 +48,7 @@ export class RequestsService {
 
   async getRequestsByStatus(body: DataRequest): Promise<RequestType[]> {
     try {
-      const response = await api.get(`/requests/status/${body.status}`, {
+      const response = await api.get(`/requests/bot/status/${body.status}`, {
         headers: {
           'x-telegram-id': body.tgID
         }
@@ -61,7 +62,7 @@ export class RequestsService {
 
   async getRequestsByPriority(body: DataRequest): Promise<RequestType[]> {
     try {
-      const response = await api.get(`/requests/priority/${body.priority}`, {
+      const response = await api.get(`/requests/bot/priority/${body.priority}`, {
         headers: {
           'x-telegram-id': body.tgID
         }
@@ -73,13 +74,62 @@ export class RequestsService {
     }
   }
 
-  async addCommentToRequest(body: DataRequest): Promise<void> {
+  async addComment(body: CreateCommentType): Promise<void> {
     try {
-      await api.post(`/requests/${body.requestId}/comments`, { comment: body.comment }, {
-        headers: {
-          'x-telegram-id': body.tgID
+      if (body.fileUrl) {
+        const formData = new FormData();
+
+        const commentData: any = {
+          content: body.content,
+          type: body.type
+        };
+
+        if (body.type === 'task') {
+          commentData.taskId = body.requestId;
+        } else {
+          commentData.requestId = body.requestId;
         }
-      });
+
+        Object.entries(commentData).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            formData.append(key, value.toString());
+          }
+        });
+
+        const url = `https://api.telegram.org/file/bot${envConfig.get("BOT_TOKEN")}/${body.fileUrl}`;
+        const response = await fetch(url);
+        const fileBlob = await response.blob();
+
+        const files = [new File([fileBlob], body.fileName, {
+          type: body.fileMime || 'application/octet-stream'
+        })];
+
+        files.forEach((file) => {
+          formData.append('attachments', file);
+        });
+        await api.post(`/comments/bot/`, formData, {
+          headers: {
+            'x-telegram-id': body.tgID,
+            'Content-Type': 'multipart/form-data'
+          },
+
+        });
+      } else {
+        const commentData: any = {
+          content: body.content,
+          type: body.type
+        };
+        if (body.type === 'task') {
+          commentData.taskId = body.requestId;
+        } else {
+          commentData.requestId = body.requestId;
+        }
+        await api.post(`/comments/bot/`, commentData, {
+          headers: {
+            'x-telegram-id': body.tgID
+          }
+        });
+      }
     } catch (error) {
       console.error('Ошибка при добавлении комментария к запросу:', error.response?.data || error.message);
       throw error;
@@ -88,7 +138,7 @@ export class RequestsService {
 
   async getEmployeeRequests(body: DataRequest): Promise<RequestType[]> {
     try {
-      const response = await api.get(`/requests/employee/${body.employeeName}`, {
+      const response = await api.get(`/requests/bot/employee/${body.employeeName}`, {
         headers: {
           'x-telegram-id': body.tgID
         }
@@ -101,7 +151,7 @@ export class RequestsService {
   }
   async getDepartmentRequests(body: DataRequest): Promise<RequestType[]> {
     try {
-      const response = await api.get(`/requests/department/${body.departmentName}`, {
+      const response = await api.get(`/requests/bot/department/${body.departmentName}`, {
         headers: {
           'x-telegram-id': body.tgID
         }
@@ -115,7 +165,7 @@ export class RequestsService {
 
   async changeRequestStatus(body: DataRequest): Promise<void> {
     try {
-      await api.patch(`/requests/${body.requestId}/status`, { status: body.status }, {
+      await api.patch(`/requests/bot/${body.requestId}/status`, { status: body.status }, {
         headers: {
           'x-telegram-id': body.tgID
         }
