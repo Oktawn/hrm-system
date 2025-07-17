@@ -119,6 +119,8 @@ export const getRoleColor = (role: string) => {
   switch (role) {
     case 'admin': return 'red';
     case 'hr': return 'purple';
+    case 'hr_director': return 'magenta';
+    case 'head': return 'orange';
     case 'manager': return 'blue';
     case 'employee': return 'green';
     default: return 'default';
@@ -129,6 +131,8 @@ export const getRoleText = (role: string) => {
   switch (role) {
     case 'admin': return 'Администратор';
     case 'hr': return 'HR';
+    case 'hr_director': return 'Директор по персоналу';
+    case 'head': return 'Руководитель отдела';
     case 'manager': return 'Менеджер';
     case 'employee': return 'Сотрудник';
     default: return role;
@@ -190,3 +194,66 @@ export const getDocumentTypeColor = (type: string): string => {
     default: return 'default';
   }
 };
+
+export const UserRoleEnum = {
+  ADMIN: "admin",
+  HEAD: "head", // Руководитель отдела
+  HR_DIRECTOR: "hr_director", // Директор по персоналу
+  HR: "hr",
+  MANAGER: "manager",
+  EMPLOYEE: "employee"
+}
+
+export const RequestStatusEnum = {
+  PENDING: "pending",
+  APPROVED: "approved",
+  REJECTED: "rejected",
+  COMPLETED: "completed",
+  CANCELLED: "cancelled",
+}
+
+export const RequestTypeEnum = {
+  DOCUMENT: "document",       // Запрос документа
+  CERTIFICATE: "certificate", // Запрос справки
+  LEAVE_VACATION: "leave_vacation", // Отпуск
+  LEAVE_SICK: "leave_sick",   // Больничный
+  LEAVE_PERSONAL: "leave_personal", // Отгул
+  BUSINESS_TRIP: "business_trip", // Командировка
+  REMOTE_WORK: "remote_work", // Удаленная работа
+  EQUIPMENT: "equipment",    // Оборудование
+  OTHER: "other"             // Другое
+}
+
+export const DocumentStatusEnum = {
+  UNDER_REVIEW: "under_review",  // На рассмотрении
+  SIGNED: "signed",              // Подписан
+  REJECTED: "rejected",          // Отказано
+  EXPIRED: "expired",           // Истёк срок
+  DRAFT: "draft"                // Черновик
+}
+
+export const DocumentTypeEnum = {
+  WORK_CERTIFICATE: "work_certificate",           // Справка с места работы
+  SALARY_CERTIFICATE: "salary_certificate",      // Справка о доходах
+  EMPLOYMENT_CERTIFICATE: "employment_certificate", // Справка о трудоустройстве
+  VACATION_CERTIFICATE: "vacation_certificate",  // Справка об отпуске
+  MEDICAL_CERTIFICATE: "medical_certificate",    // Медицинская справка
+  PERSONAL_DATA_EXTRACT: "personal_data_extract", // Выписка из личного дела
+  CONTRACT_COPY: "contract_copy",                 // Копия трудового договора
+  OTHER: "other"                                  // Другое
+}
+
+export const TaskStatusEnum = {
+  TODO: "todo",
+  IN_PROGRESS: "in_progress",
+  REVIEW: "review",
+  DONE: "done",
+  CANCELLED: "cancelled"
+}
+
+export const TaskPriorityEnum = {
+  LOW: "low",
+  MEDIUM: "medium",
+  HIGH: "high",
+  CRITICAL: "critical"
+}

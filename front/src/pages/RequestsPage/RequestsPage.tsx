@@ -2,8 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Layout, Typography, Card, Table, Tag, Space, Button, Input, Select } from 'antd';
 import { PlusOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons';
+import { debounce } from 'lodash';
 import { useAuthStore } from '../../stores/auth.store';
 import requestsAPI from '../../services/requests.service';
+import employeesAPI from '../../services/employees.service';
 import type { Request, RequestFilter } from '../../types/request.types';
 import RequestDetail from '../../components/RequestDetail/RequestDetail';
 import CreateRequestModal from '../../components/CreateRequestModal/CreateRequestModal';
@@ -12,7 +14,10 @@ import {
   getRequestStatusText,
   getPriorityColor,
   getPriorityText,
-  getRequestTypeText
+  getRequestTypeText,
+  RequestTypeEnum,
+  RequestStatusEnum,
+  TaskPriorityEnum
 } from '../../utils/status.utils';
 import type { Employee } from '../../types/employee.types';
 
@@ -25,8 +30,10 @@ export function RequestsPage() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<RequestFilter>({});
+  const [searchText, setSearchText] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
   const [createRequestModalVisible, setCreateRequestModalVisible] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -53,8 +60,24 @@ export function RequestsPage() {
         }
         response = await requestsAPI.getByEmployee(user.employeeId);
 
+        let filteredRequests = [...(response.data || [])];
 
-        const sortedRequests = [...(response.data || [])];
+        if (currentFilter.title) {
+          filteredRequests = filteredRequests.filter(req =>
+            req.title.toLowerCase().includes(currentFilter.title!.toLowerCase())
+          );
+        }
+        if (currentFilter.status) {
+          filteredRequests = filteredRequests.filter(req => req.status === currentFilter.status);
+        }
+        if (currentFilter.type) {
+          filteredRequests = filteredRequests.filter(req => req.type === currentFilter.type);
+        }
+        if (currentFilter.priority) {
+          filteredRequests = filteredRequests.filter(req => req.priority === currentFilter.priority);
+        }
+
+        const sortedRequests = [...filteredRequests];
         if (currentFilter.sortBy && currentFilter.sortOrder) {
           const allowedSortFields = ['id', 'title', 'createdAt'];
           if (allowedSortFields.includes(currentFilter.sortBy)) {
@@ -108,10 +131,37 @@ export function RequestsPage() {
     }
   }, [filter, isEmployee, user]);
 
+  const fetchEmployees = useCallback(async () => {
+    try {
+      const response = await employeesAPI.getAll({ limit: 1000 });
+      setEmployees(response.data?.data || []);
+    } catch (error) {
+      console.error('Ошибка загрузки сотрудников:', error);
+    }
+  }, []);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedSearch = useCallback(
+    debounce((searchValue: string) => {
+      setFilter(prev => ({
+        ...prev,
+        title: searchValue.trim() || undefined
+      }));
+    }, 500),
+    []
+  );
+
+  useEffect(() => {
+    debouncedSearch(searchText);
+  }, [searchText, debouncedSearch]);
+
   useEffect(() => {
     fetchRequests(pagination.current, pagination.pageSize, filter);
+    if (isManager) {
+      fetchEmployees();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.current, pagination.pageSize, filter, user]);
+  }, [pagination.current, pagination.pageSize, filter, user, fetchRequests, fetchEmployees, isManager]);
 
   const handleRequestClick = (requestId: number) => {
     setSearchParams({ request: requestId.toString() });
@@ -250,49 +300,69 @@ export function RequestsPage() {
             </Button>
           </div>
 
-          <Space style={{ marginBottom: '16px' }}>
-            {!isEmployee && (
-              <Input
-                placeholder="Поиск по названию"
-                prefix={<SearchOutlined />}
+          <Space style={{ marginBottom: '16px', flexWrap: 'wrap' }}>
+            <Input
+              placeholder="Поиск по названию"
+              prefix={<SearchOutlined />}
+              style={{ width: 200 }}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+            {isManager && (
+              <Select
+                placeholder="Сотрудник"
                 style={{ width: 200 }}
-                onChange={(e) => setFilter({ ...filter, title: e.target.value })}
-              />
+                allowClear
+                showSearch
+                optionFilterProp="children"
+                value={filter.creatorId}
+                onChange={(value) => setFilter({ ...filter, creatorId: value })}
+              >
+                {employees.map(emp => (
+                  <Option key={emp.id} value={emp.id}>
+                    {emp.firstName} {emp.lastName}
+                  </Option>
+                ))}
+              </Select>
             )}
             <Select
               placeholder="Тип заявки"
-              style={{ width: 150 }}
+              style={{ width: 180 }}
               allowClear
+              value={filter.type}
               onChange={(value) => setFilter({ ...filter, type: value })}
             >
-              <Option value="document">Документ</Option>
-              <Option value="certificate">Справка</Option>
-              <Option value="leave_vacation">Отпуск</Option>
-              <Option value="leave_sick">Больничный</Option>
-              <Option value="leave_personal">Неоплачиваемый отпуск</Option>
+              {Object.values(RequestTypeEnum).map(type => (
+                <Option key={type} value={type}>
+                  {getRequestTypeText(type)}
+                </Option>
+              ))}
             </Select>
             <Select
               placeholder="Статус"
               style={{ width: 150 }}
               allowClear
+              value={filter.status}
               onChange={(value) => setFilter({ ...filter, status: value })}
             >
-              <Option value="pending">На рассмотрении</Option>
-              <Option value="approved">Одобрено</Option>
-              <Option value="rejected">Отклонено</Option>
-              <Option value="completed">Выполнено</Option>
-              <Option value="cancelled">Отменено</Option>
+              {Object.values(RequestStatusEnum).map(status => (
+                <Option key={status} value={status}>
+                  {getRequestStatusText(status)}
+                </Option>
+              ))}
             </Select>
             <Select
               placeholder="Приоритет"
               style={{ width: 150 }}
               allowClear
+              value={filter.priority}
               onChange={(value) => setFilter({ ...filter, priority: value })}
             >
-              <Option value="critical">Критический</Option>
-              <Option value="high">Высокий</Option>
-              <Option value="medium">Средний</Option>
-              <Option value="low">Низкий</Option>
+              {Object.values(TaskPriorityEnum).map(priority => (
+                <Option key={priority} value={priority}>
+                  {getPriorityText(priority)}
+                </Option>
+              ))}
             </Select>
           </Space>
         </div>

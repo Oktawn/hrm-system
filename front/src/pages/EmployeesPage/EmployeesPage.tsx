@@ -207,6 +207,8 @@ export function EmployeesPage() {
               <Col xs={24} sm={12} md={8} lg={6} key={employee.id}>
                 <Card
                   hoverable
+                  style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                  styles={{ body: { flex: 1, display: 'flex', flexDirection: 'column' } }}
                   actions={[
                     <EyeOutlined
                       key="view"
@@ -390,12 +392,16 @@ export function EmployeesPage() {
                     )}
                   </Descriptions.Item>
                 )}
-                <Descriptions.Item label="Дата создания">
-                  {new Date(selectedEmployee.createdAt).toLocaleDateString()}
-                </Descriptions.Item>
-                <Descriptions.Item label="Последнее обновление">
-                  {new Date(selectedEmployee.updatedAt).toLocaleDateString()}
-                </Descriptions.Item>
+                {user?.role === 'admin' && (
+                  <>
+                    <Descriptions.Item label="Дата создания">
+                      {new Date(selectedEmployee.createdAt).toLocaleDateString()}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Последнее обновление">
+                      {new Date(selectedEmployee.updatedAt).toLocaleDateString()}
+                    </Descriptions.Item>
+                  </>
+                )}
               </Descriptions>
             </div>
           )}

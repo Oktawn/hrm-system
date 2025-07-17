@@ -53,8 +53,8 @@ app.use("/api/documents", documentsRouter);
 
 async function main() {
   // await migrate.rollback();
-  await migrate.latest();
-  await seed.run();
+  // await migrate.latest();
+  // await seed.run();
   AppDataSource.initialize()
     .then(() => {
       console.log('Соединение с базой данных установлено');

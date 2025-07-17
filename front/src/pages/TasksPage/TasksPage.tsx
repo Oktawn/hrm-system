@@ -11,7 +11,9 @@ import {
   getTaskStatusColor,
   getTaskStatusText,
   getPriorityColor,
-  getPriorityText
+  getPriorityText,
+  TaskPriorityEnum,
+  TaskStatusEnum
 } from '../../utils/status.utils';
 
 const { Content } = Layout;
@@ -319,24 +321,27 @@ export function TasksPage() {
               placeholder="Статус"
               style={{ width: 150 }}
               allowClear
+              value={filter.status}
               onChange={(value) => setFilter({ ...filter, status: value })}
             >
-              <Option value="todo">К выполнению</Option>
-              <Option value="in_progress">В работе</Option>
-              <Option value="review">На проверке</Option>
-              <Option value="done">Выполнено</Option>
-              <Option value="cancelled">Отменено</Option>
+              {Object.values(TaskStatusEnum).map(status => (
+                <Option key={status} value={status}>
+                  {getTaskStatusText(status)}
+                </Option>
+              ))}
             </Select>
             <Select
               placeholder="Приоритет"
               style={{ width: 150 }}
               allowClear
+              value={filter.priority}
               onChange={(value) => setFilter({ ...filter, priority: value })}
             >
-              <Option value="critical">Критический</Option>
-              <Option value="high">Высокий</Option>
-              <Option value="medium">Средний</Option>
-              <Option value="low">Низкий</Option>
+              {Object.values(TaskPriorityEnum).map(priority => (
+                <Option key={priority} value={priority}>
+                  {getPriorityText(priority)}
+                </Option>
+              ))}
             </Select>
             {!isEmployee && (
               <Select

@@ -1,6 +1,5 @@
 import type { FileAttachment } from "./document.types";
 
-
 export type RequestPriority = 'low'
   | 'medium'
   | 'high'
@@ -16,7 +15,11 @@ export type RequestType = 'document'
   | 'certificate'
   | 'leave_vacation'
   | 'leave_sick'
-  | 'leave_personal';
+  | 'leave_personal'
+  | 'business_trip'
+  | 'remote_work'
+  | 'equipment'
+  | 'other';
 
 
 export interface CreateRequestData {
