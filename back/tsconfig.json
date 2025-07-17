@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
     "target": "ES2024",
-    "module": "CommonJS",
+    "module": "nodenext",
     "outDir": "./dist",
     "rootDir": "./src",
     "removeComments": true,
+    "allowJs": true,
+    "checkJs": true,
     "emitDecoratorMetadata": true,
-    "moduleResolution": "node",
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "incremental": true,
@@ -18,6 +19,13 @@
     "noFallthroughCasesInSwitch": false,
     "esModuleInterop": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.js",
+  ],
+  "exclude": [
+    "node_modules",
+    "src/**/*.test.*",
+    "src/**/*.spec.*"
+  ]
 }

@@ -1,8 +1,7 @@
-import { Knex } from "knex";
-import { DocumentTemplateService } from "../documents/document-template.service";
-import { DocumentTypeEnum } from "../commons/enums/enums";
+import { DocumentTemplateService } from "../../documents/document-template.service";
+import { DocumentTypeEnum } from "../../commons/enums/enums";
 
-export async function seed(knex: Knex): Promise<void> {
+export async function seed(knex: import("knex").Knex): Promise<void>{
 
     await knex("documents").del();
 
@@ -10,7 +9,7 @@ export async function seed(knex: Knex): Promise<void> {
         .select("*")
         .whereIn("type", ["document", "certificate", "leave_vacation", "leave_sick", "leave_personal"])
         .orderBy("id")
-        .limit(15); 
+        .limit(15);
 
     const hrEmployees = await knex("employees")
         .join("users", "employees.userId", "users.id")
@@ -25,7 +24,7 @@ export async function seed(knex: Knex): Promise<void> {
     const templateService = new DocumentTemplateService();
 
     const documentStatuses = ['under_review', 'draft'];
-    
+
     const documentTypeMapping = {
         'document': ['work_certificate', 'employment_certificate', 'contract_copy'],
         'certificate': ['salary_certificate', 'personal_data_extract'],
@@ -49,12 +48,12 @@ export async function seed(knex: Knex): Promise<void> {
         const availableTypes = documentTypeMapping[request.type] || ['work_certificate'];
         const documentType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
         const status = documentStatuses[Math.floor(Math.random() * documentStatuses.length)];
-        
-        const creator = hrEmployees.length > 0 ? 
+
+        const creator = hrEmployees.length > 0 ?
             hrEmployees[Math.floor(Math.random() * hrEmployees.length)] : null;
 
         const title = `${documentTitles[documentType]} - ${request.title}`;
-        
+
         const requestCreator = await knex("employees").where("id", request.creatorId).first();
 
         if (!requestCreator) continue;
@@ -114,17 +113,17 @@ export async function seed(knex: Knex): Promise<void> {
 
         let filePath = null;
         let fileUrl = null;
-        
+
         try {
             const tempDocumentId = Date.now() + Math.floor(Math.random() * 1000);
             const documentFile = await templateService.generateDocument(
-                documentType as DocumentTypeEnum, 
-                templateData, 
+                documentType as DocumentTypeEnum,
+                templateData,
                 tempDocumentId
             );
             filePath = documentFile.filePath;
             fileUrl = documentFile.fileUrl;
-            content = documentFile.content; 
+            content = documentFile.content;
         } catch (error) {
             console.warn(`Could not generate file for document ${title}:`, error.message);
         }

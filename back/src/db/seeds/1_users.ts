@@ -1,9 +1,9 @@
-import { Knex } from "knex";
-import { UserRoleEnum } from "../commons/enums/enums";
 import * as bcrypt from "bcrypt";
 import { faker } from '@faker-js/faker';
+import { UserRoleEnum } from "../../commons/enums/enums";
+import knex from "knex";
 
-export async function seed(knex: Knex): Promise<void> {
+export async function seed(knex: knex.Knex): Promise<void> {
     await knex("tasks_assignees_employees").del();
     await knex("requests").del();
     await knex("tasks").del();

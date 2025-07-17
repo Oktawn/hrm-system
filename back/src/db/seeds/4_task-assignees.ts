@@ -1,6 +1,5 @@
-import { Knex } from "knex";
 
-export async function seed(knex: Knex): Promise<void> {
+export async function seed(knex: import("knex").Knex): Promise<void> {
   await knex("tasks_assignees_employees").del();
 
   console.log("Assigning tasks to employees...");

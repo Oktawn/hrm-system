@@ -14,6 +14,7 @@ import { positionsRouter } from './positions/positions.router';
 import { commentsRouter } from './comments/comments.router';
 import { uploadsRouter } from './uploads/uploads.router';
 import { documentsRouter } from './documents/documents.router';
+import { migrate, seed } from './db/knex';
 
 const app = express();
 const port = envConfig.get("API_PORT");
@@ -50,14 +51,20 @@ app.use("/api/comments", commentsRouter);
 app.use("/api/uploads", uploadsRouter);
 app.use("/api/documents", documentsRouter);
 
-AppDataSource.initialize()
-  .then(() => {
-    console.log('Соединение с базой данных установлено');
+async function main() {
+  await migrate.latest();
+  await seed.run();
+  AppDataSource.initialize()
+    .then(() => {
+      console.log('Соединение с базой данных установлено');
 
-    app.listen(port, () => {
-      console.log(`Сервер запущен на порту ${port}`);
+      app.listen(port, () => {
+        console.log(`Сервер запущен на порту ${port}`);
+      });
+    })
+    .catch((err) => {
+      console.error('Ошибка при инициализации соединения с базой данных', err);
     });
-  })
-  .catch((err) => {
-    console.error('Ошибка при инициализации соединения с базой данных', err);
-  });
+};
+
+main();

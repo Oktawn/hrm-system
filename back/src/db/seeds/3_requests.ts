@@ -1,8 +1,7 @@
-import { Knex } from "knex";
-import { RequestStatusEnum, RequestTypeEnum, TaskPriorityEnum } from "../commons/enums/enums";
+import { RequestStatusEnum, RequestTypeEnum, TaskPriorityEnum } from "../../commons/enums/enums";
 import { faker } from '@faker-js/faker';
 
-export async function seed(knex: Knex): Promise<void> {
+export async function seed(knex: import("knex").Knex): Promise<void> {
     await knex("requests").del();
 
     const employees = await knex("employees").select("*");

@@ -1,8 +1,7 @@
-import { Knex } from "knex";
-import { TaskStatusEnum, TaskPriorityEnum } from "../commons/enums/enums";
+import { TaskStatusEnum, TaskPriorityEnum } from "../../commons/enums/enums";
 import { faker } from '@faker-js/faker';
-
-export async function seed(knex: Knex): Promise<void> {
+import knex from "knex";
+export async function seed(knex: knex.Knex): Promise<void> {
 
   await knex("tasks_assignees_employees").del();
   await knex("tasks").del();
@@ -18,12 +17,12 @@ export async function seed(knex: Knex): Promise<void> {
     .where("users.role", "IN", ["admin", "manager"])
     .select("employees.*");
 
-  const creators = managers.length > 0 ? managers : employees.slice(0, 5); 
+  const creators = managers.length > 0 ? managers : employees.slice(0, 5);
 
   const tasks = [];
   const taskTitles = [
     "Разработка API для модуля сотрудников",
-    "Обновление дизайн системы", 
+    "Обновление дизайн системы",
     "Настройка CI/CD pipeline",
     "Оптимизация производительности базы данных",
     "Создание документации проекта",
@@ -283,6 +282,6 @@ export async function seed(knex: Knex): Promise<void> {
       ]) : null
     });
   }
-  
+
   await knex("tasks").insert(tasks).returning('*');
 };

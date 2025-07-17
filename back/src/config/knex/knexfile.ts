@@ -1,9 +1,12 @@
-import type { Knex } from "knex";
-import { envConfig } from "./src/config/config";
+import { Knex } from "knex";
+import { envConfig } from "../config";
+import path from "path";
 
-// Update with your config settings.
+const nodeEnv = process.env.NODE_ENV || "development";
 
-const config: { [key: string]: Knex.Config } = {
+console.log(`Using environment: ${nodeEnv}`);
+
+const knexConfig: Record<string, Knex.Config> = {
   development: {
     client: "postgresql",
     connection: {
@@ -18,10 +21,12 @@ const config: { [key: string]: Knex.Config } = {
       max: 10
     },
     migrations: {
-      directory: "./src/migrations",
+      directory: path.join(__dirname, "../db/migrations"),
+      extension: "ts"
     },
     seeds: {
-      directory: "./src/seeds",
+      directory: path.join(__dirname, "../db/seeds"),
+      extension: "ts"
     }
   },
   production: {
@@ -38,13 +43,14 @@ const config: { [key: string]: Knex.Config } = {
       max: 10
     },
     migrations: {
-      directory: "./src/migrations",
+      directory: "./dist/db/migrations",
+      extension: "js"
     },
     seeds: {
-      directory: "./src/seeds",
+      directory: "./dist/db/seeds",
+      extension: "js"
     }
-  }
-
+  },
 };
 
-module.exports = config;
+export default knexConfig[nodeEnv] || knexConfig.development;

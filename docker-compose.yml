@@ -6,11 +6,12 @@ services:
       - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    restart: always
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_DATABASE}
+
+    restart: unless-stopped
     ports:
       - "${DB_EXTERNAL_PORT}:5432"
 

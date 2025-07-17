@@ -1,5 +1,9 @@
 import type { Knex } from "knex";
-import { DocumentStatusEnum, DocumentTypeEnum, RequestStatusEnum, RequestTypeEnum, TaskPriorityEnum, TaskStatusEnum, UserRoleEnum } from "../commons/enums/enums";
+import {
+  DocumentStatusEnum, DocumentTypeEnum, RequestStatusEnum,
+  RequestTypeEnum, TaskPriorityEnum, TaskStatusEnum, UserRoleEnum
+}
+  from "../../commons/enums/enums";
 
 
 export async function up(knex: Knex): Promise<void> {
