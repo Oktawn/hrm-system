@@ -20,8 +20,8 @@ employees.push({
   hireDate: faker.date.past({ years: 5 }),
   phone: faker.phone.number({ style: 'international' }),
   userId: adminId,
-  tgID: 342611986,
-  tgUsername: '@Oktawn',
+  tgID: faker.number.int({ min: 100000000, max: 999999999 }),
+  tgUsername: `@${faker.internet.username()}`,
   departmentId: 1,
   positionId: 1
 });

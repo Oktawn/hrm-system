@@ -342,15 +342,15 @@ export function HomePage() {
                 </Col>
                 <Col xs={24} lg={12}>
                   <Card
-                    title="Статистика по сотрудникам"
+                    title="Моя статистика"
                     size="small"
                     extra={
                       <Button
                         type="link"
                         icon={<EyeOutlined />}
-                        onClick={() => navigate('/employees')}
+                        onClick={() => navigate('/tasks?myTasks=true')}
                       >
-                        Все сотрудники
+                        Мои задачи
                       </Button>
                     }
                   >
