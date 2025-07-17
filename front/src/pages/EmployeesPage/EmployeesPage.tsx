@@ -360,6 +360,11 @@ export function EmployeesPage() {
                     {selectedEmployee.phone}
                   </Descriptions.Item>
                 )}
+                {selectedEmployee.tgUsername && (
+                  <Descriptions.Item label="Telegram">
+                    {selectedEmployee.tgUsername}
+                  </Descriptions.Item>
+                )}
                 {selectedEmployee.position && (
                   <Descriptions.Item label="Должность">
                     {selectedEmployee.position.name}

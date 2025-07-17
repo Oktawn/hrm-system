@@ -14,6 +14,7 @@ taskRouter.get("/recent", authMiddleware(), tasksController.getRecentTasks);
 //routes for statistics
 taskRouter.get("/statistics", authMiddleware(), tasksStatisticsController.getStatistics);
 taskRouter.get("/statistics/total", authMiddleware(), tasksStatisticsController.getTotalStatistics);
+taskRouter.get("/statistics/personal", authMiddleware(), tasksStatisticsController.getPersonalStatistics);
 taskRouter.get("/statistics/export", authMiddleware(), tasksStatisticsController.exportToExcel);
 
 //routes for bots

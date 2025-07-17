@@ -6,9 +6,11 @@ export interface ICreateEmployee {
   birthDate?: Date;
   hireDate?: Date;
   phone?: string;
+  tgID?: number;
+  tgUsername?: string;
   departmentId?: number;
   positionId?: number;
-  assignedManagerId?: string; 
+  assignedManagerId?: string;
 }
 
 export interface IUpdateEmployee {
@@ -20,9 +22,11 @@ export interface IUpdateEmployee {
   birthDate?: Date;
   hireDate?: Date;
   phone?: string;
+  tgID?: number;
+  tgUsername?: string;
   departmentId?: number;
   positionId?: number;
-  assignedManagerId?: string; 
+  assignedManagerId?: string;
 }
 
 export interface IEmployeeFilter {
@@ -34,4 +38,20 @@ export interface IEmployeeFilter {
   isActive?: boolean;
   page?: number;
   limit?: number;
+}
+
+export interface Employee {
+  id: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  birthDate?: Date;
+  hireDate?: Date;
+  phone?: string;
+  tgID?: number;
+  tgUsername?: string;
+  userId: string;
+  departmentId: number;
+  positionId: number;
+  assignedManagerId?: string;
 }

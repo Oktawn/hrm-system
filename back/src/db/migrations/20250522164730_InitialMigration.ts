@@ -2,8 +2,7 @@ import type { Knex } from "knex";
 import {
   DocumentStatusEnum, DocumentTypeEnum, RequestStatusEnum,
   RequestTypeEnum, TaskPriorityEnum, TaskStatusEnum, UserRoleEnum
-}
-  from "../../commons/enums/enums";
+} from "../../commons/enums/enums";
 
 
 export async function up(knex: Knex): Promise<void> {
@@ -52,6 +51,7 @@ export async function up(knex: Knex): Promise<void> {
     table.date('hireDate').nullable();
     table.string('phone').nullable();
     table.integer("tgID").nullable().unique();
+    table.string('tgUsername').nullable();
     table.uuid('assignedManagerId').nullable().references('id').inTable('employees').onDelete('SET NULL');
     table.uuid('userId').notNullable().unique().references('id').inTable('users').onDelete('CASCADE');
     table.integer('departmentId').nullable().references('id').inTable('departments').onDelete('SET NULL');
@@ -128,13 +128,12 @@ export async function up(knex: Knex): Promise<void> {
 
     table.timestamp('signedAt').nullable();
     table.text('rejectionReason').nullable();
-    table.jsonb('templateData').nullable(); // Данные для заполнения шаблона
+    table.jsonb('templateData').nullable(); 
     table.jsonb('metadata').nullable();
 
     table.timestamp('createdAt').defaultTo(knex.fn.now());
     table.timestamp('updatedAt').defaultTo(knex.fn.now());
 
-    // Индексы для улучшения производительности
     table.index(['type']);
     table.index(['status']);
     table.index(['requestedById']);

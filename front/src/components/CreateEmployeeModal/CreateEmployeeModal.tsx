@@ -80,6 +80,7 @@ export function CreateEmployeeModal({ visible, onClose, onEmployeeCreated }: Cre
         birthDate: values.birthDate ? values.birthDate.format('YYYY-MM-DD') : undefined,
         hireDate: values.hireDate ? values.hireDate.format('YYYY-MM-DD') : undefined,
         phone: values.phone,
+        tgUsername: values.tgUsername,
         departmentId: values.departmentId,
         positionId: values.positionId,
         assignedManagerId: values.assignedManagerId,
@@ -172,6 +173,13 @@ export function CreateEmployeeModal({ visible, onClose, onEmployeeCreated }: Cre
           label="Телефон"
         >
           <Input placeholder="+7 (999) 123-45-67" />
+        </Form.Item>
+
+        <Form.Item
+          name="tgUsername"
+          label="Telegram"
+        >
+          <Input placeholder="@username" />
         </Form.Item>
 
         <Form.Item

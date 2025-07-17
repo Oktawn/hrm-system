@@ -1,9 +1,56 @@
 import { Request, Response, NextFunction } from 'express';
+import { AuthenticatedRequest } from '../auth/auth.interface';
 import { TasksStatisticsService } from './tasks-statistics.service';
 import { ITaskStatisticsFilter } from './tasks-statistics.interface';
+import { employeeRepository } from '../db/db-rep';
 
 export class TasksStatisticsController {
   private tasksStatisticsService = new TasksStatisticsService();
+
+  getPersonalStatistics = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(400).json({
+          success: false,
+          message: 'User ID not found'
+        });
+        return;
+      }
+
+      const employee = await employeeRepository.findOne({
+        where: { user: { id: userId } },
+      });
+
+      if (!employee) {
+        res.status(404).json({
+          success: false,
+          message: 'Employee not found'
+        });
+        return;
+      }
+
+      const filter: ITaskStatisticsFilter = {
+        employeeId: employee.id,
+        dateFrom: req.query.dateFrom as string,
+        dateTo: req.query.dateTo as string,
+      };
+
+      Object.keys(filter).forEach(key =>
+        filter[key as keyof ITaskStatisticsFilter] === undefined &&
+        delete filter[key as keyof ITaskStatisticsFilter]
+      );
+
+      const totalStats = await this.tasksStatisticsService.getTotalStatistics(filter);
+
+      res.status(200).json({
+        success: true,
+        data: totalStats
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 
   getStatistics = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -15,13 +62,13 @@ export class TasksStatisticsController {
         dateTo: req.query.dateTo as string,
       };
 
-      Object.keys(filter).forEach(key => 
-        filter[key as keyof ITaskStatisticsFilter] === undefined && 
+      Object.keys(filter).forEach(key =>
+        filter[key as keyof ITaskStatisticsFilter] === undefined &&
         delete filter[key as keyof ITaskStatisticsFilter]
       );
 
       const statistics = await this.tasksStatisticsService.getTasksStatistics(filter);
-      
+
       res.status(200).json({
         success: true,
         data: statistics
@@ -41,14 +88,13 @@ export class TasksStatisticsController {
         dateTo: req.query.dateTo as string,
       };
 
-      Object.keys(filter).forEach(key => 
-        filter[key as keyof ITaskStatisticsFilter] === undefined && 
+      Object.keys(filter).forEach(key =>
+        filter[key as keyof ITaskStatisticsFilter] === undefined &&
         delete filter[key as keyof ITaskStatisticsFilter]
       );
 
       const excelBuffer = await this.tasksStatisticsService.exportToExcel(filter);
-      
-      // имя файла с датой
+
       const date = new Date().toISOString().split('T')[0];
       const filename = `task-statistics-${date}.xlsx`;
 
@@ -72,13 +118,13 @@ export class TasksStatisticsController {
         dateTo: req.query.dateTo as string,
       };
 
-      Object.keys(filter).forEach(key => 
-        filter[key as keyof ITaskStatisticsFilter] === undefined && 
+      Object.keys(filter).forEach(key =>
+        filter[key as keyof ITaskStatisticsFilter] === undefined &&
         delete filter[key as keyof ITaskStatisticsFilter]
       );
 
       const totalStats = await this.tasksStatisticsService.getTotalStatistics(filter);
-      
+
       res.status(200).json({
         success: true,
         data: totalStats

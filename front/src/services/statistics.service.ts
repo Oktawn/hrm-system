@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { TaskStatistics, TaskStatisticsFilter } from '../types/statistics.types';
 import { api } from './auth.service';
 
@@ -63,6 +62,19 @@ class TaskStatisticsService {
 
     const queryString = params.toString();
     const endpoint = `/tasks/statistics/total${queryString ? `?${queryString}` : ''}`;
+
+    const response = await api.get(endpoint);
+    return response.data;
+  }
+
+  async getPersonalStatistics(filter?: { dateFrom?: string; dateTo?: string }): Promise<{ success: boolean; data: any }> {
+    const params = new URLSearchParams();
+
+    if (filter?.dateFrom) params.append('dateFrom', filter.dateFrom);
+    if (filter?.dateTo) params.append('dateTo', filter.dateTo);
+
+    const queryString = params.toString();
+    const endpoint = `/tasks/statistics/personal${queryString ? `?${queryString}` : ''}`;
 
     const response = await api.get(endpoint);
     return response.data;

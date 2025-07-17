@@ -6,6 +6,8 @@ export interface Employee {
   birthDate?: string;
   hireDate?: string;
   phone?: string;
+  tgID?: number;
+  tgUsername?: string;
   position?: {
     id: string;
     name: string;
@@ -39,6 +41,8 @@ export interface CreateEmployeeData {
   birthDate?: string;
   hireDate?: string;
   phone?: string;
+  tgID?: number;
+  tgUsername?: string;
   departmentId?: number;
   positionId?: number;
   assignedManagerId?: string;
@@ -54,6 +58,8 @@ export interface UpdateEmployeeData {
   hireDate?: string;
   phone?: string;
   departmentId?: number;
+  tgID?: number;
+  tgUsername?: string;
   positionId?: number;
   assignedManagerId?: string;
 }

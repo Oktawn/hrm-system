@@ -52,6 +52,7 @@ app.use("/api/uploads", uploadsRouter);
 app.use("/api/documents", documentsRouter);
 
 async function main() {
+  // await migrate.rollback();
   await migrate.latest();
   await seed.run();
   AppDataSource.initialize()

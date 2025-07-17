@@ -1,5 +1,7 @@
 export enum UserRoleEnum {
   ADMIN = "admin",
+  HEAD = "head", // Руководитель отдела
+  HR_DIRECTOR = "hr_director", // Директор по персоналу
   HR = "hr",
   MANAGER = "manager",
   EMPLOYEE = "employee"
