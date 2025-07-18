@@ -16,22 +16,25 @@ type TaskDataSession = {
   tasks: Task[];
 }
 
+type RequestDataSession = {
+  currentPage: number;
+  totalPages?: number;
+  requests: RequestType[];
+}
+
 type TasksSession = {
   tasks: TaskDataSession;
 }
 
 type RequestsSession = {
-  requests: {
-    currentPage: number;
-    totalPages?: number;
-    requests: RequestType[];
-  };
+  requests: RequestDataSession;
 }
 
 
 export {
   TaskDataSession,
   RequestsSession,
+  RequestDataSession,
   TasksSession,
   UserSession
 }

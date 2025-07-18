@@ -10,9 +10,9 @@ import { escapeSpecialChars, getPriorityText, getRequestStatusText, getRequestTy
 import dedent from "dedent";
 import { priorityKeyboard, requestHRKeyboard, requestKeyboard, requestTypeKeyboard, statusRequestKeyboard } from "./keyboards.bot";
 import dayjs from "dayjs";
-import { NextFunction } from "express";
 import { TasksService } from "../services/tasks.service";
 import moment from "moment";
+import { RequestDataSession } from "../commons/session.type";
 
 export const requestsComposer = new Composer<RequestComposerConversation>();
 const requestsService = new RequestsService();
@@ -25,18 +25,19 @@ requestsComposer.use(async (ctx, next) => {
       totalPages: 0,
       requests: []
     }
+    console.log("Session requests initialized");
   }
   await next();
 });
 
 const dataOnPage = 10;
 
-function listRequests(ctx: RequestContext) {
-  const { requests, totalPages, currentPage } = ctx.session.requests;
+function listRequests(requests: RequestDataSession) {
+  const { requests: requestList, totalPages, currentPage } = requests;
 
   const startIndex = currentPage * dataOnPage;
   const endIndex = startIndex + dataOnPage;
-  const requestsForPage = requests.slice(startIndex, endIndex);
+  const requestsForPage = requestList.slice(startIndex, endIndex);
 
   const requestsKeyboard = new InlineKeyboard();
 
@@ -62,14 +63,14 @@ function listRequests(ctx: RequestContext) {
 function showRequests(request: RequestType) {
   const url = `${envConfig.get("ORIGIN_FRONTEND")}/requests?request=${request.id}`;
   const msg = dedent`
-    Задача: ${request.id}
-    Название: ${escapeSpecialChars(request.title) || '\-'}
-    Описание: ${escapeSpecialChars(request.description) || '\-'}
-    Тип: ${getRequestTypeText(request.type) || '\-'}
-    Создатель: ${escapeSpecialChars(showEmployee(request.creator)) || '\-'}
-    Исполнитель: ${escapeSpecialChars(showEmployee(request.assignee)) || '\-'}
-    Статус: ${getRequestStatusText(request.status) || '\-'}
-    Приоритет: ${getPriorityText(request.priority) || '\-'}
+    Заявка: ${request.id}
+    Название: ${escapeSpecialChars(request.title) || ' '}
+    Описание: ${escapeSpecialChars(request.description) || ' '}
+    Тип: ${getRequestTypeText(request.type) || ' '}
+    Создатель: ${request.creator ? escapeSpecialChars(showEmployee(request.creator)) : ' '}
+    Исполнитель: ${request.assignee ? escapeSpecialChars(showEmployee(request.assignee)) : ' '}
+    Статус: ${getRequestStatusText(request.status) || ' '}
+    Приоритет: ${getPriorityText(request.priority) || ' '}
     URL: [внешняя ссылка](${url})`;
   return msg;
 }
@@ -80,14 +81,19 @@ async function getRequests(conv: RequestConversation, ctx: RequestContext) {
     const requests = await requestsService.getRequests({
       tgID: ctx.from.id
     });
+    const requestsData: RequestDataSession = {
+      requests: requests,
+      currentPage: 0,
+      totalPages: Math.ceil(requests.length / dataOnPage)
+    }
     await conv.external((ctx) => {
-      ctx.session.requests.requests = requests;
+      ctx.session.requests = requestsData;
     });
     if (requests.length === 0) {
       await ctx.reply("Заявок не найдено.");
     } else {
       await ctx.reply("Ваши заявки:", {
-        reply_markup: listRequests(ctx)
+        reply_markup: listRequests(requestsData)
       });
     }
   } catch (error) {
@@ -97,7 +103,7 @@ async function getRequests(conv: RequestConversation, ctx: RequestContext) {
 }
 
 
-async function createRequest(conv: RequestConversation, ctx: RequestContext, next: NextFunction) {
+async function createRequest(conv: RequestConversation, ctx: RequestContext) {
   await ctx.reply(`Выберите тип заявки, которую хотите создать:`, {
     reply_markup: requestTypeKeyboard
   });
@@ -356,25 +362,28 @@ async function addComment(conv: RequestConversation, ctx: RequestContext) {
 }
 
 async function findEmployeeRequests(conv: RequestConversation, ctx: RequestContext) {
-  await ctx.reply("Введите ФИО сотрудника для поиска заявок:");
+  await ctx.reply("Введите Фамилию и/или имя сотрудника для поиска заявок:");
   const employeeName = await conv.waitFor("message:text");
-  await ctx.reply(`Поиск заявок сотрудника: ${employeeName}`);
+  await ctx.reply(`Поиск заявок сотрудника: ${employeeName.message.text}`);
   try {
     const requests = await requestsService.getEmployeeRequests({
       tgID: ctx.from.id,
-      employeeName: employeeName.message.text.trim()
+      employeeName: employeeName.message.text.replace(/\s+/g, "_").trim()
     });
+    const requestsData: RequestDataSession = {
+      currentPage: 0,
+      totalPages: Math.round(requests.length / dataOnPage),
+      requests: requests
+    };
     await conv.external((ctx) => {
-      ctx.session.requests.requests = requests;
-      ctx.session.requests.currentPage = 0;
-      ctx.session.requests.totalPages = Math.round(requests.length / dataOnPage);
+      ctx.session.requests = requestsData;
     });
     if (requests.length === 0) {
       await ctx.reply("Заявки не найдены.");
     }
     else {
       await ctx.reply("Заявки сотрудника:", {
-        reply_markup: listRequests(ctx)
+        reply_markup: listRequests(requestsData)
       });
     }
   } catch (error) {
@@ -395,17 +404,20 @@ async function getRequestsByPriority(conv: RequestConversation, ctx: RequestCont
       tgID: ctx.from.id,
       priority: ans.callbackQuery.data
     });
+    const dataRequest: RequestDataSession = {
+      currentPage: 0,
+      totalPages: Math.ceil((Array.isArray(result) ? result.length : 1) / dataOnPage),
+      requests: result
+    };
     await conv.external((ctx) => {
-      ctx.session.requests.requests = result;
-      ctx.session.requests.currentPage = 0;
-      ctx.session.requests.totalPages = Math.round(result.length / dataOnPage);
+      ctx.session.requests = dataRequest;
     });
     if (result.length === 0) {
       await ctx.reply("Заявок с таким приоритетом не найдено.");
     }
     else {
       await ctx.reply(`Заявки с приоритетом "${getPriorityText(ans.callbackQuery.data)}": `, {
-        reply_markup: listRequests(ctx),
+        reply_markup: listRequests(dataRequest),
       });
     }
   } catch (error) {
@@ -464,7 +476,7 @@ async function getRequestsByStatus(conv: RequestConversation, ctx: RequestContex
       await ctx.reply("Заявок с таким статусом не найдено.");
     } else {
       await ctx.reply(`Заявки со статусом "${getRequestStatusText(ans.callbackQuery.data)}": `, {
-        reply_markup: listRequests(ctx),
+        reply_markup: listRequests(dataRequest),
       });
     }
   } catch (error) {
@@ -491,12 +503,12 @@ requestsComposer.on("callback_query:data", async (ctx, next) => {
   switch (data) {
     case "requests_start":
       if (ctx.session.user.role === UserRoleEnum.EMPLOYEE) {
-        await ctx.reply("Выберите действие:", {
+        await ctx.reply("Добро пожаловать в управление заявками:", {
           reply_markup: requestKeyboard,
         });
       }
       else {
-        await ctx.reply("Выберите действие:", {
+        await ctx.reply("Добро пожаловать в управление заявками:", {
           reply_markup: requestHRKeyboard,
         });
       }
@@ -507,6 +519,9 @@ requestsComposer.on("callback_query:data", async (ctx, next) => {
     case "leave_vacation":
     case "leave_personal":
       await ctx.conversation.enter("createLeaveRequest");
+      break;
+    case "requests_view":
+      await ctx.conversation.enter("getRequests");
       break;
     case "leave_sick":
       await ctx.conversation.enter("createSickRequest");
@@ -537,7 +552,7 @@ requestsComposer.on("callback_query:data", async (ctx, next) => {
         ctx.session.requests.currentPage--;
       }
       await ctx.editMessageReplyMarkup({
-        reply_markup: listRequests(ctx)
+        reply_markup: listRequests(ctx.session.requests)
       });
       break;
     case "requests_next":
@@ -545,7 +560,7 @@ requestsComposer.on("callback_query:data", async (ctx, next) => {
         ctx.session.requests.currentPage++;
       }
       await ctx.editMessageReplyMarkup({
-        reply_markup: listRequests(ctx)
+        reply_markup: listRequests(ctx.session.requests)
       });
       break;
     default:

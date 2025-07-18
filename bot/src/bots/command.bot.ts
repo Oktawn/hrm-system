@@ -52,7 +52,6 @@ async function checkBot(tgID: number) {
 const commandKeyboard = new InlineKeyboard()
   .text("Задачи", "tasks_start").row()
   .text("Заявки", "requests_start").row()
-  .text("Документы", "documents_start").row()
   .text("Добавить комментарий", "add_comment").row();
 
 commandComposer.command("start", async (ctx) => {
@@ -73,7 +72,7 @@ commandComposer.command("keyboard", async (ctx) => {
 });
 
 const helloMessage = dedent`
-  Привет! Я бот, который поможет вам управлять задачами, заявками и документами.
+  Привет! Я бот, который поможет вам управлять задачами, заявками и комментариями.
   Используйте команды для навигации:
   - /start: Начать работу с ботом
   - /reset: Сбросить все действия

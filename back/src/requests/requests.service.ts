@@ -1,7 +1,7 @@
 import createHttpError from "http-errors";
 import { employeeRepository, requestRepository } from "../db/db-rep";
 import { ICreateRequest, IRequestFilter, IUpdateRequest } from "./requests.interface";
-import { RequestStatusEnum, UserRoleEnum } from "../commons/enums/enums";
+import { RequestStatusEnum, TaskPriorityEnum, UserRoleEnum } from "../commons/enums/enums";
 import { DocumentsService } from "../documents/documents.service";
 
 export class RequestsService {
@@ -175,6 +175,20 @@ export class RequestsService {
     };
   }
 
+  async getRequestsForBot(id: number) {
+    const request = await requestRepository.find({
+      where: {
+        creator: { tgID: id }
+      },
+      relations: ["creator", "assignee", "creator.user", "assignee.user"]
+    });
+    if (!request) {
+      throw createHttpError(404, "Request not found");
+    }
+    return request;
+  }
+
+
   async getAllRequestsByEmployeeId(employeeId: string) {
     const requests = await requestRepository.find({
       where: { creator: { id: employeeId } },
@@ -182,6 +196,24 @@ export class RequestsService {
       order: { createdAt: "DESC" }
     });
     if (!requests) {
+      throw createHttpError(404, "Requests not found");
+    }
+    return requests;
+  }
+
+  async getRequestsByEmployeeName(name: string) {
+    if (!name || typeof name !== 'string') {
+      throw createHttpError(400, "Employee name is required");
+    }
+
+    const [firstName, lastName] = name.split("_").map(part => part.trim().toLowerCase());
+    const requests = await requestRepository.createQueryBuilder("request")
+      .leftJoinAndSelect("request.creator", "creator")
+      .where("LOWER(creator.firstName) LIKE :firstName OR LOWER(creator.lastName) LIKE :lastName", { firstName: `%${firstName}%`, lastName: `%${lastName}%` })
+      .orderBy("request.createdAt", "DESC")
+      .getMany();
+
+    if (!requests || requests.length === 0) {
       throw createHttpError(404, "Requests not found");
     }
     return requests;
@@ -198,6 +230,19 @@ export class RequestsService {
     }
     return requests;
   }
+
+  async getRequestsByPriority(priority: string) {
+    const requests = await requestRepository.find({
+      where: { priority: TaskPriorityEnum[priority] },
+      relations: ["creator", "assignee"],
+      order: { createdAt: "DESC" }
+    });
+    if (!requests) {
+      throw createHttpError(404, "Requests not found");
+    }
+    return requests;
+  }
+
 
   async updateRequestStatus(requestId: number, status: RequestStatusEnum, userId: string) {
     const request = await requestRepository.findOne({

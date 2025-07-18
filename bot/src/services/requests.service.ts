@@ -25,7 +25,7 @@ export class RequestsService {
           'x-telegram-id': body.tgID
         }
       });
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error('Ошибка при получении заявок:', error.response?.data || error.message);
       throw error;
@@ -39,7 +39,7 @@ export class RequestsService {
           'x-telegram-id': body.tgID
         }
       });
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error('Ошибка при получении запроса по ID:', error.response?.data || error.message);
       throw error;
@@ -53,7 +53,7 @@ export class RequestsService {
           'x-telegram-id': body.tgID
         }
       });
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error('Ошибка при получении запросов по статусу:', error.response?.data || error.message);
       throw error;
@@ -67,7 +67,7 @@ export class RequestsService {
           'x-telegram-id': body.tgID
         }
       });
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error('Ошибка при получении запросов по приоритету:', error.response?.data || error.message);
       throw error;
@@ -147,7 +147,7 @@ export class RequestsService {
           'x-telegram-id': body.tgID
         }
       });
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error('Ошибка при получении запросов сотрудника:', error.response?.data || error.message);
       throw error;

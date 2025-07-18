@@ -89,6 +89,19 @@ export class RequestsController {
       res.status(500).json({ error: error.message });
     }
   }
+  async getRequestsForBot(req: AuthenticatedRequest & AuthenticatedRequestBot, res: Response) {
+    try {
+      const botId = req.bot?.tgID;
+      const requests = await requestsService.getRequestsForBot(botId);
+      res.status(200).json({
+        success: true,
+        data: requests
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   async getRequestsByStatus(req: Request, res: Response) {
     try {
       const { status } = req.params;
@@ -101,10 +114,38 @@ export class RequestsController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  async getRequestsByPriority(req: Request, res: Response) {
+    try {
+      const { priority } = req.params;
+      const requests = await requestsService.getRequestsByPriority(priority);
+      res.status(200).json({
+        success: true,
+        data: requests
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+
   async getRequestsByEmployeeId(req: Request, res: Response) {
     try {
       const { employeeId } = req.params;
       const requests = await requestsService.getAllRequestsByEmployeeId(employeeId);
+      res.status(200).json({
+        success: true,
+        data: requests
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async getRequestsByEmployeeName(req: Request, res: Response) {
+    try {
+      const { name } = req.params;
+      const requests = await requestsService.getRequestsByEmployeeName(name as string);
       res.status(200).json({
         success: true,
         data: requests
