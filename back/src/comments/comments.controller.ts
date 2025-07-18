@@ -71,7 +71,6 @@ export class CommentsController {
       const commentId = parseInt(req.params.commentId);
       const commentData: IUpdateComment = req.body;
       const user = req?.user ? req.user : req.bot;
-
       const comment = await commentsService.updateComment(commentId, commentData, user);
       res.json(comment);
     } catch (error) {

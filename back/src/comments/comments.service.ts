@@ -37,10 +37,21 @@ export class CommentsService {
 
     const savedComment = await commentRepository.save(comment);
 
-    return await commentRepository.findOne({
-      where: { id: savedComment.id },
-      relations: ['author']
-    });
+    return {
+      id: savedComment.id,
+      content: savedComment.content,
+      type: savedComment.type,
+      created_at: savedComment.created_at,
+      updated_at: savedComment.updated_at,
+      author: {
+        id: employee.id,
+        firstName: employee.firstName,
+        lastName: employee.lastName,
+        middleName: employee.middleName
+      },
+      attachments: savedComment.attachments || []
+
+    }
   }
 
 
@@ -48,7 +59,20 @@ export class CommentsService {
     return await commentRepository.find({
       where: { task: { id: taskId }, type: 'task' },
       relations: ['author'],
-      order: { created_at: 'ASC' }
+      order: { created_at: 'ASC' },
+      select: {
+        id: true,
+        content: true,
+        type: true,
+        created_at: true,
+        updated_at: true,
+        author: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          middleName: true
+        }
+      }
     });
   }
 
@@ -56,7 +80,20 @@ export class CommentsService {
     return await commentRepository.find({
       where: { request: { id: requestId }, type: 'request' },
       relations: ['author'],
-      order: { created_at: 'ASC' }
+      order: { created_at: 'ASC' },
+      select: {
+        id: true,
+        content: true,
+        type: true,
+        created_at: true,
+        updated_at: true,
+        author: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          middleName: true
+        }
+      }
     });
   }
 
@@ -70,19 +107,27 @@ export class CommentsService {
       throw createError(404, "Comment not found");
     }
 
-
-    if (comment.author.user.id !== user.userId ||
-      user.role !== UserRoleEnum.EMPLOYEE) {
+    if (comment.author.user.id !== user.userId && user.role === UserRoleEnum.EMPLOYEE) {
       throw createError(403, "You can only edit your own comments or you must be a manager");
     }
 
     comment.content = commentData.content;
     const savedComment = await commentRepository.save(comment);
 
-    return await commentRepository.findOne({
-      where: { id: savedComment.id },
-      relations: ['author']
-    });
+    return {
+      id: savedComment.id,
+      content: savedComment.content,
+      type: savedComment.type,
+      created_at: savedComment.created_at,
+      updated_at: savedComment.updated_at,
+      author: {
+        id: savedComment.author.id,
+        firstName: savedComment.author.firstName,
+        lastName: savedComment.author.lastName,
+        middleName: savedComment.author.middleName
+      },
+      attachments: savedComment.attachments || []
+    };
   }
 
   async deleteComment(commentId: number, user: TokenPayload) {
@@ -94,8 +139,7 @@ export class CommentsService {
     if (!comment) {
       throw createError(404, "Comment not found");
     }
-
-    if (comment.author.user.id !== user.userId || user.role !== "employee") {
+    if (comment.author.user.id !== user.userId && user.role === UserRoleEnum.EMPLOYEE) {
       throw createError(403, "You can only delete your own comments or you must be a manager");
     }
 
