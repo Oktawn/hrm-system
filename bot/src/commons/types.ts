@@ -53,10 +53,17 @@ type CreateCommentType = {
   taskId?: number;
   requestId?: number;
   attachments?: any[];
+  file: DataTelegramm;
+}
+
+type DataTelegramm = {
   fileUrl?: string;
   fileName?: string;
   fileMime?: string;
+  height?: number;
+  width?: number;
 }
+
 
 
 type DataRequest = {
@@ -84,6 +91,7 @@ export {
   CreateRequestType,
   CreateCommentType,
   Attachment,
+  DataTelegramm,
   DataRequest,
   DataTask,
   Assignee

@@ -3,7 +3,7 @@ import { Composer, InlineKeyboard, Keyboard } from "grammy";
 import { RequestComposerConversation, RequestContext, RequestConversation } from "../commons/context.types";
 import { RequestTypeEnum, TaskPriorityEnum, UserRoleEnum } from "../commons/enums";
 import { RequestsService } from "../services/requests.service";
-import { CreateRequestType, RequestType } from "../commons/types";
+import { CreateRequestType, DataTelegramm, RequestType } from "../commons/types";
 import { envConfig } from "../config/config";
 import { showEmployee } from "./tasks.bot";
 import { getPriorityText, getRequestStatusText, getRequestTypeText } from "../commons/status.util";
@@ -210,17 +210,22 @@ async function createSickRequest(conv: RequestConversation, ctx: RequestContext)
 }
 
 async function addComment(conv: RequestConversation, ctx: RequestContext) {
-  await ctx.reply(dedent`
+  const inKeyboard = new InlineKeyboard()
+    .text("К задаче", "task")
+    .text("К заявке", "request")
+  const id = (await ctx.reply(dedent`
     Вы перешли в раздел добавления комментария.
     Также можете прикрепить файл, если это необходимо.
-    Для начала укажите добавить комментарий к задаче или заявке, введите его ID, к которой хотите добавить комментарий:
-    Например, Задача 123.
-    `)
-  const [type, requestId] = (await conv.waitFor("message:text"))
-    .message.text.trim().split(" ");
+    Для начала укажите к задаче или заявке хотите добавить комментарий:
+    `, {
+    reply_markup: inKeyboard
+  })).message_id;
+  const type = (await conv.waitForCallbackQuery(["task", "request"])).callbackQuery.data;
+  await ctx.reply(`Введите ID ${type.toLowerCase() === "task" ? "задачи" : "заявки"} для добавления комментария:`);
+  const requestId = (await conv.waitFor("message:text")).message.text.trim();
 
   try {
-    const check = type === "Задача" ? await taskservice.getTaskById({
+    const check = type === "task" ? await taskservice.getTaskById({
       id: parseInt(requestId),
       tgID: ctx.from.id
     }) : await requestsService.getRequestsById({
@@ -233,34 +238,38 @@ async function addComment(conv: RequestConversation, ctx: RequestContext) {
     }
     await ctx.reply(`Введите текст комментария и прикрепите файл, если это необходимо, к ${type.toLowerCase()} ID ${requestId}:`);
     const comment = await conv.waitFor("message");
-    let file = {
-      fileUrl: undefined,
-      fileName: undefined,
-      fileMime: undefined
-    };
+    let file: DataTelegramm = {};
     if (comment.message.document) {
-      file.fileUrl = (await ctx.api.getFile(comment.message.document.file_id)).file_path;
-      file.fileName = comment.message.document.file_name;
-      file.fileMime = comment.message.document.mime_type;
+      file = {
+        fileUrl: (await ctx.api.getFile(comment.message.document.file_id)).file_path,
+        fileName: comment.message.document.file_name,
+        fileMime: comment.message.document.mime_type
+      };
     }
     if (comment.message.photo) {
-      const photo = comment.message.photo[0];
-      file.fileUrl = (await ctx.api.getFile(photo.file_id)).file_path;
-      file.fileName = `photo.png`;
-      file.fileMime = 'image/png';
+      const photo = comment.message.photo[comment.message.photo.length - 1];
+      file = {
+        fileUrl: (await ctx.api.getFile(photo.file_id)).file_path,
+        fileMime: "image/jpeg",
+        fileName: `photo.jpg`,
+        height: photo.height,
+        width: photo.width
+      };
     }
     await requestsService.addComment({
       content: comment.message?.text ? comment.message.text.trim() : comment.message.caption?.trim(),
       tgID: ctx.from.id,
       type: type === "Заявка" ? "request" : "task",
       requestId: parseInt(requestId),
-      fileUrl: file.fileUrl ? file.fileUrl : undefined,
-      fileName: file.fileName ? file.fileName : undefined,
-      fileMime: file.fileMime ? file.fileMime : undefined
+      file: file
     })
     await ctx.reply("Комментарий успешно добавлен.");
   } catch (error) {
     await ctx.reply(`Ошибка при добавлении комментария: ${error.message}`);
+  } finally {
+    await ctx.api.editMessageReplyMarkup(ctx.chatId, id, {
+      reply_markup: new InlineKeyboard()
+    });
   }
   return;
 }

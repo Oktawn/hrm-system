@@ -76,7 +76,7 @@ export class RequestsService {
 
   async addComment(body: CreateCommentType): Promise<void> {
     try {
-      if (body.fileUrl) {
+      if (body.file.fileUrl) {
         const formData = new FormData();
 
         const commentData: any = {
@@ -96,13 +96,17 @@ export class RequestsService {
           }
         });
 
-        const url = `https://api.telegram.org/file/bot${envConfig.get("BOT_TOKEN")}/${body.fileUrl}`;
+        const url = `https://api.telegram.org/file/bot${envConfig.get("BOT_TOKEN")}/${body.file.fileUrl}`;
         const response = await fetch(url);
         const fileBlob = await response.blob();
 
-        const files = [new File([fileBlob], body.fileName, {
-          type: body.fileMime || 'application/octet-stream'
+        const files = [new File([fileBlob], body.file.fileName, {
+          type: body.file.fileMime || 'application/octet-stream'
         })];
+        if (body.file.width !== undefined && body.file.height !== undefined) {
+          formData.append('width', body.file.width.toString());
+          formData.append('height', body.file.height.toString());
+        }
 
         files.forEach((file) => {
           formData.append('attachments', file);

@@ -239,8 +239,6 @@ tasksComposer.on("callback_query:data", async (ctx, next) => {
         })), {
           parse_mode: "MarkdownV2",
         });
-      } else {
-        await ctx.reply("Неизвестная команда.");
       }
       break;
   }
