@@ -66,6 +66,7 @@ export class CommentsService {
         type: true,
         created_at: true,
         updated_at: true,
+        attachments: true,
         author: {
           id: true,
           firstName: true,
@@ -87,6 +88,7 @@ export class CommentsService {
         type: true,
         created_at: true,
         updated_at: true,
+        attachments: true,
         author: {
           id: true,
           firstName: true,
