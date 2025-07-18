@@ -8,29 +8,40 @@ import fs from 'fs';
 export class UploadsController {
   private uploadsDir = "/app/uploads";
   async uploadFiles(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-    uploadMultiple(req, res, (err) => {
-      if (err) {
-        return res.status(400).json({
-          success: false,
-          message: err.message
+    try {
+
+
+      uploadMultiple(req, res, (err) => {
+        if (err) {
+          return res.status(400).json({
+            success: false,
+            message: err.message
+          });
+        }
+
+        if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'Не выбраны файлы для загрузки'
+          });
+        }
+
+        const attachments = (req.files as Express.Multer.File[]).map(createAttachment);
+
+        res.status(200).json({
+          success: true,
+          message: 'Файлы успешно загружены',
+          data: attachments
         });
-      }
-
-      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'Не выбраны файлы для загрузки'
-        });
-      }
-
-      const attachments = (req.files as Express.Multer.File[]).map(createAttachment);
-
-      res.status(200).json({
-        success: true,
-        message: 'Файлы успешно загружены',
-        data: attachments
       });
-    });
+    } catch (error) {
+      console.error('Ошибка при загрузке файлов:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Ошибка при загрузке файлов'
+      });
+      next(error);
+    }
   }
 
   async downloadFile(req: Request, res: Response, next: NextFunction) {

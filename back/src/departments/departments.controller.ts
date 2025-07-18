@@ -124,4 +124,28 @@ export class DepartmentsController {
       });
     }
   };
+
+  getEmployeeDepartmentStats = async (req: Request, res: Response) => {
+    try {
+      const employeeId = req.params.employeeId;
+      if (!employeeId) {
+        res.status(400).json({
+          success: false,
+          message: "Employee ID is required"
+        });
+        return;
+      }
+
+      const stats = await this.departmentsService.getEmployeeDepartmentStats(employeeId);
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      res.status(error.status || 500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  };
 }

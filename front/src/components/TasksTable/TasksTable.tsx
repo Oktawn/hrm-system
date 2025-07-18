@@ -1,6 +1,5 @@
 import { useState, Fragment } from 'react';
 import tasksService, { type Task } from '../../services/tasks.service';
-import Comments from '../Comments/Comments';
 import StatusSelector from '../StatusSelector/StatusSelector';
 import { useAuthStore } from '../../stores/auth.store';
 import { getPriorityCSSColor, getPriorityText } from '../../utils/status.utils';
@@ -12,7 +11,6 @@ interface TasksTableProps {
 }
 
 function TasksTable({ tasks, onTaskUpdate }: TasksTableProps) {
-  const [showComments, setShowComments] = useState<{ taskId: number; visible: boolean }>({ taskId: 0, visible: false });
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
   const { user: currentUser } = useAuthStore();
@@ -36,13 +34,6 @@ function TasksTable({ tasks, onTaskUpdate }: TasksTableProps) {
     }
   };
 
-  const handleShowComments = (taskId: number) => {
-    setShowComments({ taskId, visible: true });
-  };
-
-  const handleCloseComments = () => {
-    setShowComments({ taskId: 0, visible: false });
-  };
 
   const toggleRowExpansion = (taskId: number) => {
     const newExpanded = new Set(expandedRows);
@@ -139,17 +130,6 @@ function TasksTable({ tasks, onTaskUpdate }: TasksTableProps) {
                       <span className="no-deadline">Не указан</span>
                     )}
                   </td>
-                  <td>
-                    <div className="actions">
-                      <button
-                        className="action-button comment-button"
-                        onClick={() => handleShowComments(task.id)}
-                        title="Комментарии"
-                      >
-                        💬
-                      </button>
-                    </div>
-                  </td>
                 </tr>
 
                 {expandedRows.has(task.id) && (
@@ -196,13 +176,6 @@ function TasksTable({ tasks, onTaskUpdate }: TasksTableProps) {
           </div>
         )}
       </div>
-
-      <Comments
-        type="task"
-        itemId={showComments.taskId}
-        isVisible={showComments.visible}
-        onClose={handleCloseComments}
-      />
     </div>
   );
 };

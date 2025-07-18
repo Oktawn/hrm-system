@@ -8,8 +8,6 @@ import {
   Select,
   Card,
   Divider,
-  List,
-  Avatar,
   Input,
   Form,
   message
@@ -26,10 +24,8 @@ import {
 import { useAuthStore } from '../../stores/auth.store';
 import requestsAPI from '../../services/requests.service';
 import employeesAPI from '../../services/employees.service';
-import { commentsService, type IComment, type ICreateComment } from '../../services/comments.service';
 import { api } from '../../services/auth.service';
 import StatusSelector from '../StatusSelector/StatusSelector';
-import SimpleFileUpload from '../SimpleFileUpload/SimpleFileUpload';
 import {
   getPriorityColor, getPriorityText,
   getRequestTypeText,
@@ -39,6 +35,7 @@ import './RequestDetail.css';
 import type { Employee } from '../../types/employee.types';
 import type { Request, RequestStatus } from '../../types/request.types';
 import type { FileAttachment } from '../../types/document.types';
+import Comments from '../Comments/Comments';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -55,11 +52,8 @@ export function RequestDetail({ requestId, visible, onClose, onRequestUpdate }: 
   const { user } = useAuthStore();
   const [request, setRequest] = useState<Request | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [comments, setComments] = useState<IComment[]>([]);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [newComment, setNewComment] = useState('');
-  const [commentAttachments, setCommentAttachments] = useState<File[]>([]);
   const [form] = Form.useForm();
 
 
@@ -95,24 +89,14 @@ export function RequestDetail({ requestId, visible, onClose, onRequestUpdate }: 
     }
   }, []);
 
-  const fetchComments = useCallback(async () => {
-    if (!requestId) return;
 
-    try {
-      const data = await commentsService.getCommentsByRequest(requestId);
-      setComments(data);
-    } catch (error) {
-      console.error('Ошибка загрузки комментариев:', error);
-    }
-  }, [requestId]);
 
   useEffect(() => {
     if (visible && requestId) {
       fetchRequestDetails();
       fetchEmployees();
-      fetchComments();
     }
-  }, [visible, requestId, fetchComments, fetchRequestDetails, fetchEmployees]);
+  }, [visible, requestId, fetchRequestDetails, fetchEmployees]);
 
   const handleStatusChange = async (newStatus: string) => {
     if (!request) return;
@@ -145,32 +129,6 @@ export function RequestDetail({ requestId, visible, onClose, onRequestUpdate }: 
     } catch (error) {
       console.error('Ошибка обновления заявки:', error);
       message.error('Не удалось обновить заявку');
-    }
-  };
-
-  const handleAddComment = async () => {
-    if (!newComment.trim() || !request) return;
-
-    try {
-      const commentData: ICreateComment = {
-        content: newComment,
-        type: 'request',
-        requestId: request.id
-      };
-
-      if (commentAttachments.length > 0) {
-        await commentsService.createCommentWithFiles(commentData, commentAttachments);
-      } else {
-        await commentsService.createComment(commentData);
-      }
-
-      setNewComment('');
-      setCommentAttachments([]);
-      fetchComments();
-      message.success('Комментарий добавлен');
-    } catch (error) {
-      console.error('Ошибка добавления комментария:', error);
-      message.error('Не удалось добавить комментарий');
     }
   };
 
@@ -209,15 +167,12 @@ export function RequestDetail({ requestId, visible, onClose, onRequestUpdate }: 
         responseType: 'blob'
       });
 
-      // Получаем MIME-тип из заголовков ответа
       const contentType = response.headers['content-type'] || 'application/octet-stream';
-      
-      // Создаем blob с правильным MIME-типом
+
       const blob = new Blob([response.data], { type: contentType });
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');
-      
-      // Очищаем URL через некоторое время
+
       setTimeout(() => {
         window.URL.revokeObjectURL(url);
       }, 1000);
@@ -415,105 +370,10 @@ export function RequestDetail({ requestId, visible, onClose, onRequestUpdate }: 
 
             <Divider>Комментарии</Divider>
 
-            <div className="comments-section">
-              <List
-                dataSource={comments}
-                renderItem={(comment) => (
-                  <List.Item>
-                    <List.Item.Meta
-                      avatar={<Avatar icon={<UserOutlined />} />}
-                      title={
-                        <Space>
-                          <Text strong>
-                            {comment.author.firstName} {comment.author.lastName}
-                          </Text>
-                          <Text type="secondary" style={{ fontSize: '12px' }}>
-                            {new Date(comment.created_at).toLocaleString()}
-                          </Text>
-                        </Space>
-                      }
-                      description={
-                        <div>
-                          <div>{comment.content}</div>
-                          {/* Отображение вложений */}
-                          {comment.attachments && comment.attachments.length > 0 && (
-                            <div style={{ marginTop: 8 }}>
-                              <Text strong style={{ fontSize: '12px', color: '#666' }}>
-                                Вложения:
-                              </Text>
-                              <div style={{ marginTop: 4 }}>
-                                {comment.attachments.map((attachment: FileAttachment, index: number) => (
-                                  <div key={index} style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    marginBottom: 4,
-                                    padding: '4px 8px',
-                                    backgroundColor: '#f5f5f5',
-                                    borderRadius: '4px',
-                                    fontSize: '12px'
-                                  }}>
-                                    <span style={{ flex: 1, marginRight: 8 }}>
-                                      {attachment.originalName} ({formatFileSize(attachment.size)})
-                                    </span>
-                                    <div style={{ display: 'flex', gap: 4 }}>
-                                      {isImage(attachment.mimetype) && (
-                                        <Button
-                                          type="text"
-                                          size="small"
-                                          icon={<EyeOutlined />}
-                                          onClick={() => handleView(attachment.filename)}
-                                          title="Просмотр"
-                                        />
-                                      )}
-                                      <Button
-                                        type="text"
-                                        size="small"
-                                        icon={<DownloadOutlined />}
-                                        onClick={() => handleDownload(attachment.filename)}
-                                        title="Скачать"
-                                      />
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
-
-              <div className="add-comment" style={{ marginTop: 16 }}>
-                <div style={{ marginBottom: 12 }}>
-                  <Input.TextArea
-                    placeholder="Добавить комментарий..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    rows={3}
-                  />
-                </div>
-
-                <div style={{ marginBottom: 12 }}>
-                  <SimpleFileUpload
-                    files={commentAttachments}
-                    onFilesChange={setCommentAttachments}
-                    maxFiles={3}
-                    maxSize={10 * 1024 * 1024}
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
-                  />
-                </div>
-
-                <Button
-                  type="primary"
-                  onClick={handleAddComment}
-                  disabled={!newComment.trim()}
-                >
-                  Отправить
-                </Button>
-              </div>
-            </div>
+            <Comments
+              type="request"
+              itemId={request.id}
+            />
           </>
         )}
       </div>

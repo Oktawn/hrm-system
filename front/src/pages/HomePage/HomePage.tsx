@@ -40,6 +40,7 @@ export function HomePage() {
   const [tasksStats, setTasksStats] = useState<TaskStats | null>(null);
   const [personalTasksStats, setPersonalTasksStats] = useState<any | null>(null);
   const [departmentsStats, setDepartmentsStats] = useState<DepartmentStats[]>([]);
+  const [employeeDepartmentStats, setEmployeeDepartmentStats] = useState<DepartmentStats | null>(null);
 
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
   const [userTasks, setUserTasks] = useState<Task[]>([]);
@@ -52,8 +53,9 @@ export function HomePage() {
         setError(null);
 
         const isEmployee = user?.role === 'employee';
-        const isHrOrManager = user?.role === 'hr' || user?.role === 'manager';
+        const isHrOrManager = user?.role === 'hr' || user?.role === 'manager' || user?.role === 'hr_director';
         const isAdmin = user?.role === 'admin';
+        const isHead = user?.role === 'head';
 
         if (!isEmployee) {
           const [
@@ -77,6 +79,24 @@ export function HomePage() {
             setPersonalTasksStats(personalStats.data);
           } catch (error) {
             console.warn('Ошибка загрузки личной статистики:', error);
+          }
+
+          if (user.employeeId) {
+            try {
+              const departmentStats = await departmentsAPI.getEmployeeDepartmentStats(user.employeeId);
+              setEmployeeDepartmentStats(departmentStats.data);
+            } catch (error) {
+              console.warn('Ошибка загрузки статистики отдела:', error);
+            }
+          }
+        }
+
+        if (isHead && user.employeeId) {
+          try {
+            const departmentStats = await departmentsAPI.getEmployeeDepartmentStats(user.employeeId);
+            setEmployeeDepartmentStats(departmentStats.data);
+          } catch (error) {
+            console.warn('Ошибка загрузки статистики отдела:', error);
           }
         }
 
@@ -207,7 +227,10 @@ export function HomePage() {
                       value={personalTasksStats.completionRate || 0}
                       suffix="%"
                       prefix={<CheckCircleOutlined />}
-                      valueStyle={{ color: personalTasksStats.completionRate >= 80 ? '#52c41a' : personalTasksStats.completionRate >= 50 ? '#faad14' : '#f5222d' }}
+                      valueStyle={{
+                        color: personalTasksStats.completionRate >= 80 ?
+                          '#52c41a' : personalTasksStats.completionRate >= 50 ? '#faad14' : '#f5222d'
+                      }}
                     />
                   </Card>
                 </Col>
@@ -215,7 +238,7 @@ export function HomePage() {
             )}
 
             {/* Для HR, менеджеров и админов показываем общую статистику */}
-            {(user?.role === 'hr' || user?.role === 'manager') && (
+            {(user?.role === 'hr' || user?.role === 'manager' || user?.role === 'hr_director') && (
               <>
                 <Col xs={24} sm={12} md={6}>
                   <Card>
@@ -253,6 +276,52 @@ export function HomePage() {
                       title="Количество отделов"
                       value={departmentsStats.length}
                       prefix={<ApartmentOutlined />}
+                      valueStyle={{ color: '#722ed1' }}
+                    />
+                  </Card>
+                </Col>
+              </>
+            )}
+
+            {/* Для руководителей отделов показываем статистику их отдела */}
+            {user?.role === 'head' && employeeDepartmentStats && (
+              <>
+                <Col xs={24} sm={12} md={6}>
+                  <Card>
+                    <Statistic
+                      title={`Сотрудники отдела "${employeeDepartmentStats.name}"`}
+                      value={employeeDepartmentStats.employeeCount || 0}
+                      prefix={<TeamOutlined />}
+                      valueStyle={{ color: '#3f8600' }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <Card>
+                    <Statistic
+                      title="Мои активные задачи"
+                      value={userTasks.filter(task => task.status === 'in_progress' || task.status === 'todo').length || 0}
+                      prefix={<ProjectOutlined />}
+                      valueStyle={{ color: '#1890ff' }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <Card>
+                    <Statistic
+                      title="Мои выполненные задачи"
+                      value={userTasks.filter(task => task.status === 'done').length || 0}
+                      prefix={<CheckCircleOutlined />}
+                      valueStyle={{ color: '#52c41a' }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <Card>
+                    <Statistic
+                      title="Всего моих задач"
+                      value={userTasks.length || 0}
+                      prefix={<ProjectOutlined />}
                       valueStyle={{ color: '#722ed1' }}
                     />
                   </Card>
@@ -342,34 +411,25 @@ export function HomePage() {
                 </Col>
                 <Col xs={24} lg={12}>
                   <Card
-                    title="Моя статистика"
+                    title={employeeDepartmentStats ? `Сотрудники в отделе "${employeeDepartmentStats.name}"` : 'Статистика отдела'}
                     size="small"
                     extra={
                       <Button
                         type="link"
                         icon={<EyeOutlined />}
-                        onClick={() => navigate('/tasks?myTasks=true')}
+                        onClick={() => navigate('/employees')}
                       >
-                        Мои задачи
+                        Все сотрудники
                       </Button>
                     }
                   >
                     <Row gutter={[16, 16]}>
-                      <Col span={12}>
+                      <Col span={24}>
                         <Statistic
-                          title="Всего задач"
-                          value={personalTasksStats.totalTasks || 0}
+                          title="Всего сотрудников в отделе"
+                          value={employeeDepartmentStats?.employeeCount || 0}
                           valueStyle={{ color: '#1890ff' }}
-                          prefix={<ProjectOutlined />}
-                        />
-                      </Col>
-                      <Col span={12}>
-                        <Statistic
-                          title="Процент выполнения"
-                          value={personalTasksStats.completionRate || 0}
-                          suffix="%"
-                          valueStyle={{ color: personalTasksStats.completionRate >= 80 ? '#52c41a' : personalTasksStats.completionRate >= 50 ? '#faad14' : '#f5222d' }}
-                          prefix={<CheckCircleOutlined />}
+                          prefix={<TeamOutlined />}
                         />
                       </Col>
                     </Row>
@@ -448,6 +508,80 @@ export function HomePage() {
                 </Col>
               </>
             )}
+
+            {/* Для руководителей отделов показываем статистику их отдела */}
+            {user?.role === 'head' && employeeDepartmentStats && (
+              <>
+                <Col xs={24} lg={12}>
+                  <Card
+                    title={`Статистика отдела "${employeeDepartmentStats.name}"`}
+                    size="small"
+                    extra={
+                      <Button
+                        type="link"
+                        icon={<EyeOutlined />}
+                        onClick={() => navigate('/employees')}
+                      >
+                        Сотрудники отдела
+                      </Button>
+                    }
+                  >
+                    <Row gutter={[16, 16]}>
+                      <Col span={24}>
+                        <Statistic
+                          title="Всего сотрудников в отделе"
+                          value={employeeDepartmentStats.employeeCount || 0}
+                          valueStyle={{ color: '#1890ff' }}
+                          prefix={<TeamOutlined />}
+                        />
+                      </Col>
+                    </Row>
+                  </Card>
+                </Col>
+                <Col xs={24} lg={12}>
+                  <Card
+                    title="Мои задачи"
+                    size="small"
+                    extra={
+                      <Button
+                        type="link"
+                        icon={<EyeOutlined />}
+                        onClick={() => navigate('/tasks?myTasks=true')}
+                      >
+                        Все мои задачи
+                      </Button>
+                    }
+                  >
+                    <Row gutter={[16, 16]}>
+                      <Col span={8}>
+                        <Statistic
+                          title="К выполнению"
+                          value={userTasks.filter(task => task.status === 'todo').length || 0}
+                          valueStyle={{ color: '#faad14' }}
+                          prefix={<ClockCircleOutlined />}
+                        />
+                      </Col>
+                      <Col span={8}>
+                        <Statistic
+                          title="В работе"
+                          value={userTasks.filter(task => task.status === 'in_progress').length || 0}
+                          valueStyle={{ color: '#1890ff' }}
+                          prefix={<ProjectOutlined />}
+                        />
+                      </Col>
+                      <Col span={8}>
+                        <Statistic
+                          title="Выполнено"
+                          value={userTasks.filter(task => task.status === 'done').length || 0}
+                          valueStyle={{ color: '#52c41a' }}
+                          prefix={<CheckCircleOutlined />}
+                        />
+                      </Col>
+                    </Row>
+                  </Card>
+                </Col>
+              </>
+            )}
           </Row>
 
           {/* Списки данных */}
@@ -499,7 +633,7 @@ export function HomePage() {
 
             {/* Мои задачи - для всех кроме админов */}
             {user && user.role !== 'admin' && (
-              <Col xs={24} lg={user.role === 'employee' ? 12 : 8}>
+              <Col xs={24} lg={user.role === 'employee' ? 12 : (user.role === 'head' ? 12 : 8)}>
                 <Card
                   title="Мои задачи"
                   size="small"
@@ -539,9 +673,9 @@ export function HomePage() {
             )}
 
             {/* Заявки */}
-            <Col xs={24} lg={user && user.role !== 'admin' ? (user.role === 'employee' ? 12 : 8) : 12}>
+            <Col xs={24} lg={user && user.role !== 'admin' ? (user.role === 'employee' || user.role === 'head' ? 12 : 8) : 12}>
               <Card
-                title={user?.role === 'employee' ? 'Мои заявки' : 'Последние заявки'}
+                title={user?.role === 'employee' ? 'Мои заявки' : (user?.role === 'head' ? 'Заявки отдела' : 'Последние заявки')}
                 size="small"
                 extra={
                   <Button

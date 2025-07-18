@@ -1,7 +1,6 @@
 import { Fragment, useState } from 'react';
 import requestsService from '../../services/requests.service';
 import type { Request } from '../../types/request.types';
-import Comments from '../Comments/Comments';
 import StatusSelector from '../StatusSelector/StatusSelector';
 import { useAuthStore } from '../../stores/auth.store';
 import { getPriorityCSSColor, getPriorityText, getRequestTypeText } from '../../utils/status.utils';
@@ -13,7 +12,6 @@ interface RequestsTableProps {
 }
 
 function RequestsTable({ requests, onRequestUpdate }: RequestsTableProps) {
-  const [showComments, setShowComments] = useState<{ requestId: number; visible: boolean }>({ requestId: 0, visible: false });
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
   const { user: currentUser } = useAuthStore();
@@ -37,13 +35,6 @@ function RequestsTable({ requests, onRequestUpdate }: RequestsTableProps) {
     }
   };
 
-  const handleShowComments = (requestId: number) => {
-    setShowComments({ requestId, visible: true });
-  };
-
-  const handleCloseComments = () => {
-    setShowComments({ requestId: 0, visible: false });
-  };
 
   const toggleRowExpansion = (requestId: number) => {
     const newExpanded = new Set(expandedRows);
@@ -132,17 +123,6 @@ function RequestsTable({ requests, onRequestUpdate }: RequestsTableProps) {
                       {formatDate(request.createdAt)}
                     </span>
                   </td>
-                  <td>
-                    <div className="actions">
-                      <button
-                        className="action-button comment-button"
-                        onClick={() => handleShowComments(request.id)}
-                        title="Комментарии"
-                      >
-                        💬
-                      </button>
-                    </div>
-                  </td>
                 </tr>
 
                 {expandedRows.has(request.id) && (
@@ -197,13 +177,6 @@ function RequestsTable({ requests, onRequestUpdate }: RequestsTableProps) {
           </div>
         )}
       </div>
-
-      <Comments
-        type="request"
-        itemId={showComments.requestId}
-        isVisible={showComments.visible}
-        onClose={handleCloseComments}
-      />
     </div>
   );
 };

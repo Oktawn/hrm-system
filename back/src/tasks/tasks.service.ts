@@ -278,7 +278,6 @@ export class TasksService {
       throw createError(404, "Employee not found");
     }
 
-    // Проверяем права на изменение статуса
     const isCreator = task.creator?.id === employee.id;
     const isAssignee = task.assignees.some(assignee => assignee.id === employee.id);
     const isManager = ['admin', 'hr', 'manager'].includes(employee.user.role);

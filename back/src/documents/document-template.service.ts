@@ -7,21 +7,14 @@ export class DocumentTemplateService {
   private generatedDocsPath = path.join(__dirname, '../../uploads/documents');
 
   constructor() {
-    // Создаем папку для сгенерированных документов если её нет
     fs.ensureDirSync(this.generatedDocsPath);
   }
 
-  /**
-   * Получить путь к шаблону по типу документа
-   */
   getTemplatePath(documentType: DocumentTypeEnum): string {
     const templateFileName = `${documentType}.txt`;
     return path.join(this.templatesPath, templateFileName);
   }
 
-  /**
-   * Загрузить шаблон документа
-   */
   async loadTemplate(documentType: DocumentTypeEnum): Promise<string> {
     const templatePath = this.getTemplatePath(documentType);
 
@@ -32,13 +25,9 @@ export class DocumentTemplateService {
     return await fs.readFile(templatePath, 'utf-8');
   }
 
-  /**
-   * Заполнить шаблон данными
-   */
   fillTemplate(template: string, data: Record<string, any>): string {
     let filledTemplate = template;
 
-    // Заменяем все плейсхолдеры вида {key} на соответствующие значения
     for (const [key, value] of Object.entries(data)) {
       const placeholder = `{${key}}`;
       const replacement = value !== null && value !== undefined ? String(value) : '';
@@ -48,25 +37,17 @@ export class DocumentTemplateService {
     return filledTemplate;
   }
 
-  /**
-   * Сгенерировать документ на основе шаблона
-   */
   async generateDocument(
     documentType: DocumentTypeEnum,
     templateData: Record<string, any>,
     documentId: number
   ): Promise<{ filePath: string; fileUrl: string; content: string }> {
-    // Загружаем шаблон
     const template = await this.loadTemplate(documentType);
-
-    // Заполняем шаблон данными
     const content = this.fillTemplate(template, templateData);
 
-    // Генерируем имя файла
     const fileName = `document_${documentId}_${Date.now()}.txt`;
     const filePath = path.join(this.generatedDocsPath, fileName);
 
-    // Сохраняем документ
     await fs.writeFile(filePath, content, 'utf-8');
 
     const fileUrl = `/api/uploads/download/${fileName}`;
@@ -82,7 +63,6 @@ export class DocumentTemplateService {
     const currentDate = new Date();
     const documentNumber = `№ ${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${Math.floor(Math.random() * 10000)}`;
 
-    // Определяем пол сотрудника для правильного склонения
     const gender = this.determineGender(employee.firstName, employee.middleName);
     const genderEnding = gender === 'male' ? '' : 'а';
 
@@ -156,7 +136,6 @@ export class DocumentTemplateService {
   private getTypeSpecificData(employee: any, request: any): Record<string, any> {
     const data: Record<string, any> = {};
 
-    // Зарплатные данные (для справок о доходах)
     data.baseSalary = employee.position?.baseSalary || 'Не указан';
     data.averageSalary = 'По запросу';
     data.averageSalaryYear = 'По запросу';
@@ -164,7 +143,6 @@ export class DocumentTemplateService {
     data.paymentSystem = 'Оклад';
     data.paymentConditions = '';
 
-    // Трудовые данные
     data.contractType = 'Трудовой договор';
     data.contractDate = employee.hireDate ? this.formatDate(employee.hireDate) : '';
     data.workSchedule = '5-дневная рабочая неделя, 8-часовой рабочий день';
@@ -172,7 +150,6 @@ export class DocumentTemplateService {
     data.employmentStatus = 'Работает по настоящее время';
     data.additionalEmploymentInfo = '';
 
-    // Отпускные данные
     data.vacationType = 'Ежегодный оплачиваемый отпуск';
     data.vacationStartDate = request?.startDate ? this.formatDate(request.startDate) : '';
     data.vacationEndDate = request?.endDate ? this.formatDate(request.endDate) : '';
@@ -184,7 +161,6 @@ export class DocumentTemplateService {
     data.annualVacationDays = '28';
     data.vacationConditions = '';
 
-    // Медицинские данные
     data.medicalInfo = '';
     data.sickLeaveStartDate = '';
     data.sickLeaveEndDate = '';
@@ -195,7 +171,6 @@ export class DocumentTemplateService {
     data.additionalMedicalInfo = '';
     data.workRecommendations = '';
 
-    // Персональные данные
     data.education = 'По запросу';
     data.specialty = 'По запросу';
     data.workHistory = '';
@@ -203,10 +178,8 @@ export class DocumentTemplateService {
     data.trainingHistory = '';
     data.additionalPersonalInfo = '';
 
-    // Дополнительные условия контракта
     data.additionalContractConditions = '';
 
-    // Прочие документы
     data.documentTitle = request?.title || 'Документ';
     data.documentContent = request?.description || '';
 

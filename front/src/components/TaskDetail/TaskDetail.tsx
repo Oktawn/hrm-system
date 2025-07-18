@@ -8,8 +8,6 @@ import {
   Select,
   Card,
   Divider,
-  List,
-  Avatar,
   Input,
   Form,
   DatePicker,
@@ -21,23 +19,18 @@ import {
   ClockCircleOutlined,
   EditOutlined,
   SaveOutlined,
-  CloseOutlined,
-  DownloadOutlined,
-  EyeOutlined
+  CloseOutlined
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/auth.store';
 import tasksAPI, { type Task } from '../../services/tasks.service';
 import employeesAPI from '../../services/employees.service';
-import { commentsService } from '../../services/comments.service';
-import { type IComment, type ICreateComment } from '../../services/comments.service';
-import { api } from '../../services/auth.service';
 import StatusSelector from '../StatusSelector/StatusSelector';
 import FileUpload from '../FileUpload/FileUpload';
-import SimpleFileUpload from '../SimpleFileUpload/SimpleFileUpload';
-import { getPriorityColor, getPriorityText } from '../../utils/status.utils';
+import { getPriorityColor, getPriorityText, TaskPriorityEnum } from '../../utils/status.utils';
 import dayjs from 'dayjs';
 import './TaskDetail.css';
 import type { Employee } from '../../types/employee.types';
+import Comments from '../Comments/Comments';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -54,11 +47,8 @@ export function TaskDetail({ taskId, visible, onClose, onTaskUpdate }: TaskDetai
   const { user } = useAuthStore();
   const [task, setTask] = useState<Task | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [comments, setComments] = useState<IComment[]>([]);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [newComment, setNewComment] = useState('');
-  const [commentAttachments, setCommentAttachments] = useState<File[]>([]);
   const [attachments, setAttachments] = useState<any[]>([]);
   const [form] = Form.useForm();
 
@@ -95,24 +85,12 @@ export function TaskDetail({ taskId, visible, onClose, onTaskUpdate }: TaskDetai
     }
   };
 
-  const fetchComments = useCallback(async () => {
-    if (!taskId) return;
-
-    try {
-      const data = await commentsService.getCommentsByTask(taskId);
-      setComments(data);
-    } catch (error) {
-      console.error('Ошибка загрузки комментариев:', error);
-    }
-  }, [taskId]);
-
   useEffect(() => {
     if (visible && taskId) {
       fetchTaskDetails();
       fetchEmployees();
-      fetchComments();
     }
-  }, [visible, taskId, fetchTaskDetails, fetchComments]);
+  }, [visible, taskId, fetchTaskDetails]);
 
   const handleStatusChange = async (newStatus: string) => {
     if (!task) return;
@@ -150,92 +128,12 @@ export function TaskDetail({ taskId, visible, onClose, onTaskUpdate }: TaskDetai
     }
   };
 
-  const handleAddComment = async () => {
-    if (!newComment.trim() || !task) return;
-
-    try {
-      const commentData: ICreateComment = {
-        content: newComment,
-        type: 'task',
-        taskId: task.id
-      };
-
-      if (commentAttachments.length > 0) {
-        await commentsService.createCommentWithFiles(commentData, commentAttachments);
-      } else {
-        await commentsService.createComment(commentData);
-      }
-
-      setNewComment('');
-      setCommentAttachments([]);
-      fetchComments();
-      message.success('Комментарий добавлен');
-    } catch (error) {
-      console.error('Ошибка добавления комментария:', error);
-      message.error('Не удалось добавить комментарий');
-    }
-  };
-
   const canEdit = () => {
     if (!user || !task || !user.employeeId) return false;
     const isCreator = task.creator.id === user.employeeId;
     const isAssignee = task.assignees.some(a => a.id === user.employeeId);
     const isManager = ['admin', 'hr', 'manager'].includes(user.role);
     return isCreator || isAssignee || isManager;
-  };
-
-  const handleDownload = async (filename: string) => {
-    try {
-      const response = await api.get(`/uploads/download/${filename}`, {
-        responseType: 'blob'
-      });
-
-      const blob = new Blob([response.data]);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Ошибка скачивания файла:', error);
-      message.error('Не удалось скачать файл');
-    }
-  };
-
-  const handleView = async (filename: string) => {
-    try {
-      const response = await api.get(`/uploads/view/${filename}`, {
-        responseType: 'blob'
-      });
-
-      const contentType = response.headers['content-type'] || 'application/octet-stream';
-      
-      const blob = new Blob([response.data], { type: contentType });
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
-      }, 1000);
-    } catch (error) {
-      console.error('Ошибка просмотра файла:', error);
-      message.error('Не удалось открыть файл');
-    }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const isImage = (mimetype?: string) => {
-    return mimetype && mimetype.startsWith('image/');
   };
 
   if (!task) return null;
@@ -275,10 +173,11 @@ export function TaskDetail({ taskId, visible, onClose, onTaskUpdate }: TaskDetai
 
             <Form.Item name="priority" label="Приоритет">
               <Select>
-                <Option value="low">Низкий</Option>
-                <Option value="medium">Средний</Option>
-                <Option value="high">Высокий</Option>
-                <Option value="critical">Критический</Option>
+                {Object.values(TaskPriorityEnum).map(priority => (
+                  <Option key={priority} value={priority}>
+                    {getPriorityText(priority)}
+                  </Option>
+                ))}
               </Select>
             </Form.Item>
 
@@ -404,104 +303,10 @@ export function TaskDetail({ taskId, visible, onClose, onTaskUpdate }: TaskDetai
 
             <Divider>Комментарии</Divider>
 
-            <div className="comments-section">
-              <List
-                dataSource={comments}
-                renderItem={(comment) => (
-                  <List.Item>
-                    <List.Item.Meta
-                      avatar={<Avatar icon={<UserOutlined />} />}
-                      title={
-                        <Space>
-                          <Text strong>
-                            {comment.author.firstName} {comment.author.lastName}
-                          </Text>
-                          <Text type="secondary" style={{ fontSize: '12px' }}>
-                            {new Date(comment.created_at).toLocaleString()}
-                          </Text>
-                        </Space>
-                      }
-                      description={
-                        <div>
-                          <div>{comment.content}</div>
-                          {comment.attachments && comment.attachments.length > 0 && (
-                            <div style={{ marginTop: 8 }}>
-                              <Text strong style={{ fontSize: '12px', color: '#666' }}>
-                                Вложения:
-                              </Text>
-                              <div style={{ marginTop: 4 }}>
-                                {comment.attachments.map((attachment: any, index: number) => (
-                                  <div key={index} style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    marginBottom: 4,
-                                    padding: '4px 8px',
-                                    backgroundColor: '#f5f5f5',
-                                    borderRadius: '4px',
-                                    fontSize: '12px'
-                                  }}>
-                                    <span style={{ flex: 1, marginRight: 8 }}>
-                                      {attachment.originalName} ({formatFileSize(attachment.size)})
-                                    </span>
-                                    <div style={{ display: 'flex', gap: 4 }}>
-                                      {isImage(attachment.mimetype) && (
-                                        <Button
-                                          type="text"
-                                          size="small"
-                                          icon={<EyeOutlined />}
-                                          onClick={() => handleView(attachment.filename)}
-                                          title="Просмотр"
-                                        />
-                                      )}
-                                      <Button
-                                        type="text"
-                                        size="small"
-                                        icon={<DownloadOutlined />}
-                                        onClick={() => handleDownload(attachment.filename)}
-                                        title="Скачать"
-                                      />
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
-
-              <div className="add-comment" style={{ marginTop: 16 }}>
-                <div style={{ marginBottom: 12 }}>
-                  <Input.TextArea
-                    placeholder="Добавить комментарий..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    rows={3}
-                  />
-                </div>
-
-                <div style={{ marginBottom: 12 }}>
-                  <SimpleFileUpload
-                    files={commentAttachments}
-                    onFilesChange={setCommentAttachments}
-                    maxFiles={3}
-                    maxSize={10 * 1024 * 1024}
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
-                  />
-                </div>
-
-                <Button
-                  type="primary"
-                  onClick={handleAddComment}
-                  disabled={!newComment.trim()}
-                >
-                  Отправить
-                </Button>
-              </div>
-            </div>
+            <Comments
+              type="task"
+              itemId={task.id}
+            />
           </>
         )}
       </div>

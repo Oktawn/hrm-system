@@ -2,6 +2,7 @@ import createError from "http-errors";
 import { commentRepository, employeeRepository, taskRepository, requestRepository } from "../db/db-rep";
 import { ICreateComment, IUpdateComment } from "./comments.interface";
 import { BotPayload, TokenPayload } from "../auth/auth.interface";
+import { UserRoleEnum } from "../commons/enums/enums";
 
 export class CommentsService {
 
@@ -69,12 +70,19 @@ export class CommentsService {
       throw createError(404, "Comment not found");
     }
 
-    if (comment.author.user.id !== user.userId) {
-      throw createError(403, "You can only edit your own comments");
+
+    if (comment.author.user.id !== user.userId ||
+      user.role !== UserRoleEnum.EMPLOYEE) {
+      throw createError(403, "You can only edit your own comments or you must be a manager");
     }
 
     comment.content = commentData.content;
-    return await commentRepository.save(comment);
+    const savedComment = await commentRepository.save(comment);
+
+    return await commentRepository.findOne({
+      where: { id: savedComment.id },
+      relations: ['author']
+    });
   }
 
   async deleteComment(commentId: number, user: TokenPayload) {
@@ -87,7 +95,7 @@ export class CommentsService {
       throw createError(404, "Comment not found");
     }
 
-    if (comment.author.user.id !== user.userId && user.role !== 'admin' && user.role !== 'hr' && user.role !== 'manager') {
+    if (comment.author.user.id !== user.userId || user.role !== "employee") {
       throw createError(403, "You can only delete your own comments or you must be a manager");
     }
 

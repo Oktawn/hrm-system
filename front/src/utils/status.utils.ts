@@ -114,7 +114,6 @@ export const getStatusText = (status: string, type: 'task' | 'request'): string 
 };
 
 
-
 export const getRoleColor = (role: string) => {
   switch (role) {
     case 'admin': return 'red';
@@ -194,6 +193,11 @@ export const getDocumentTypeColor = (type: string): string => {
     default: return 'default';
   }
 };
+
+/** 
+ * Все перечисления статусов, ролей и типов заявок
+ * Используются для унификации и упрощения работы с типами в приложении
+ */
 
 export const UserRoleEnum = {
   ADMIN: "admin",

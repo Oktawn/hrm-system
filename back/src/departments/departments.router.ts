@@ -8,6 +8,7 @@ const departmentsController = new DepartmentsController();
 
 departmentsRouter.get("/", authMiddleware(), departmentsController.getAllDepartments);
 departmentsRouter.get("/stats", authMiddleware(), departmentsController.getDepartmentStats);
+departmentsRouter.get("/employee/:employeeId/stats", authMiddleware(), departmentsController.getEmployeeDepartmentStats);
 departmentsRouter.get("/:id", authMiddleware(), departmentsController.getDepartmentById);
 departmentsRouter.post("/", authMiddleware([UserRoleEnum.ADMIN, UserRoleEnum.HR]), departmentsController.createDepartment);
 departmentsRouter.put("/:id", authMiddleware([UserRoleEnum.ADMIN, UserRoleEnum.HR]), departmentsController.updateDepartment);

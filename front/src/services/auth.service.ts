@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from 'axios';
 import type { AxiosResponse } from 'axios';
 import type { LoginRequest, LoginResponse } from '../types/auth.types';

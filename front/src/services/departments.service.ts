@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { api } from './auth.service';
 
 export interface Department {
@@ -29,6 +28,11 @@ class DepartmentsService {
 
   async getStats(): Promise<{ success: boolean; data: DepartmentStats[] }> {
     const response = await api.get('/departments/stats');
+    return response.data;
+  }
+
+  async getEmployeeDepartmentStats(employeeId: string): Promise<{ success: boolean; data: DepartmentStats }> {
+    const response = await api.get(`/departments/employee/${employeeId}/stats`);
     return response.data;
   }
 

@@ -1,10 +1,10 @@
 import { api } from './auth.service';
 
 export interface IComment {
-  id: string;
+  id: number;
   content: string;
   type: 'task' | 'request';
-  author: {
+  author?: {
     id: string;
     firstName: string;
     lastName: string;
@@ -30,7 +30,7 @@ export interface IUpdateComment {
 class CommentsService {
   async createComment(commentData: ICreateComment): Promise<IComment> {
     const response = await api.post('/comments', commentData);
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   }
 
   async createCommentWithFiles(commentData: ICreateComment, files: File[]): Promise<IComment> {
@@ -65,12 +65,12 @@ class CommentsService {
     return response.data;
   }
 
-  async updateComment(commentId: string, commentData: IUpdateComment): Promise<IComment> {
+  async updateComment(commentId: number, commentData: IUpdateComment): Promise<IComment> {
     const response = await api.put(`/comments/${commentId}`, commentData);
     return response.data;
   }
 
-  async deleteComment(commentId: string): Promise<void> {
+  async deleteComment(commentId: number): Promise<void> {
     await api.delete(`/comments/${commentId}`);
   }
 }

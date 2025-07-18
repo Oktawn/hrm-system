@@ -12,7 +12,7 @@ export interface IUpdateComment {
 }
 
 export interface ICommentResponse {
-  id: string;
+  id: number;
   content: string;
   type: 'task' | 'request';
   author: {
