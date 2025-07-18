@@ -1,17 +1,18 @@
 import { createConversation } from "@grammyjs/conversations";
 import { Composer, InlineKeyboard, Keyboard } from "grammy";
 import { RequestComposerConversation, RequestContext, RequestConversation } from "../commons/context.types";
-import { RequestTypeEnum, TaskPriorityEnum, UserRoleEnum } from "../commons/enums";
+import { RequestStatusEnum, RequestTypeEnum, TaskPriorityEnum, UserRoleEnum } from "../commons/enums";
 import { RequestsService } from "../services/requests.service";
 import { CreateRequestType, DataTelegramm, RequestType } from "../commons/types";
 import { envConfig } from "../config/config";
 import { showEmployee } from "./tasks.bot";
-import { getPriorityText, getRequestStatusText, getRequestTypeText } from "../commons/status.util";
+import { escapeSpecialChars, getPriorityText, getRequestStatusText, getRequestTypeText } from "../commons/status.util";
 import dedent from "dedent";
-import { priorityKeyboard, requestHRKeyboard, requestKeyboard, requestTypeKeyboard } from "./keyboards.bot";
+import { priorityKeyboard, requestHRKeyboard, requestKeyboard, requestTypeKeyboard, statusRequestKeyboard } from "./keyboards.bot";
 import dayjs from "dayjs";
 import { NextFunction } from "express";
 import { TasksService } from "../services/tasks.service";
+import moment from "moment";
 
 export const requestsComposer = new Composer<RequestComposerConversation>();
 const requestsService = new RequestsService();
@@ -62,13 +63,13 @@ function showRequests(request: RequestType) {
   const url = `${envConfig.get("ORIGIN_FRONTEND")}/requests?request=${request.id}`;
   const msg = dedent`
     Задача: ${request.id}
-    Название: ${request.title || '-'}
-    Описание: ${request.description || '-'}
-    Тип: ${getRequestTypeText(request.type) || '-'}
-    Создатель: ${showEmployee(request.creator) || '-'}
-    Исполнитель: ${showEmployee(request.assignee) || '-'}
-    Статус: ${getRequestStatusText(request.status) || '-'}
-    Приоритет: ${getPriorityText(request.priority) || '-'}
+    Название: ${escapeSpecialChars(request.title) || '\-'}
+    Описание: ${escapeSpecialChars(request.description) || '\-'}
+    Тип: ${getRequestTypeText(request.type) || '\-'}
+    Создатель: ${escapeSpecialChars(showEmployee(request.creator)) || '\-'}
+    Исполнитель: ${escapeSpecialChars(showEmployee(request.assignee)) || '\-'}
+    Статус: ${getRequestStatusText(request.status) || '\-'}
+    Приоритет: ${getPriorityText(request.priority) || '\-'}
     URL: [внешняя ссылка](${url})`;
   return msg;
 }
@@ -100,14 +101,91 @@ async function createRequest(conv: RequestConversation, ctx: RequestContext, nex
   await ctx.reply(`Выберите тип заявки, которую хотите создать:`, {
     reply_markup: requestTypeKeyboard
   });
-  next();
 }
+
+
+async function createDocumentRequest(conv: RequestConversation, ctx: RequestContext) {
+  let newRequest: CreateRequestType = {
+    type: ctx.callbackQuery?.data || RequestTypeEnum.DOCUMENT,
+    title: getRequestTypeText(RequestTypeEnum.DOCUMENT),
+    description: "",
+    priority: ""
+  };
+  let msgsId = [];
+
+  await ctx.reply(dedent`
+    Создание заявки на документ.
+    Введите, пожалуйста, описание или цель документа:`
+  );
+  newRequest.description = (await conv.waitFor("message:text")).message.text.trim();
+
+  msgsId.push((await ctx.reply("Выберите приоритет заявки:", {
+    reply_markup: priorityKeyboard
+  })).message_id);
+  newRequest.priority = (await conv.waitForCallbackQuery(
+    Object.values(TaskPriorityEnum)
+  )).callbackQuery.data;
+
+  try {
+    await requestsService.createRequest({
+      tgID: ctx.from.id,
+      request: newRequest
+    });
+    await ctx.reply("Заявка на документ успешно создана!");
+  } catch (error) {
+    await ctx.reply(`Ошибка при создании заявки: ${error.message}`);
+  } finally {
+    await Promise.all(msgsId.map((id) =>
+      ctx.api.editMessageReplyMarkup(ctx.chatId, id, {
+        reply_markup: new InlineKeyboard()
+      })));
+  }
+}
+
+async function createCertificateRequest(conv: RequestConversation, ctx: RequestContext) {
+  let newRequest: CreateRequestType = {
+    type: ctx.callbackQuery?.data || RequestTypeEnum.CERTIFICATE,
+    title: getRequestTypeText(RequestTypeEnum.CERTIFICATE),
+    description: "",
+    priority: ""
+  };
+  let msgsId = [];
+
+  await ctx.reply(dedent`
+    Создание заявки на справку.
+    Введите, пожалуйста, для чего нужна справка или дополнительные детали:`
+  );
+  newRequest.description = (await conv.waitFor("message:text")).message.text.trim();
+
+  msgsId.push((await ctx.reply("Выберите приоритет заявки:", {
+    reply_markup: priorityKeyboard
+  })).message_id);
+  newRequest.priority = (await conv.waitForCallbackQuery(
+    Object.values(TaskPriorityEnum)
+  )).callbackQuery.data;
+
+  try {
+    await requestsService.createRequest({
+      tgID: ctx.from.id,
+      request: newRequest
+    });
+    await ctx.reply("Заявка на справку успешно создана!");
+  } catch (error) {
+    await ctx.reply(`Ошибка при создании заявки: ${error.message}`);
+  } finally {
+    await Promise.all(msgsId.map((id) =>
+      ctx.api.editMessageReplyMarkup(ctx.chatId, id, {
+        reply_markup: new InlineKeyboard()
+      })));
+  }
+}
+
 
 async function createLeaveRequest(conv: RequestConversation, ctx: RequestContext) {
   let newRequest: CreateRequestType = {
     type: ctx.callbackQuery.data,
     title: "",
-    description: "",
+    description: "Оплачиваемый отпуск",
     priority: ""
   }
   let msgsId = [];
@@ -143,8 +221,9 @@ async function createLeaveRequest(conv: RequestConversation, ctx: RequestContext
     await ctx.reply(isValid.msg);
     return;
   }
-  newRequest.startDate = new Date(startInput);
-  newRequest.endDate = new Date(endInput);
+  newRequest.startDate = moment(startInput, "DD.MM.YYYY").toDate();
+  newRequest.endDate = moment(endInput, "DD.MM.YYYY").toDate();
+  newRequest.duration = moment(newRequest.endDate).diff(moment(newRequest.startDate), 'days') + 1;
   msgsId.push((await ctx.reply("Выберите приоритет заявки:", {
     reply_markup: priorityKeyboard
   })).message_id);
@@ -158,12 +237,13 @@ async function createLeaveRequest(conv: RequestConversation, ctx: RequestContext
       request: newRequest
     });
     await ctx.reply("Заявка на отпуск успешно создана!");
+  } catch (error) {
+    await ctx.reply(`Ошибка при создании заявки: ${error.message}`);
+  } finally {
     await Promise.all(msgsId.map((id) =>
       ctx.api.editMessageReplyMarkup(ctx.chatId, id, {
         reply_markup: new InlineKeyboard()
       })));
-  } catch (error) {
-    await ctx.reply(`Ошибка при создании заявки: ${error.message}`);
   }
   return;
 }
@@ -200,12 +280,13 @@ async function createSickRequest(conv: RequestConversation, ctx: RequestContext)
       request: newRequest
     });
     await ctx.reply("Заявка на больничный успешно создана!");
+  } catch (error) {
+    await ctx.reply(`Ошибка при создании заявки: ${error.message}`);
+  } finally {
     await Promise.all(msgsId.map((id) =>
       ctx.api.editMessageReplyMarkup(ctx.chatId, id, {
         reply_markup: new InlineKeyboard()
       })));
-  } catch (error) {
-    await ctx.reply(`Ошибка при создании заявки: ${error.message}`);
   }
 }
 
@@ -220,7 +301,7 @@ async function addComment(conv: RequestConversation, ctx: RequestContext) {
     `, {
     reply_markup: inKeyboard
   })).message_id;
-  const type = (await conv.waitForCallbackQuery(["task", "request"])).callbackQuery.data;
+  const type = (await conv.waitForCallbackQuery(["task", "request"])).callbackQuery.data as "task" | "request";
   await ctx.reply(`Введите ID ${type.toLowerCase() === "task" ? "задачи" : "заявки"} для добавления комментария:`);
   const requestId = (await conv.waitFor("message:text")).message.text.trim();
 
@@ -257,9 +338,9 @@ async function addComment(conv: RequestConversation, ctx: RequestContext) {
       };
     }
     await requestsService.addComment({
-      content: comment.message?.text ? comment.message.text.trim() : comment.message.caption?.trim(),
+      content: comment.message?.text ? comment.message.text.trim() : comment.message.caption?.trim() ? comment.message.caption.trim() : file.fileName,
       tgID: ctx.from.id,
-      type: type === "Заявка" ? "request" : "task",
+      type: type,
       requestId: parseInt(requestId),
       file: file
     })
@@ -334,11 +415,73 @@ async function getRequestsByPriority(conv: RequestConversation, ctx: RequestCont
   return;
 }
 
+async function getRequestsById(conv: RequestConversation, ctx: RequestContext) {
+  await ctx.reply("Введите ID заявки для просмотра:");
+  const requestId = (await conv.waitFor("message:text")).message.text.trim();
+
+  if (!requestId) {
+    await ctx.reply("Пожалуйста, укажите ID заявки.");
+    return;
+  }
+  try {
+    const request = await requestsService.getRequestsById({
+      tgID: ctx.from.id,
+      id: parseInt(requestId)
+    });
+    if (request) {
+      let msg = showRequests(request);
+      await ctx.reply(msg, {
+        parse_mode: "MarkdownV2",
+      });
+    } else {
+      await ctx.reply("Заявка не найдена.");
+    }
+  } catch (error) {
+    ctx.reply("Произошла ошибка при получении заявки.");
+  }
+  return;
+};
+
+async function getRequestsByStatus(conv: RequestConversation, ctx: RequestContext) {
+  await ctx.reply("Выберите статус заявки", {
+    reply_markup: statusRequestKeyboard
+  });
+  const ans = await conv.waitForCallbackQuery(Object.values(RequestStatusEnum) as string[]);
+  try {
+    const result = await requestsService.getRequestsByStatus({
+      tgID: ctx.from.id,
+      status: ans.callbackQuery.data
+    });
+    const dataRequest = {
+      currentPage: 0,
+      totalPages: Math.ceil((Array.isArray(result) ? result.length : 1) / dataOnPage),
+      requests: Array.isArray(result) ? result : [result]
+    }
+    await conv.external((ctx) => {
+      ctx.session.requests = dataRequest;
+    });
+    if (dataRequest.requests.length === 0) {
+      await ctx.reply("Заявок с таким статусом не найдено.");
+    } else {
+      await ctx.reply(`Заявки со статусом "${getRequestStatusText(ans.callbackQuery.data)}": `, {
+        reply_markup: listRequests(ctx),
+      });
+    }
+  } catch (error) {
+    ctx.reply("Произошла ошибка при получении заявок.");
+  }
+  return;
+}
+
 requestsComposer.use(createConversation(addComment));
 requestsComposer.use(createConversation(getRequests));
 requestsComposer.use(createConversation(createRequest));
+requestsComposer.use(createConversation(createDocumentRequest));
+requestsComposer.use(createConversation(createCertificateRequest));
 requestsComposer.use(createConversation(createLeaveRequest));
 requestsComposer.use(createConversation(createSickRequest));
+requestsComposer.use(createConversation(getRequestsById));
+requestsComposer.use(createConversation(getRequestsByStatus));
 requestsComposer.use(createConversation(findEmployeeRequests));
 requestsComposer.use(createConversation(getRequestsByPriority));
 
@@ -362,6 +505,7 @@ requestsComposer.on("callback_query:data", async (ctx, next) => {
       await ctx.conversation.enter("createRequest");
       break;
     case "leave_vacation":
+    case "leave_personal":
       await ctx.conversation.enter("createLeaveRequest");
       break;
     case "leave_sick":
@@ -370,11 +514,23 @@ requestsComposer.on("callback_query:data", async (ctx, next) => {
     case "add_comment":
       await ctx.conversation.enter("addComment");
       break;
-    case "requests_find_employee":
+    case "requests_by_employee":
       await ctx.conversation.enter("findEmployeeRequests");
       break;
-    case "requests_find_priority":
+    case "document":
+      await ctx.conversation.enter("createDocumentRequest");
+      break;
+    case "certificate":
+      await ctx.conversation.enter("createCertificateRequest");
+      break;
+    case "requests_by_priority":
       await ctx.conversation.enter("getRequestsByPriority");
+      break;
+    case "requests_by_id":
+      await ctx.conversation.enter("getRequestsById");
+      break;
+    case "requests_by_status":
+      await ctx.conversation.enter("getRequestsByStatus");
       break;
     case "requests_prev":
       if (ctx.session.requests.currentPage > 0) {
@@ -401,8 +557,6 @@ requestsComposer.on("callback_query:data", async (ctx, next) => {
         })), {
           parse_mode: "MarkdownV2",
         });
-      } else {
-        await ctx.reply("Неизвестная команда.");
       }
       break;
   }
@@ -413,8 +567,8 @@ requestsComposer.on("callback_query:data", async (ctx, next) => {
 
 
 function validateLeaveDates(startInput: string, endInput: string, type?: string): { msg: string, valid: boolean } {
-  const startDate = dayjs(startInput, "DD.MM.YYYY");
-  const endDate = dayjs(endInput, "DD.MM.YYYY");
+  const startDate = moment(startInput, "DD.MM.YYYY");
+  const endDate = moment(endInput, "DD.MM.YYYY");
   if (!startDate.isValid() || !endDate.isValid()) {
     return { msg: "Некорректный формат даты. Используйте дд.мм.гггг-дд.мм.гггг", valid: false };
   }
@@ -431,10 +585,10 @@ function validateLeaveDates(startInput: string, endInput: string, type?: string)
   if (type === "leave_vacation" && startDate.diff(endDate, 'day') > 30) {
     return { msg: "Максимальная продолжительность отпуска - 30 дней.", valid: false };
   }
-  if (type === "leave_vacation" && startDate.diff(dayjs(), 'day') < 30) {
+  if (type === "leave_vacation" && startDate.diff(moment(), 'day') < 30) {
     return { msg: "Отпуск должен быть запланирован не менее чем за 30 дней.", valid: false };
   }
-  if (type === "leave_personal" && startDate.diff(dayjs(), 'day') < 3) {
+  if (type === "leave_personal" && startDate.diff(moment(), 'day') < 3) {
     return { msg: "Неоплачиваемый отпуск должен быть запланирован не менее чем за 3 дня.", valid: false };
   }
   if (type === "leave_personal" && startDate.diff(endDate, 'day') > 14) {

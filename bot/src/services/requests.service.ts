@@ -6,7 +6,7 @@ export class RequestsService {
 
   async createRequest(body: DataRequest): Promise<void> {
     try {
-      await api.post("/requests/bot/", body.request, {
+      await api.post("/requests/bot/create", body.request, {
         headers: {
           'x-telegram-id': body.tgID
         }
@@ -153,19 +153,7 @@ export class RequestsService {
       throw error;
     }
   }
-  async getDepartmentRequests(body: DataRequest): Promise<RequestType[]> {
-    try {
-      const response = await api.get(`/requests/bot/department/${body.departmentName}`, {
-        headers: {
-          'x-telegram-id': body.tgID
-        }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Ошибка при получении запросов по отделу:', error.response?.data || error.message);
-      throw error;
-    }
-  }
+
 
   async changeRequestStatus(body: DataRequest): Promise<void> {
     try {

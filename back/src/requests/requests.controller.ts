@@ -18,7 +18,6 @@ export class RequestsController {
 
       try {
         const requestData = req.body;
-
         let attachments = [];
         if (req.files && Array.isArray(req.files) && req.files.length > 0) {
           attachments = (req.files as Express.Multer.File[]).map(createAttachment);

@@ -5,7 +5,7 @@ import { createConversation } from "@grammyjs/conversations";
 import { Assignee, DataTask, Task } from "../commons/types";
 import dedent from "dedent";
 import { TaskPriorityEnum, TaskStatusEnum } from "../commons/enums";
-import { getPriorityText, getTaskStatusText } from "../commons/status.util";
+import { escapeSpecialChars, getPriorityText, getTaskStatusText } from "../commons/status.util";
 import { envConfig } from "../config/config";
 import { TaskDataSession } from "../commons/session.type";
 import { priorityKeyboard, statusTaskKeyboard, tasksInlineKeyboard } from "./keyboards.bot";
@@ -84,10 +84,10 @@ function showTask(task: Task) {
   const url = `${envConfig.get("ORIGIN_FRONTEND")}/tasks?task=${task.id}`;
   const msg = dedent`
     Задача: ${task.id}
-    Название: ${task.title || '-'}
-    Описание: ${task.description || '-'}
-    Создатель: ${showEmployee(task.creator) || '-'}
-    Исполнители: ${task.assignees && task.assignees.length > 0 ? task.assignees.map(showEmployee).join(", ") : '-'}
+    Название: ${escapeSpecialChars(task.title) || '-'}
+    Описание: ${escapeSpecialChars(task.description) || '-'}
+    Создатель: ${escapeSpecialChars(showEmployee(task.creator)) || '-'}
+    Исполнители: ${task.assignees && task.assignees.length > 0 ? task.assignees.map(a => escapeSpecialChars(showEmployee(a))).join(", ") : '-'}
     Статус: ${getTaskStatusText(task.status) || '-'}
     Приоритет: ${getPriorityText(task.priority) || '-'}
     URL: [внешняя ссылка](${url})`;

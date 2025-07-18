@@ -44,3 +44,13 @@ export const getRequestTypeText = (type: string): string => {
     default: return type;
   }
 };
+
+export const escapeSpecialChars = (text: string) => {
+  const specialChars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
+  return text.split('').map(char => {
+    if (specialChars.includes(char)) {
+      return '\\' + char;
+    }
+    return char;
+  }).join('');
+}
