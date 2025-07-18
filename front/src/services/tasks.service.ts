@@ -53,7 +53,7 @@ export interface TaskFilter {
   priority?: string;
   deadline?: string;
   creatorId?: string;
-  assigneesId?: string[];
+  assigneesId?: string[] | string;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
 }

@@ -27,6 +27,7 @@ export interface IRequestFilter {
   description?: string;
   title?: string;
   employeeId?: string;
+  creatorId?: string;
   startDateFrom?: Date;
   startDateTo?: Date;
   endDateFrom?: Date;

@@ -130,6 +130,9 @@ export class RequestsService {
     if (filter.employeeId) {
       queryB.andWhere("creator.id = :employeeId", { employeeId: filter.employeeId });
     }
+    if (filter.creatorId) {
+      queryB.andWhere("creator.id = :creatorId", { creatorId: filter.creatorId });
+    }
 
     if (filter.startDateFrom) {
       queryB.andWhere("request.startDate >= :startDateFrom", { startDateFrom: filter.startDateFrom });
@@ -142,6 +145,12 @@ export class RequestsService {
     }
     if (filter.endDateTo) {
       queryB.andWhere("request.endDate <= :endDateTo", { endDateTo: filter.endDateTo });
+    }
+    if (filter.title) {
+      queryB.andWhere("LOWER(request.title) LIKE :title", { title: `%${filter.title.toLowerCase()}%` });
+    }
+    if (filter.description) {
+      queryB.andWhere("LOWER(request.description) LIKE :description", { description: `%${filter.description.toLowerCase()}%` });
     }
 
     if (sortBy) {

@@ -128,12 +128,12 @@ export class TasksService {
     queryB.leftJoinAndSelect("task.creator", "creator");
 
     if (data.title) {
-      queryB.andWhere("task.title LIKE :title",
-        { title: `%${data.title}%` });
+      queryB.andWhere("LOWER(task.title) LIKE :title",
+        { title: `%${data.title.toLowerCase()}%` });
     }
     if (data.description) {
-      queryB.andWhere("task.description LIKE :description",
-        { description: `%${data.description}%` });
+      queryB.andWhere("LOWER(task.description) LIKE :description",
+        { description: `%${data.description.toLowerCase()}%` });
     }
     if (data.status) {
       queryB.andWhere("task.status = :status",

@@ -121,7 +121,7 @@ export function TasksPage() {
 
   const fetchEmployees = async () => {
     try {
-      const response = await employeesAPI.getAll();
+      const response = await employeesAPI.getAll({ limit: 1000 });
       if (response.data?.data) {
         setEmployees(response.data.data.map((emp: any) => ({
           id: emp.id,
@@ -135,10 +135,12 @@ export function TasksPage() {
   };
 
   useEffect(() => {
-    fetchTasks(pagination.current, pagination.pageSize, filter);
+    fetchTasks(1, 10, filter);
+  }, [filter, fetchTasks]);
+
+  useEffect(() => {
     fetchEmployees();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchTasks, filter, pagination.current, pagination.pageSize, user]);
+  }, [user]);
 
   useEffect(() => {
     if (myTasksFilter && user?.employeeId && !filter.assigneesId) {
@@ -168,7 +170,7 @@ export function TasksPage() {
     fetchTasks(pagination.current, pagination.pageSize, filter);
   };
 
-  const handleTableChange = (pagination: any, _filters: any, sorter: any) => {
+  const handleTableChange = (paginationInfo: any, _filters: any, sorter: any) => {
     let newSortField = '';
     let newSortOrder: 'ascend' | 'descend' | null = null;
 
@@ -177,20 +179,17 @@ export function TasksPage() {
       newSortOrder = sorter.order;
     }
 
-    const newPagination = {
-      current: pagination.current,
-      pageSize: pagination.pageSize,
-      total: pagination.total,
-    };
-    setPagination(newPagination);
-
     const updatedFilter: TaskFilter = {
       ...filter,
       sortBy: newSortField || undefined,
       sortOrder: newSortOrder === 'ascend' ? 'ASC' : newSortOrder === 'descend' ? 'DESC' : undefined,
     };
 
-    setFilter(updatedFilter);
+    if (paginationInfo.current !== pagination.current || paginationInfo.pageSize !== pagination.pageSize) {
+      fetchTasks(paginationInfo.current, paginationInfo.pageSize, updatedFilter);
+    } else if (JSON.stringify(updatedFilter) !== JSON.stringify(filter)) {
+      setFilter(updatedFilter);
+    }
   };
 
   const columns = [
@@ -309,7 +308,7 @@ export function TasksPage() {
           </div>
 
           <Space style={{ marginBottom: '16px' }}>
-            {!isEmployee && (
+            {isManager && (
               <Input
                 placeholder="Поиск по названию"
                 prefix={<SearchOutlined />}
@@ -343,12 +342,17 @@ export function TasksPage() {
                 </Option>
               ))}
             </Select>
-            {!isEmployee && (
+            {isManager && (
               <Select
                 placeholder="Исполнитель"
                 style={{ width: 200 }}
                 allowClear
                 mode="multiple"
+                showSearch
+                optionFilterProp="children"
+                filterOption={(input, option) =>
+                  (option?.children?.toString().toLowerCase() ?? '').includes(input.toLowerCase())
+                }
                 value={filter.assigneesId}
                 onChange={(value) => setFilter({ ...filter, assigneesId: value })}
               >
@@ -381,11 +385,9 @@ export function TasksPage() {
               showQuickJumper: true,
               showTotal: (total) => `Всего: ${total} задач`,
               onChange: (page, pageSize) => {
-                setPagination(prev => ({ ...prev, current: page, pageSize }));
                 fetchTasks(page, pageSize, filter);
               },
               onShowSizeChange: (_, size) => {
-                setPagination(prev => ({ ...prev, current: 1, pageSize: size }));
                 fetchTasks(1, size, filter);
               },
             }}

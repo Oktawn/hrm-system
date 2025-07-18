@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Layout, Typography, Card, Table, Tag, Space, Button, Input, Select } from 'antd';
 import { PlusOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons';
@@ -66,6 +66,9 @@ export function RequestsPage() {
           filteredRequests = filteredRequests.filter(req =>
             req.title.toLowerCase().includes(currentFilter.title!.toLowerCase())
           );
+        }
+        if (currentFilter.creatorId) {
+          filteredRequests = filteredRequests.filter(req => req.creator?.id === currentFilter.creatorId);
         }
         if (currentFilter.status) {
           filteredRequests = filteredRequests.filter(req => req.status === currentFilter.status);
@@ -140,9 +143,8 @@ export function RequestsPage() {
     }
   }, []);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const debouncedSearch = useCallback(
-    debounce((searchValue: string) => {
+  const debouncedSearch = useMemo(
+    () => debounce((searchValue: string) => {
       setFilter(prev => ({
         ...prev,
         title: searchValue.trim() || undefined
@@ -153,15 +155,24 @@ export function RequestsPage() {
 
   useEffect(() => {
     debouncedSearch(searchText);
+
+    return () => {
+      debouncedSearch.cancel();
+    };
   }, [searchText, debouncedSearch]);
 
   useEffect(() => {
-    fetchRequests(pagination.current, pagination.pageSize, filter);
+    fetchRequests(1, 10, filter);
+  }, [filter, fetchRequests]);
+
+  useEffect(() => {
     if (isManager) {
       fetchEmployees();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.current, pagination.pageSize, filter, user, fetchRequests, fetchEmployees, isManager]);
+  }, [user, isManager, fetchEmployees]);
+
+  useEffect(() => {
+  }, [requests]);
 
   const handleRequestClick = (requestId: number) => {
     setSearchParams({ request: requestId.toString() });
@@ -184,20 +195,17 @@ export function RequestsPage() {
       newSortOrder = sorter.order;
     }
 
-    const newPagination = {
-      current: paginationInfo.current,
-      pageSize: paginationInfo.pageSize,
-      total: paginationInfo.total,
-    };
-    setPagination(newPagination);
-
     const updatedFilter: RequestFilter = {
       ...filter,
       sortBy: newSortField || undefined,
       sortOrder: newSortOrder === 'ascend' ? 'ASC' : newSortOrder === 'descend' ? 'DESC' : undefined,
     };
 
-    setFilter(updatedFilter);
+    if (paginationInfo.current !== pagination.current || paginationInfo.pageSize !== pagination.pageSize) {
+      fetchRequests(paginationInfo.current, paginationInfo.pageSize, updatedFilter);
+    } else if (JSON.stringify(updatedFilter) !== JSON.stringify(filter)) {
+      setFilter(updatedFilter);
+    }
   };
 
   const columns = [
@@ -315,8 +323,13 @@ export function RequestsPage() {
                 allowClear
                 showSearch
                 optionFilterProp="children"
+                filterOption={(input, option) =>
+                  (option?.children?.toString().toLowerCase() ?? '').includes(input.toLowerCase())
+                }
                 value={filter.creatorId}
-                onChange={(value) => setFilter({ ...filter, creatorId: value })}
+                onChange={(value) => {
+                  setFilter({ ...filter, creatorId: value });
+                }}
               >
                 {employees.map(emp => (
                   <Option key={emp.id} value={emp.id}>
@@ -386,10 +399,10 @@ export function RequestsPage() {
               showQuickJumper: true,
               showTotal: (total) => `Всего: ${total} заявок`,
               onChange: (page, pageSize) => {
-                setPagination(prev => ({ ...prev, current: page, pageSize }));
+                fetchRequests(page, pageSize, filter);
               },
               onShowSizeChange: (_, size) => {
-                setPagination(prev => ({ ...prev, current: 1, pageSize: size }));
+                fetchRequests(1, size, filter);
               },
             }}
           />

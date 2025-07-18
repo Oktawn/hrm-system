@@ -19,19 +19,19 @@ export class EmployeesService {
     queryB.leftJoinAndSelect("assignedManager.user", "assignedManagerUser");
 
     if (filter.firstName) {
-      queryB.andWhere("employee.firstName ILIKE :firstName", {
-        firstName: `%${filter.firstName}%`,
+      queryB.andWhere("LOWER(employee.firstName) ILIKE :firstName", {
+        firstName: `%${filter.firstName.toLowerCase()}%`,
       });
     }
     if (filter.lastName) {
-      queryB.andWhere("employee.lastName ILIKE :lastName", {
-        lastName: `%${filter.lastName}%`,
+      queryB.andWhere("LOWER(employee.lastName) ILIKE :lastName", {
+        lastName: `%${filter.lastName.toLowerCase()}%`,
       });
     }
 
     if (filter.email) {
-      queryB.andWhere("user.email ILIKE :email", {
-        email: `%${filter.email}%`,
+      queryB.andWhere("LOWER(user.email) ILIKE :email", {
+        email: `%${filter.email.toLowerCase()}%`,
       });
     }
 

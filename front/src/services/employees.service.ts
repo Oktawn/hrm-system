@@ -22,7 +22,7 @@ export const employeesAPI = {
     positionId?: string;
     isActive?: boolean;
   }): Promise<AxiosResponse<EmployeesResponse>> =>
-    api.get('/employees', { params: { limit: 100, ...params } }),
+    api.get('/employees', { params: { limit: params?.limit || 100, ...params } }),
 
   getById: (id: string): Promise<AxiosResponse<Employee>> =>
     api.get(`/employees/${id}`),
