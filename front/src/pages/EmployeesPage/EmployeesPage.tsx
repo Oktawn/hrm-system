@@ -4,6 +4,7 @@ import { PlusOutlined, SearchOutlined, UserOutlined, EyeOutlined, EditOutlined }
 import { useAuthStore } from '../../stores/auth.store';
 import employeesAPI from '../../services/employees.service';
 import { CreateEmployeeModal } from '../../components/CreateEmployeeModal/CreateEmployeeModal';
+import { EditEmployeeModal } from '../../components/EditEmployeeModal/EditEmployeeModal';
 import { debounce } from 'lodash';
 import { getRoleColor, getRoleText } from '../../utils/status.utils';
 import type { Employee } from '../../types/employee.types';
@@ -26,6 +27,8 @@ export function EmployeesPage() {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
   const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
 
   const fetchEmployees = useCallback(async (filters?: {
@@ -104,6 +107,17 @@ export function EmployeesPage() {
   const showEmployeeDetails = (employee: Employee) => {
     setSelectedEmployee(employee);
     setDetailModalVisible(true);
+  };
+
+  const showEditEmployee = (employee: Employee) => {
+    setEmployeeToEdit(employee);
+    setEditModalVisible(true);
+  };
+
+  const handleEmployeeUpdated = () => {
+    fetchEmployees();
+    setEditModalVisible(false);
+    setEmployeeToEdit(null);
   };
 
   const uniqueDepartments = Array.from(
@@ -216,7 +230,11 @@ export function EmployeesPage() {
                       title="Подробности"
                     />,
                     ...(user?.role === 'admin' || user?.role === 'hr' ? [
-                      <EditOutlined key="edit" title="Редактировать" />
+                      <EditOutlined 
+                        key="edit" 
+                        title="Редактировать" 
+                        onClick={() => showEditEmployee(employee)}
+                      />
                     ] : [])
                   ]}
                 >
@@ -316,7 +334,17 @@ export function EmployeesPage() {
               Закрыть
             </Button>,
             ...(user?.role === 'admin' || user?.role === 'hr' ? [
-              <Button key="edit" type="primary" icon={<EditOutlined />}>
+              <Button 
+                key="edit" 
+                type="primary" 
+                icon={<EditOutlined />}
+                onClick={() => {
+                  setDetailModalVisible(false);
+                  if (selectedEmployee) {
+                    showEditEmployee(selectedEmployee);
+                  }
+                }}
+              >
                 Редактировать
               </Button>
             ] : [])
@@ -414,6 +442,16 @@ export function EmployeesPage() {
             fetchEmployees();
             setCreateModalVisible(false);
           }}
+        />
+
+        <EditEmployeeModal
+          visible={editModalVisible}
+          employee={employeeToEdit}
+          onClose={() => {
+            setEditModalVisible(false);
+            setEmployeeToEdit(null);
+          }}
+          onEmployeeUpdated={handleEmployeeUpdated}
         />
       </Content>
     </Layout>

@@ -35,9 +35,11 @@ export async function seed(knex: knex.Knex): Promise<void> {
 
   console.log("Updating employee assigned managers...");
   for (const assignment of assignments) {
-    await knex("employees")
-      .where("id", assignment.employeeId)
-      .update({ assignedManagerId: assignment.assignedManagerId });
+    if (assignment.assignedManagerId) {
+      await knex("employees")
+        .where("id", assignment.employeeId)
+        .update({ assignedManagerId: assignment.assignedManagerId });
+    }
   }
 
   console.log("Generating requests and tasks...");

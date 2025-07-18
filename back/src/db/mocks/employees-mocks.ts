@@ -2,15 +2,15 @@ import { faker } from '@faker-js/faker';
 import { UserRoleEnum } from '../../commons/enums/enums';
 import { departments } from './departments-mocks';
 import { positions } from './positions-mocks';
+import { getRoleByPositionName } from '../../utils/role.utils';
 const EMPLOYEE_COUNT = 200;
 
 const employees = [];
 
-// Храним роли для каждого сотрудника отдельно для использования в users-mocks
 const employeeRoles = new Map();
 
-// Админ
 const adminId = faker.string.uuid();
+const adminPosition = positions.find(p => p.name.includes('CTO')) || positions[0];
 employees.push({
   id: faker.string.uuid(),
   firstName: 'Иван',
@@ -22,96 +22,87 @@ employees.push({
   userId: adminId,
   tgID: faker.number.int({ min: 100000000, max: 999999999 }),
   tgUsername: `@${faker.internet.username()}`,
-  departmentId: 1,
-  positionId: 1
+  departmentId: adminPosition.departmentId,
+  positionId: adminPosition.id
 });
 employeeRoles.set(adminId, UserRoleEnum.ADMIN);
 
 for (let depIdx = 0; depIdx < departments.length; depIdx++) {
   const department = departments[depIdx];
-  // HR — один на отдел
-  const hrUserId = faker.string.uuid();
-  employees.push({
-    id: faker.string.uuid(),
-    firstName: faker.person.firstName(),
-    lastName: faker.person.lastName(),
-    middleName: faker.person.middleName(),
-    birthDate: faker.date.birthdate({ min: 25, max: 45, mode: 'age' }),
-    hireDate: faker.date.past({ years: 3 }),
-    phone: faker.phone.number({ style: 'international' }),
-    userId: hrUserId,
-    tgID: faker.number.int({ min: 100000000, max: 999999999 }),
-    tgUsername: `@${faker.internet.username()}`,
-    departmentId: department.id,
-    positionId: positions.find(p => p.departmentId === department.id && p.name.toLowerCase().includes('hr'))?.id || positions[0].id
+  const departmentPositions = positions.filter(p => p.departmentId === department.id);
+
+  const keyPositions = [
+    departmentPositions.find(p => p.name.toLowerCase().includes('директор')),
+    departmentPositions.find(p => p.name.toLowerCase().includes('руководитель')),
+    departmentPositions.find(p => p.name.toLowerCase().includes('hr') && !p.name.toLowerCase().includes('директор')),
+    departmentPositions.find(p => (p.name.toLowerCase().includes('менеджер') || p.name.toLowerCase().includes('manager')) &&
+      !p.name.toLowerCase().includes('директор')),
+    ...faker.helpers.arrayElements(departmentPositions.filter(p =>
+      !p.name.toLowerCase().includes('директор') &&
+      !p.name.toLowerCase().includes('руководитель')
+    ), { min: 2, max: 4 })
+  ].filter(Boolean);
+
+  keyPositions.forEach(position => {
+    if (position && employees.length < EMPLOYEE_COUNT) {
+      const employeeUserId = faker.string.uuid();
+      const role = getRoleByPositionName(position.name);
+
+      employees.push({
+        id: faker.string.uuid(),
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
+        middleName: faker.person.middleName(),
+        birthDate: faker.date.birthdate({
+          min: role === UserRoleEnum.HEAD ? 30 : (role === UserRoleEnum.MANAGER ? 25 : 22),
+          max: role === UserRoleEnum.HEAD ? 55 : (role === UserRoleEnum.MANAGER ? 45 : 40),
+          mode: 'age'
+        }),
+        hireDate: faker.date.past({
+          years: role === UserRoleEnum.HEAD ? 6 : (role === UserRoleEnum.MANAGER ? 4 : 3)
+        }),
+        phone: faker.phone.number({ style: 'international' }),
+        userId: employeeUserId,
+        tgID: faker.number.int({ min: 100000000, max: 999999999 }),
+        tgUsername: `@${faker.internet.username()}`,
+        departmentId: department.id,
+        positionId: position.id
+      });
+      employeeRoles.set(employeeUserId, role);
+    }
   });
-  employeeRoles.set(hrUserId, UserRoleEnum.HR);
 }
 
-// Менеджеры — один на три отдела (распределяем по группам)
-const managerGroups = Math.ceil(departments.length / 3);
-for (let group = 0; group < managerGroups; group++) {
-  // Менеджер для группы из 3 отделов
-  const groupDepartments = departments.slice(group * 3, (group + 1) * 3);
-  const managerUserId = faker.string.uuid();
-  employees.push({
-    id: faker.string.uuid(),
-    firstName: faker.person.firstName(),
-    lastName: faker.person.lastName(),
-    middleName: faker.person.middleName(),
-    birthDate: faker.date.birthdate({ min: 28, max: 50, mode: 'age' }),
-    hireDate: faker.date.past({ years: 4 }),
-    phone: faker.phone.number({ style: 'international' }),
-    userId: managerUserId,
-    tgID: faker.number.int({ min: 100000000, max: 999999999 }),
-    tgUsername: `@${faker.internet.username()}`,
-    departmentId: groupDepartments[0].id, // Привязываем к первому отделу группы
-    positionId: positions.find(p => p.departmentId === groupDepartments[0].id && p.name.toLowerCase().includes('менеджер'))?.id || positions[0].id
-  });
-  employeeRoles.set(managerUserId, UserRoleEnum.MANAGER);
-}
-
-// Руководитель — один на отдел
-for (let depIdx = 0; depIdx < departments.length; depIdx++) {
-  const department = departments[depIdx];
-  const headUserId = faker.string.uuid();
-  employees.push({
-    id: faker.string.uuid(),
-    firstName: faker.person.firstName(),
-    lastName: faker.person.lastName(),
-    middleName: faker.person.middleName(),
-    birthDate: faker.date.birthdate({ min: 30, max: 55, mode: 'age' }),
-    hireDate: faker.date.past({ years: 6 }),
-    phone: faker.phone.number({ style: 'international' }),
-    userId: headUserId,
-    tgID: faker.number.int({ min: 100000000, max: 999999999 }),
-    tgUsername: `@${faker.internet.username()}`,
-    departmentId: department.id,
-    positionId: positions.find(p => p.departmentId === department.id && (p.name.toLowerCase().includes('руководитель') || p.name.toLowerCase().includes('директор')))?.id || positions[0].id
-  });
-  employeeRoles.set(headUserId, UserRoleEnum.HEAD);
-}
-
-// Остальные сотрудники
 while (employees.length < EMPLOYEE_COUNT) {
   const depIdx = faker.number.int({ min: 0, max: departments.length - 1 });
   const department = departments[depIdx];
+  const departmentPositions = positions.filter(p => p.departmentId === department.id);
+
+  const position = faker.helpers.arrayElement(departmentPositions);
   const employeeUserId = faker.string.uuid();
+  const role = getRoleByPositionName(position.name);
+
   employees.push({
     id: faker.string.uuid(),
     firstName: faker.person.firstName(),
     lastName: faker.person.lastName(),
     middleName: faker.person.middleName(),
-    birthDate: faker.date.birthdate({ min: 22, max: 40, mode: 'age' }),
-    hireDate: faker.date.past({ years: 2 }),
+    birthDate: faker.date.birthdate({
+      min: role === UserRoleEnum.HEAD ? 30 : (role === UserRoleEnum.MANAGER ? 25 : 22),
+      max: role === UserRoleEnum.HEAD ? 55 : (role === UserRoleEnum.MANAGER ? 45 : 40),
+      mode: 'age'
+    }),
+    hireDate: faker.date.past({
+      years: role === UserRoleEnum.HEAD ? 6 : (role === UserRoleEnum.MANAGER ? 4 : 2)
+    }),
     phone: faker.phone.number({ style: 'international' }),
     userId: employeeUserId,
     tgID: faker.number.int({ min: 100000000, max: 999999999 }),
     tgUsername: `@${faker.internet.username()}`,
     departmentId: department.id,
-    positionId: positions.find(p => p.departmentId === department.id && !['hr', 'менеджер', 'руководитель', 'директор'].some(role => p.name.toLowerCase().includes(role)))?.id || positions[0].id
+    positionId: position.id
   });
-  employeeRoles.set(employeeUserId, UserRoleEnum.EMPLOYEE);
+  employeeRoles.set(employeeUserId, role);
 }
 
 export { employees, employeeRoles };

@@ -2,13 +2,14 @@ import { employeeRepository, userRepository, departmentRepository, positionRepos
 import { ICreateEmployee, IEmployeeFilter, IUpdateEmployee } from "./employee.interface";
 import createError from "http-errors";
 import { UserRoleEnum } from "../commons/enums/enums";
+import { getRoleByPositionName } from "../utils/role.utils";
 
 
 
 export class EmployeesService {
   async getAllEmployees(filter: IEmployeeFilter) {
     filter.page = filter.page || 1;
-    filter.limit = filter.limit || 100; 
+    filter.limit = filter.limit || 100;
 
     const queryB = employeeRepository.createQueryBuilder("employee");
     queryB.leftJoinAndSelect("employee.department", "department");
@@ -16,7 +17,7 @@ export class EmployeesService {
     queryB.leftJoinAndSelect("employee.user", "user");
     queryB.leftJoinAndSelect("employee.assignedManager", "assignedManager");
     queryB.leftJoinAndSelect("assignedManager.user", "assignedManagerUser");
-    
+
     if (filter.firstName) {
       queryB.andWhere("employee.firstName ILIKE :firstName", {
         firstName: `%${filter.firstName}%`,
@@ -47,22 +48,22 @@ export class EmployeesService {
     }
 
     queryB.orderBy("employee.lastName", "ASC")
-         .addOrderBy("employee.firstName", "ASC");
+      .addOrderBy("employee.firstName", "ASC");
 
     const page = (filter.page - 1) * filter.limit;
     queryB.skip(page).take(filter.limit);
     const [employees, total] = await queryB.getManyAndCount();
-    
+
     const modifiedEmployees = employees.map(employee => ({
       ...employee,
-      user: employee.user ? { 
+      user: employee.user ? {
         id: employee.user.id,
         email: employee.user.email,
         role: employee.user.role,
         isActive: employee.user.isActive
       } : null
     }));
-    
+
     return {
       data: modifiedEmployees,
       meta: {
@@ -106,21 +107,25 @@ export class EmployeesService {
 
   async createEmployee(employeeData: ICreateEmployee) {
     const { email, departmentId, positionId, assignedManagerId, ...data } = employeeData;
-    
+
     const findUser = await userRepository.findOne({
       where: { email: email },
     });
-    
+
     if (!findUser) {
       throw createError(404, "User not found. Create user account first.");
     }
-    
+
     const existingEmployee = await employeeRepository.findOne({
       where: { user: { id: findUser.id } },
     });
-    
+
     if (existingEmployee) {
       throw createError(400, "This user is already associated with an employee");
+    }
+
+    if (positionId && !departmentId) {
+      throw createError(400, "Cannot assign position without department");
     }
 
     let department = null;
@@ -136,10 +141,15 @@ export class EmployeesService {
     let position = null;
     if (positionId) {
       position = await positionRepository.findOne({
-        where: { id: positionId }
+        where: { id: positionId },
+        relations: ["department"]
       });
       if (!position) {
         throw createError(404, "Position not found");
+      }
+
+      if (position.department && position.department.id !== departmentId) {
+        throw createError(400, "Position does not belong to the selected department");
       }
     }
 
@@ -152,9 +162,9 @@ export class EmployeesService {
       if (!assignedManager) {
         throw createError(404, "Assigned manager not found");
       }
-      
-      if (![UserRoleEnum.HR, UserRoleEnum.MANAGER, UserRoleEnum.ADMIN].includes(assignedManager.user.role)) {
-        throw createError(400, "Assigned manager must have HR, Manager, or Admin role");
+
+      if (![UserRoleEnum.HR, UserRoleEnum.MANAGER, UserRoleEnum.ADMIN, UserRoleEnum.HEAD].includes(assignedManager.user.role)) {
+        throw createError(400, "Assigned manager must have HR, Manager, Admin, or Head role");
       }
     }
 
@@ -167,6 +177,12 @@ export class EmployeesService {
     });
 
     try {
+      if (position && findUser.role !== UserRoleEnum.ADMIN) {
+        const newRole = getRoleByPositionName(position.name);
+        findUser.role = newRole;
+        await userRepository.save(findUser);
+      }
+
       await employeeRepository.save(newEmployee);
       return await this.getEmployeeById(findUser.id);
     } catch (error) {
@@ -176,17 +192,21 @@ export class EmployeesService {
 
   async updateEmployee(employeeData: IUpdateEmployee) {
     const { userId, email, departmentId, positionId, assignedManagerId, ...data } = employeeData;
-    
+
     const findEmployee = await employeeRepository.findOne({
       where: { user: { id: userId } },
       relations: ["user", "department", "position", "assignedManager"],
     });
-    
+
     if (!findEmployee) {
       throw createError(404, "Employee not found");
     }
 
     try {
+      if (positionId && positionId !== null && (!departmentId && departmentId !== null && !findEmployee.department)) {
+        throw createError(400, "Cannot assign position without department");
+      }
+
       if (email) {
         const findUser = await userRepository.findOne({
           where: { id: userId }
@@ -199,6 +219,16 @@ export class EmployeesService {
 
       if (departmentId !== undefined) {
         if (departmentId === null) {
+          if (findEmployee.position) {
+            findEmployee.position = null;
+            const findUser = await userRepository.findOne({
+              where: { id: userId }
+            });
+            if (findUser && findUser.role !== UserRoleEnum.ADMIN) {
+              findUser.role = UserRoleEnum.EMPLOYEE;
+              await userRepository.save(findUser);
+            }
+          }
           findEmployee.department = null;
         } else {
           const department = await departmentRepository.findOne({
@@ -214,14 +244,38 @@ export class EmployeesService {
       if (positionId !== undefined) {
         if (positionId === null) {
           findEmployee.position = null;
+          const findUser = await userRepository.findOne({
+            where: { id: userId }
+          });
+          if (findUser && findUser.role !== UserRoleEnum.ADMIN) {
+            findUser.role = UserRoleEnum.EMPLOYEE;
+            await userRepository.save(findUser);
+          }
         } else {
           const position = await positionRepository.findOne({
-            where: { id: positionId }
+            where: { id: positionId },
+            relations: ["department"]
           });
           if (!position) {
             throw createError(404, "Position not found");
           }
+
+          const currentDepartmentId = departmentId !== undefined ? departmentId : findEmployee.department?.id;
+
+          if (position.department && position.department.id !== currentDepartmentId) {
+            throw createError(400, "Position does not belong to the selected department");
+          }
+
           findEmployee.position = position;
+
+          const newRole = getRoleByPositionName(position.name);
+          const findUser = await userRepository.findOne({
+            where: { id: userId }
+          });
+          if (findUser && findUser.role !== UserRoleEnum.ADMIN) {
+            findUser.role = newRole;
+            await userRepository.save(findUser);
+          }
         }
       }
 
@@ -236,11 +290,11 @@ export class EmployeesService {
           if (!assignedManager) {
             throw createError(404, "Assigned manager not found");
           }
-          
-          if (![UserRoleEnum.HR, UserRoleEnum.MANAGER, UserRoleEnum.ADMIN].includes(assignedManager.user.role)) {
-            throw createError(400, "Assigned manager must have HR, Manager, or Admin role");
+
+          if (![UserRoleEnum.HR, UserRoleEnum.MANAGER, UserRoleEnum.ADMIN, UserRoleEnum.HEAD].includes(assignedManager.user.role)) {
+            throw createError(400, "Assigned manager must have HR, Manager, Admin, or Head role");
           }
-          
+
           findEmployee.assignedManager = assignedManager;
         }
       }
@@ -283,8 +337,8 @@ export class EmployeesService {
         .leftJoinAndSelect("employee.user", "user")
         .leftJoinAndSelect("employee.department", "department")
         .leftJoinAndSelect("employee.position", "position")
-        .where("user.role IN (:...roles)", { 
-          roles: [UserRoleEnum.HR, UserRoleEnum.MANAGER, UserRoleEnum.ADMIN] 
+        .where("user.role IN (:...roles)", {
+          roles: [UserRoleEnum.HR, UserRoleEnum.MANAGER, UserRoleEnum.ADMIN]
         })
         .andWhere("user.isActive = :isActive", { isActive: true })
         .orderBy("employee.lastName", "ASC")
@@ -309,15 +363,15 @@ export class EmployeesService {
   async getEmployeeStats() {
     try {
       const totalEmployees = await employeeRepository.count();
-      
+
       const activeEmployees = await employeeRepository
         .createQueryBuilder("employee")
         .leftJoin("employee.user", "user")
         .where("user.isActive = :isActive", { isActive: true })
         .getCount();
-        
+
       const inactiveEmployees = totalEmployees - activeEmployees;
-      
+
       return {
         total: totalEmployees,
         active: activeEmployees,

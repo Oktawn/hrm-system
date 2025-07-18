@@ -13,7 +13,8 @@ employeesRouter.get("/", authMiddleware(), employeesController.getAllEmployees);
 employeesRouter.get("/:id", authMiddleware(), employeesController.getEmployeeById);
 employeesRouter.post("/create", authMiddleware([UserRoleEnum.ADMIN]), employeesController.createEmployee);
 employeesRouter.put("/update/me", authMiddleware(), employeesController.updateEmployee);
-employeesRouter.put("/update", authMiddleware([UserRoleEnum.ADMIN, UserRoleEnum.HR, UserRoleEnum.MANAGER]), employeesController.updateAnotherEmployee);
+employeesRouter.put("/update", authMiddleware([UserRoleEnum.ADMIN, UserRoleEnum.HR, UserRoleEnum.MANAGER,
+UserRoleEnum.HR_DIRECTOR, UserRoleEnum.HEAD]), employeesController.updateAnotherEmployee);
 employeesRouter.delete("/:id", authMiddleware([UserRoleEnum.ADMIN]), employeesController.deleteEmployee);
 
 
