@@ -231,26 +231,122 @@ npm run dev
 
 ## API Endpoints
 
-### Аутентификация
-- `POST /api/auth/login` - вход в систему
-- `POST /api/auth/logout` - выход
-- `POST /api/auth/refresh` - обновление токена
-- `GET /api/auth/check` - проверка токена
+###  Аутентификация (`/api/auth`)
+- `POST /register` - регистрация нового пользователя
+- `POST /login` - вход в систему
+- `POST /logout` - выход из системы
+- `POST /refresh` - обновление токена доступа
+- `GET /check` - проверка действительности токена
+- `GET /check/bot` - проверка Telegram бота
 
-### Сотрудники
-- `GET /api/employees` - список сотрудников
-- `GET /api/employees/:id` - профиль сотрудника
-- `POST /api/employees/create` - создание сотрудника
-- `PUT /api/employees/update/:id` - обновление профиля
+###  Профиль (`/api/profile`)
+- `GET /` - получить профиль текущего пользователя
+- `PUT /` - обновить профиль
+- `PUT /password` - изменить пароль
 
-### Задачи
-- `GET /api/tasks` - список задач
-- `POST /api/tasks` - создание задачи
-- `PUT /api/tasks/:id` - обновление задачи
-- `GET /api/tasks/stats` - статистика задач
+###  Сотрудники (`/api/employees`)
+- `GET /` - список всех сотрудников
+- `GET /:id` - профиль сотрудника по ID
+- `GET /account/me` - получить информацию о своём аккаунте
+- `GET /stats` - статистика по сотрудникам
+- `GET /managers` - список доступных менеджеров (HR/ADMIN/MANAGER)
+- `POST /create` - создание нового сотрудника (ADMIN)
+- `PUT /update/me` - обновление собственного профиля
+- `PUT /update` - обновление профиля другого сотрудника (HR/ADMIN/MANAGER)
+- `DELETE /:id` - удаление сотрудника (ADMIN)
 
-### Заявки
-- `GET /api/requests` - список заявок
-- `POST /api/requests/create` - создание заявки
-- `PUT /api/requests/update/:id` - обновление заявки
-- `PATCH /api/requests/:id/status` - изменение статуса
+###  Отделы (`/api/departments`)
+- `GET /` - список всех отделов
+- `GET /:id` - информация об отделе по ID
+- `GET /stats` - статистика по отделам
+- `GET /employee/:employeeId/stats` - статистика отдела конкретного сотрудника
+- `POST /` - создание нового отдела (ADMIN/HR)
+- `PUT /:id` - обновление отдела (ADMIN/HR)
+- `DELETE /:id` - удаление отдела (ADMIN)
+
+###  Должности (`/api/positions`)
+- `GET /` - список всех должностей
+- `GET /:id` - информация о должности по ID
+- `GET /department/:departmentId` - должности по отделу
+- `POST /` - создание новой должности (ADMIN/HR)
+- `PUT /:id` - обновление должности (ADMIN/HR)
+- `DELETE /:id` - удаление должности (ADMIN)
+
+###  Задачи (`/api/tasks`)
+- `GET /` - список всех задач
+- `GET /:id` - задача по ID
+- `GET /stats` - общая статистика задач
+- `GET /recent` - последние задачи
+- `GET /assignee/:assigneeId` - задачи по исполнителю
+- `GET /creator/:creatorId` - задачи по создателю
+- `GET /status/:status` - задачи по статусу
+- `GET /priority/:priority` - задачи по приоритету
+- `POST /create` - создание новой задачи
+- `PUT /update/:id` - обновление задачи
+- `PATCH /:id/status` - изменение статуса задачи
+- `DELETE /:id` - удаление задачи
+
+#### Статистика задач (`/api/tasks/statistics`)
+- `GET /` - расширенная статистика
+- `GET /total` - общая статистика
+- `GET /personal` - персональная статистика
+- `GET /export` - экспорт статистики в Excel
+
+#### Задачи для бота (`/api/tasks/bots`)
+- `GET /` - все незавершенные задачи для Telegram бота
+- `GET /:id` - задача по ID для бота
+- `GET /status/:status` - задачи по статусу для бота
+- `GET /priority/:priority` - задачи по приоритету для бота
+
+###  Заявки (`/api/requests`)
+- `GET /` - список всех заявок
+- `GET /:id` - заявка по ID
+- `GET /status/:status` - заявки по статусу
+- `GET /priority/:priority` - заявки по приоритету
+- `GET /employee/:employeeId` - заявки конкретного сотрудника
+- `POST /create` - создание новой заявки
+- `PUT /update/:id` - обновление заявки
+- `PATCH /:id/status` - изменение статуса заявки
+- `DELETE /:id` - удаление заявки
+
+#### Заявки для бота (`/api/requests/bot`)
+- `GET /` - все заявки для Telegram бота
+- `GET /:id` - заявка по ID для бота
+- `GET /status/:status` - заявки по статусу для бота
+- `GET /priority/:priority` - заявки по приоритету для бота
+- `GET /employee/:employeeId` - заявки по ID сотрудника для бота
+- `GET /employee/:name` - заявки по имени сотрудника для бота
+- `POST /create` - создание заявки через бота
+- `PUT /update/:id` - обновление заявки через бота
+- `PATCH /:id/status` - изменение статуса заявки через бота
+
+###  Документы (`/api/documents`)
+- `GET /` - список документов (ADMIN/HR/MANAGER)
+- `GET /:id` - документ по ID
+- `GET /employee/:employeeId` - документы конкретного сотрудника
+- `GET /status/:status` - документы по статусу (ADMIN/HR/MANAGER)
+- `POST /` - создание нового документа (ADMIN/HR)
+- `POST /generate/:requestId` - генерация документа по заявке (ADMIN/HR)
+- `POST /:id/regenerate` - перегенерация документа (ADMIN/HR)
+- `PUT /:id` - обновление документа
+- `PATCH /:id/status` - изменение статуса документа (ADMIN/HR/MANAGER)
+- `PATCH /:id/sign` - подписание документа (ADMIN/HR/MANAGER)
+- `PATCH /:id/reject` - отклонение документа (ADMIN/HR/MANAGER)
+- `DELETE /:id` - удаление документа (ADMIN/HR)
+
+###  Комментарии (`/api/comments`)
+- `POST /` - добавление комментария
+- `GET /task/:taskId` - комментарии к задаче
+- `GET /request/:requestId` - комментарии к заявке
+- `PUT /:commentId` - обновление комментария
+- `DELETE /:commentId` - удаление комментария
+
+#### Комментарии для бота (`/api/comments/bot`)
+- `POST /` - добавление комментария через бота
+- `PUT /:commentId` - обновление комментария через бота
+
+###  Загрузка файлов (`/api/uploads`)
+- `POST /upload` - загрузка файлов
+- `GET /download/:filename` - скачивание файла
+- `GET /view/:filename` - просмотр файла
+
