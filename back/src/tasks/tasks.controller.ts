@@ -117,7 +117,8 @@ export class TasksController {
 
         let attachments = [];
         if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-          attachments = (req.files as Express.Multer.File[]).map(createAttachment);
+          const uploadPromises = (req.files as Express.Multer.File[]).map(createAttachment);
+          attachments = await Promise.all(uploadPromises);
         }
 
         const taskDataWithAttachments: ICreateTask = {

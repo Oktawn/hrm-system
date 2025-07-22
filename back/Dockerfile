@@ -23,7 +23,7 @@ ENV LC_ALL=C.UTF-8
 COPY --from=build /app/package*.json .
 COPY --from=deps-prod /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/token.json ./dist
 COPY --from=build /app/src/templates ./src/templates
-COPY package*.json ./
-RUN mkdir -p uploads/documents
+RUN mkdir -p /tmp/uploads
 CMD ["npm", "run", "start"]

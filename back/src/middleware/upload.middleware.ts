@@ -1,17 +1,18 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { GoogleDrive } from '../google-drive/drive';
 
-const uploadsDir = "/app/uploads";
+const uploadsDir = "/tmp/uploads";
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (_req, _file, cb) => {
     cb(null, uploadsDir);
   },
-  filename: (req, file, cb) => {
+  filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
 
@@ -19,7 +20,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const fileFilter = (_: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (_: any, _file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   cb(null, true);
 };
 
@@ -35,7 +36,7 @@ export const uploadMultiple = upload.array('attachments', 5);
 
 export const uploadSingle = upload.single('file');
 
-export const createAttachment = (file: Express.Multer.File) => {
+export const createAttachment = async (file: Express.Multer.File) => {
   let originalName = file.originalname;
   try {
     if (Buffer.isBuffer(file.originalname)) {
@@ -51,19 +52,32 @@ export const createAttachment = (file: Express.Multer.File) => {
     console.warn('Ошибка при обработке имени файла:', error);
   }
 
-  return {
-    filename: file.filename,
-    originalName: originalName,
-    mimetype: file.mimetype,
-    size: file.size,
-    path: file.path,
-    uploadDate: new Date()
-  };
-};
+  const googleDrive = new GoogleDrive();
+  const fileStream = fs.createReadStream(file.path);
 
-export const deleteFile = (filename: string) => {
-  const filePath = path.join(uploadsDir, filename);
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
+  try {
+    const fileId = await googleDrive.uploadFile(
+      originalName,
+      file.mimetype,
+      fileStream
+    );
+
+
+    return {
+      fileId,
+      originalName: originalName,
+      mimetype: file.mimetype,
+      size: file.size,
+      uploadDate: new Date()
+    };
+  } catch (error) {
+    console.error('Ошибка при загрузке в Google Drive:', error);
+    throw error;
+  }
+  finally {
+    if (fs.existsSync(file.path)) {
+      fs.unlinkSync(file.path);
+    }
   }
 };
+

@@ -13,6 +13,7 @@ yarn-error.log*
 
 # Environment variables
 *.env
+token.json
 
 # IDE
 .idea/

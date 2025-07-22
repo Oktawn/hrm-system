@@ -2,7 +2,7 @@ import { Response } from "express";
 import { CommentsService } from "./comments.service";
 import { ICreateComment, IUpdateComment } from "./comments.interface";
 import { AuthenticatedRequest, AuthenticatedRequestBot } from "../auth/auth.interface";
-import { uploadMultiple, createAttachment } from '../middleware/upload.middleware';
+import { createAttachment, uploadMultiple } from '../middleware/upload.middleware';
 
 const commentsService = new CommentsService();
 
@@ -23,7 +23,8 @@ export class CommentsController {
 
         let attachments = [];
         if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-          attachments = (req.files as Express.Multer.File[]).map(createAttachment);
+          const uploadPromises = (req.files as Express.Multer.File[]).map(createAttachment);
+          attachments = await Promise.all(uploadPromises);
         }
 
         const commentDataWithAttachments = {

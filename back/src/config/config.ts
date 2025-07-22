@@ -12,6 +12,7 @@ interface IEnvConfig {
   ORIGIN_FRONTEND: string;
   ORIGIN_BOT: string;
   ORIGIN_HOST_URL_BOT: string;
+  GOOGLE_FOLDER_ID: string;
 }
 
 class EnvConfig {

@@ -6,7 +6,7 @@ const uploadsRouter = Router();
 const uploadsController = new UploadsController();
 
 uploadsRouter.post('/upload', authMiddleware(), uploadsController.uploadFiles.bind(uploadsController));
-uploadsRouter.get('/download/:filename', uploadsController.downloadFile.bind(uploadsController));
-uploadsRouter.get('/view/:filename', uploadsController.viewFile.bind(uploadsController));
+uploadsRouter.get('/download/:fileId', uploadsController.downloadFile.bind(uploadsController));
+uploadsRouter.get('/view/:fileId', uploadsController.viewFile.bind(uploadsController));
 
 export { uploadsRouter };

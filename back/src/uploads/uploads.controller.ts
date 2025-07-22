@@ -1,17 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
-import { uploadMultiple, createAttachment } from '../middleware/upload.middleware';
+import { uploadMultiple } from '../middleware/upload.middleware';
 import { AuthenticatedRequest } from '../auth/auth.interface';
-import mime from 'mime-types';
-import path from 'path';
+import { GoogleDrive } from '../google-drive/drive';
 import fs from 'fs';
 
 export class UploadsController {
-  private uploadsDir = "/app/uploads";
+  private googleDrive = new GoogleDrive();
+
   async uploadFiles(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-
-
-      uploadMultiple(req, res, (err) => {
+      uploadMultiple(req, res, async (err: any) => {
         if (err) {
           return res.status(400).json({
             success: false,
@@ -26,13 +24,41 @@ export class UploadsController {
           });
         }
 
-        const attachments = (req.files as Express.Multer.File[]).map(createAttachment);
+        try {
+          const uploadPromises = (req.files as Express.Multer.File[]).map(async (file) => {
+            const fileStream = fs.createReadStream(file.path);
 
-        res.status(200).json({
-          success: true,
-          message: 'Файлы успешно загружены',
-          data: attachments
-        });
+            const fileId = await this.googleDrive.uploadFile(
+              file.originalname,
+              file.mimetype,
+              fileStream
+            );
+
+            fs.unlinkSync(file.path);
+
+            return {
+              fileId,
+              originalName: file.originalname,
+              mimetype: file.mimetype,
+              size: file.size,
+              uploadDate: new Date()
+            };
+          });
+
+          const attachments = await Promise.all(uploadPromises);
+
+          res.status(200).json({
+            success: true,
+            message: 'Файлы успешно загружены в Google Drive',
+            data: attachments
+          });
+        } catch (uploadError) {
+          console.error('Ошибка при загрузке в Google Drive:', uploadError);
+          res.status(500).json({
+            success: false,
+            message: 'Ошибка при загрузке файлов в Google Drive'
+          });
+        }
       });
     } catch (error) {
       console.error('Ошибка при загрузке файлов:', error);
@@ -44,63 +70,49 @@ export class UploadsController {
     }
   }
 
-  async downloadFile(req: Request, res: Response, next: NextFunction) {
+  async downloadFile(req: Request, res: Response) {
     try {
-      const { filename } = req.params;
+      const { fileId } = req.params;
 
-      let filePath = path.join(this.uploadsDir, filename);
-
-      if (!fs.existsSync(filePath)) {
-        filePath = path.join(this.uploadsDir, 'documents', filename);
-      }
-
-      if (!fs.existsSync(filePath)) {
-        return res.status(404).json({
-          success: false,
-          message: 'Файл не найден'
-        });
-      }
-
-      res.download(filePath);
+      await this.googleDrive.downloadFileToResponse(fileId, res);
     } catch (error) {
       console.error('Ошибка при скачивании файла:', error);
-      next(error);
+      res.status(404).json({
+        success: false,
+        message: 'Файл не найден или ошибка доступа'
+      });
     }
   }
 
-  async viewFile(req: Request, res: Response, next: NextFunction) {
+  async viewFile(req: Request, res: Response) {
     try {
-      const { filename } = req.params;
+      const { fileId } = req.params;
 
-      let filePath = path.join(this.uploadsDir, filename);
+      const fileMetadata = await this.googleDrive.getFileMetadata(fileId);
 
-      if (!fs.existsSync(filePath)) {
-        filePath = path.join(this.uploadsDir, 'documents', filename);
-      }
-
-      if (!fs.existsSync(filePath)) {
+      if (!fileMetadata) {
         return res.status(404).json({
           success: false,
           message: 'Файл не найден'
         });
       }
 
-      const mimeType = mime.lookup(filePath);
+      const fileStream = await this.googleDrive.downloadFile(fileId);
 
-      if (mimeType) {
-        res.setHeader('Content-Type', mimeType);
-        res.setHeader('Content-Disposition', 'inline');
-      }
+      res.setHeader('Content-Type', fileMetadata.mimeType || 'application/octet-stream');
+      res.setHeader('Content-Disposition', 'inline');
 
-      if (mimeType && mimeType.startsWith('image/')) {
+      if (fileMetadata.mimeType && fileMetadata.mimeType.startsWith('image/')) {
         res.setHeader('Cache-Control', 'public, max-age=86400');
       }
 
-      const absolutePath = path.resolve(filePath);
-      res.sendFile(absolutePath);
+      fileStream.pipe(res);
     } catch (error) {
       console.error('Ошибка при просмотре файла:', error);
-      next(error);
+      res.status(404).json({
+        success: false,
+        message: 'Файл не найден или ошибка доступа'
+      });
     }
   }
 }
